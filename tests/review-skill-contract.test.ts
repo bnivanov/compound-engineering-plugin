@@ -1710,43 +1710,62 @@ describe("cross-model peer skip legibility", () => {
     return { status: r.status, out: parsed }
   }
 
-  test("parse_omp_events recovers schema JSON from streamed text deltas", async () => {
-    const worker = "skills/ce-code-review/scripts/cross-model-adversarial-review.sh"
-    const doc = '{"findings":[{"note":"n"}],"residual_risks":[],"testing_gaps":[]}'
-    // Real omp 18.1.13 shape: assistantMessageEvent is TOP-LEVEL on
-    // message_update, and thinking_delta carries the same .delta key — only
-    // text_delta events may join into the answer.
-    const delta = (d: string) =>
-      JSON.stringify({
+  const ompParserWorkers = [
+    { worker: "skills/ce-code-review/scripts/cross-model-adversarial-review.sh", doc: '{"findings":[{"note":"n"}],"residual_risks":[],"testing_gaps":[]}' },
+    { worker: "skills/ce-doc-review/scripts/cross-model-doc-review.sh", doc: '{"findings":[{"note":"n"}],"residual_risks":[],"testing_gaps":[]}' },
+    // pov validates any JSON object, not a findings schema
+    { worker: "skills/ce-pov/scripts/cross-model-pov.sh", doc: '{"voice":"peer-omp","position":"p","reasoning":"r"}' },
+  ]
+  for (const { worker, doc } of ompParserWorkers) {
+    test(`${worker} parse_omp_events recovers schema JSON from streamed text deltas`, async () => {
+      // Real omp 18.1.13 shape: assistantMessageEvent is TOP-LEVEL on
+      // message_update, and thinking_delta carries the same .delta key — only
+      // text_delta events may join into the answer.
+      const delta = (d: string) =>
+        JSON.stringify({
+          type: "message_update",
+          assistantMessageEvent: { type: "text_delta", contentIndex: 1, delta: d },
+        })
+      const thinking = JSON.stringify({
         type: "message_update",
-        assistantMessageEvent: { type: "text_delta", contentIndex: 1, delta: d },
+        assistantMessageEvent: { type: "thinking_delta", contentIndex: 0, delta: "SECRET-REASONING" },
       })
-    const thinking = JSON.stringify({
-      type: "message_update",
-      assistantMessageEvent: { type: "thinking_delta", contentIndex: 0, delta: "SECRET-REASONING" },
+      const streamed = await runOmpParser(worker, [
+        thinking,
+        delta(doc.slice(0, 20)),
+        delta(doc.slice(20)),
+      ])
+      expect(streamed.status).toBe(0)
+      expect(JSON.parse(streamed.out)).toEqual(JSON.parse(doc))
+      expect(streamed.out).not.toContain("SECRET-REASONING")
     })
-    const streamed = await runOmpParser(worker, [
-      thinking,
-      delta(doc.slice(0, 20)),
-      delta(doc.slice(20)),
-    ])
-    expect(streamed.status).toBe(0)
-    expect(JSON.parse(streamed.out).findings).toEqual([{ note: "n" }])
-    expect(streamed.out).not.toContain("SECRET-REASONING")
-  })
 
-  test("parse_omp_events falls back to the turn_end message text", async () => {
-    const worker = "skills/ce-code-review/scripts/cross-model-adversarial-review.sh"
-    const doc = '{"findings":[{"note":"n"}],"residual_risks":[],"testing_gaps":[]}'
-    const turnOnly = await runOmpParser(worker, [
-      JSON.stringify({
-        type: "turn_end",
-        message: { role: "assistant", content: [{ type: "thinking", thinking: "SECRET-REASONING" }, { type: "text", text: doc }] },
-      }),
+    test(`${worker} parse_omp_events falls back to the turn_end message text`, async () => {
+      const turnOnly = await runOmpParser(worker, [
+        JSON.stringify({
+          type: "turn_end",
+          message: { role: "assistant", content: [{ type: "thinking", thinking: "SECRET-REASONING" }, { type: "text", text: doc }] },
+        }),
+      ])
+      expect(turnOnly.status).toBe(0)
+      expect(JSON.parse(turnOnly.out)).toEqual(JSON.parse(doc))
+      expect(turnOnly.out).not.toContain("SECRET-REASONING")
+    })
+  }
+
+  test("omp event parsers keep the shared envelope shape across workers", async () => {
+    const [adv, docr, pov] = await Promise.all([
+      readRepoFile("skills/ce-code-review/scripts/cross-model-adversarial-review.sh"),
+      readRepoFile("skills/ce-doc-review/scripts/cross-model-doc-review.sh"),
+      readRepoFile("skills/ce-pov/scripts/cross-model-pov.sh"),
     ])
-    expect(turnOnly.status).toBe(0)
-    expect(JSON.parse(turnOnly.out).findings).toEqual([{ note: "n" }])
-    expect(turnOnly.out).not.toContain("SECRET-REASONING")
+    // code/doc extract the same parser; pov differs only in schema validation
+    // and its recovery hook, not in the envelope shape it reads.
+    expect(extractOmpParser(docr)).toBe(extractOmpParser(adv))
+    const povParser = extractOmpParser(pov)
+    expect(povParser).toContain('select(.type=="text_delta")')
+    expect(povParser).toContain("recover_pov_json")
+    expect(povParser).toContain('select(.type=="turn_end")')
   })
 
   test("omp serving family is unknown in every worker, so independence stays unverified", async () => {
