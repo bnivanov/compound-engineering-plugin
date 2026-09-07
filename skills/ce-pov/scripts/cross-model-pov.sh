@@ -154,7 +154,10 @@ target_serving_family() {
     codex|claude|grok|composer) printf '%s' "$1" ;;
     cursor) printf 'unknown' ;;
     opencode) printf 'unknown' ;;
-    omp) printf 'omp' ;;
+    # omp routes through the host's session-default provider, which this script
+    # cannot attest; an attested family would let a same-model peer masquerade
+    # as independent (cursor precedent).
+    omp) printf 'unknown' ;;
   esac
 }
 
@@ -808,10 +811,12 @@ parse_opencode_events() {  # <logfile> <outfile>
   return "$st"
 }
 parse_omp_events() {  # <logfile> <outfile>
-  # omp --mode json streams NDJSON: join streamed text deltas, else the
-  # turn_end message text (shapes verified against omp 18.1.13 output).
+  # omp --mode json streams NDJSON: assistantMessageEvent sits at the TOP level
+  # of message_update events (verified against omp 18.1.13), and thinking_delta
+  # carries the same .delta key — filter to text_delta so joined output is the
+  # answer, not reasoning. Fallback: the turn_end message text.
   local text tmp
-  text="$(jq -rs '[.[] | select(.type=="message_update") | (.message_update.assistantMessageEvent.delta // empty)] | join("")' "$1" 2>/dev/null)" || text=""
+  text="$(jq -rs '[.[] | select(.type=="message_update") | (.assistantMessageEvent | select(.type=="text_delta") | .delta // empty)] | join("")' "$1" 2>/dev/null)" || text=""
   if [ -z "$text" ]; then
     text="$(jq -rs '[.[] | select(.type=="turn_end") | (.message.content[]? | select(.type=="text") | .text // empty)] | join("")' "$1" 2>/dev/null)" || text=""
   fi
@@ -823,6 +828,24 @@ parse_omp_events() {  # <logfile> <outfile>
   local st=$?
   rm -f "$tmp"
   return "$st"
+}
+
+classify_omp_terminal() {   # <logfile>; omp exits 0 even on terminal failure (18.1.13)
+  local verdict
+  verdict="$(jq -rs '
+    [ .[] | select(.type=="turn_end") ] | last |
+    if . == null then "ok"
+    else .message as $m |
+      (if ($m.errorMessage // "") != "" then $m.errorMessage else "" end) as $e |
+      if $e == "" then (if ($m.stopReason // "") == "stop" then "ok" else "failed" end)
+      elif ($e | test("(^|[^0-9])529([^0-9]|$)"; "i")) and ($e | test("overload|capacity"; "i")) then "overloaded"
+      else "failed" end
+    end' "$1" 2>/dev/null)" || verdict="ok"
+  case "$verdict" in
+    ok) ;;
+    overloaded) RUN_SUCCEEDED=false; rm -f "$RAW_OUT"; log "omp turn_end reports provider overload 529" ;;
+    *) RUN_SUCCEEDED=false; rm -f "$RAW_OUT"; log "omp turn_end envelope reports failure; discarding structured output" ;;
+  esac
 }
 
 bounded_failure_evidence() {   # <logfile>; prefer structured diagnostics, then bounded head+tail
@@ -865,7 +888,7 @@ attempt_route() {   # <provider> <route>
     cursor)      note="auto (serving model unverified)" ;;
     composer)    note="$(route_model composer)" ;;
     opencode)    note="auto (serving model unverified)" ;;
-    omp)         note="auto (serving model unverified)" ;;
+    omp)         note="session-default (serving model unverified)" ;;
   esac
   log "peer run: provider=$provider route=$route model=$note POV read-only least-privilege (idle ${IDLE_SECS}s / hard ${HARD_SECS}s; grok-cli hard-only ${UNGUARDED_HARD_SECS}s)"
   case "$route" in
@@ -889,6 +912,7 @@ attempt_route() {   # <provider> <route>
     opencode)    run_timeout_cmd "" "$HARD_SECS" idle
                  [ "$RUN_SUCCEEDED" = true ] && parse_opencode_events "$PEERLOG" "$RAW_OUT" ;;
     omp)         run_timeout_cmd "" "$HARD_SECS" idle
+                 classify_omp_terminal "$PEERLOG"
                  [ "$RUN_SUCCEEDED" = true ] && parse_omp_events "$PEERLOG" "$RAW_OUT" ;;
   esac
   if [ "$RUN_SUCCEEDED" != true ]; then

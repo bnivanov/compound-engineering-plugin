@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs"
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { spawnSync } from "node:child_process"
 import { readFile } from "fs/promises"
@@ -1710,43 +1710,136 @@ describe("cross-model peer skip legibility", () => {
     return { status: r.status, out: parsed }
   }
 
-  test("parse_omp_events recovers schema JSON from streamed deltas and turn_end", async () => {
+  test("parse_omp_events recovers schema JSON from streamed text deltas", async () => {
     const worker = "skills/ce-code-review/scripts/cross-model-adversarial-review.sh"
     const doc = '{"findings":[{"note":"n"}],"residual_risks":[],"testing_gaps":[]}'
+    // Real omp 18.1.13 shape: assistantMessageEvent is TOP-LEVEL on
+    // message_update, and thinking_delta carries the same .delta key — only
+    // text_delta events may join into the answer.
     const delta = (d: string) =>
       JSON.stringify({
         type: "message_update",
-        message_update: { assistantMessageEvent: { type: "text_delta", contentIndex: 1, delta: d } },
+        assistantMessageEvent: { type: "text_delta", contentIndex: 1, delta: d },
       })
+    const thinking = JSON.stringify({
+      type: "message_update",
+      assistantMessageEvent: { type: "thinking_delta", contentIndex: 0, delta: "SECRET-REASONING" },
+    })
     const streamed = await runOmpParser(worker, [
+      thinking,
       delta(doc.slice(0, 20)),
       delta(doc.slice(20)),
-      JSON.stringify({
-        type: "turn_end",
-        message: { role: "assistant", content: [{ type: "text", text: doc }] },
-      }),
     ])
     expect(streamed.status).toBe(0)
     expect(JSON.parse(streamed.out).findings).toEqual([{ note: "n" }])
+    expect(streamed.out).not.toContain("SECRET-REASONING")
+  })
+
+  test("parse_omp_events falls back to the turn_end message text", async () => {
+    const worker = "skills/ce-code-review/scripts/cross-model-adversarial-review.sh"
+    const doc = '{"findings":[{"note":"n"}],"residual_risks":[],"testing_gaps":[]}'
     const turnOnly = await runOmpParser(worker, [
       JSON.stringify({
         type: "turn_end",
-        message: { role: "assistant", content: [{ type: "thinking", thinking: "" }, { type: "text", text: doc }] },
+        message: { role: "assistant", content: [{ type: "thinking", thinking: "SECRET-REASONING" }, { type: "text", text: doc }] },
       }),
     ])
     expect(turnOnly.status).toBe(0)
     expect(JSON.parse(turnOnly.out).findings).toEqual([{ note: "n" }])
+    expect(turnOnly.out).not.toContain("SECRET-REASONING")
   })
 
-  test("omp event parsers share the envelope shape across workers", async () => {
-    const [adv, doc] = await Promise.all([
+  test("omp serving family is unknown in every worker, so independence stays unverified", async () => {
+    // An attested omp family would let a same-model peer (the omp route serves
+    // the session-default provider) promote as independent; cursor sets the
+    // precedent of fail-closed unknown.
+    const srcs = await Promise.all([
       readRepoFile("skills/ce-code-review/scripts/cross-model-adversarial-review.sh"),
       readRepoFile("skills/ce-doc-review/scripts/cross-model-doc-review.sh"),
+      readRepoFile("skills/ce-pov/scripts/cross-model-pov.sh"),
     ])
-    expect(extractOmpParser(doc)).toBe(extractOmpParser(adv))
-    const povWorker = await readRepoFile("skills/ce-pov/scripts/cross-model-pov.sh")
-    expect(extractOmpParser(povWorker)).toContain("assistantMessageEvent.delta")
-    expect(extractOmpParser(povWorker)).toContain("recover_pov_json")
+    for (const src of srcs) {
+      const fn = src.match(/^target_serving_family\(\) \{.*$\n(?:.*\n)*?^\}$/m)?.[0]
+      expect(fn).toBeTruthy()
+      const r = spawnSync("bash", ["-c", `${fn}; target_serving_family omp; echo; target_serving_family claude`], {
+        encoding: "utf8",
+      })
+      expect(r.status).toBe(0)
+      const [ompFamily, claudeFamily] = `${r.stdout}`.trim().split("\n")
+      expect(ompFamily).toBe("unknown")
+      expect(claudeFamily).toBe("claude")
+    }
+  })
+
+  // omp --mode json exits 0 even on terminal failure; the verdict lives in the
+  // nested turn_end message (stopReason/errorMessage, verified against omp
+  // 18.1.13). The code/doc classifier must read it before parsing; pov has its
+  // own jq classifier with the same semantics.
+  async function runOmpClassifier(worker: string, envelope: string[]): Promise<string> {
+    const src = await readRepoFile(worker)
+    const fn = src.match(/^classify_provider_outcome\(\) \{.*$\n(?:.*\n)*?^\}$/m)?.[0]
+    expect(fn).toBeTruthy()
+    const dir = mkdtempSync(path.join(tmpdir(), "omp-classify-"))
+    const peerlog = path.join(dir, "peer.log")
+    writeFileSync(peerlog, `${envelope.join("\n")}\n`)
+    const script = [
+      `PEERLOG=${JSON.stringify(peerlog)}`,
+      "PEERERR=/dev/null",
+      "ACTUAL_ROUTE=omp",
+      `PY_BIN=${JSON.stringify(process.env.PY_BIN || "python3")}`,
+      fn,
+      "classify_provider_outcome",
+    ].join("\n")
+    const r = spawnSync("bash", ["-c", script], { encoding: "utf8" })
+    expect(`${r.stderr}`).toBe("")
+    return `${r.stdout}`.trim()
+  }
+
+  test("code-review classifier reads nested omp turn_end terminal state", async () => {
+    const worker = "skills/ce-code-review/scripts/cross-model-adversarial-review.sh"
+    const turnEnd = (message: Record<string, unknown>) => JSON.stringify({ type: "turn_end", message: { role: "assistant", ...message } })
+    expect(await runOmpClassifier(worker, [turnEnd({ stopReason: "stop", content: [] })])).toBe("ok")
+    expect(await runOmpClassifier(worker, [turnEnd({ stopReason: "error", content: [] })])).toBe("failed")
+    expect(await runOmpClassifier(worker, [turnEnd({ stopReason: "stop", errorMessage: "provider exploded", content: [] })])).toBe("failed")
+    expect(await runOmpClassifier(worker, [turnEnd({ stopReason: "error", errorMessage: "529 overloaded: provider capacity", content: [] })])).toBe("overloaded")
+  })
+
+  test("doc-review classifier reads nested omp turn_end terminal state", async () => {
+    const worker = "skills/ce-doc-review/scripts/cross-model-doc-review.sh"
+    const turnEnd = (message: Record<string, unknown>) => JSON.stringify({ type: "turn_end", message: { role: "assistant", ...message } })
+    expect(await runOmpClassifier(worker, [turnEnd({ stopReason: "stop", content: [] })])).toBe("ok")
+    expect(await runOmpClassifier(worker, [turnEnd({ stopReason: "error", content: [] })])).toBe("failed")
+    expect(await runOmpClassifier(worker, [turnEnd({ stopReason: "error", errorMessage: "529 capacity: overloaded", content: [] })])).toBe("overloaded")
+  })
+
+  test("pov classify_omp_terminal discards output on terminal failure", async () => {
+    const src = await readRepoFile("skills/ce-pov/scripts/cross-model-pov.sh")
+    const fn = src.match(/^classify_omp_terminal\(\) \{.*$\n(?:.*\n)*?^\}$/m)?.[0]
+    expect(fn).toBeTruthy()
+    const dir = mkdtempSync(path.join(tmpdir(), "omp-pov-"))
+    const marker = path.join(dir, "raw-out")
+    writeFileSync(marker, "stale")
+    const peerlog = path.join(dir, "peer.log")
+    const run = async (envelope: string[]): Promise<string> => {
+      writeFileSync(peerlog, `${envelope.join("\n")}\n`)
+      const script = [
+        `RAW_OUT=${JSON.stringify(marker)}`,
+        "RUN_SUCCEEDED=true",
+        'log() { printf "%s\\n" "$*" >&2; }',
+        fn,
+        `classify_omp_terminal ${JSON.stringify(peerlog)}`,
+        'if [ "$RUN_SUCCEEDED" = true ]; then echo kept; else echo discarded; fi',
+      ].join("\n")
+      const r = spawnSync("bash", ["-c", script], { encoding: "utf8" })
+      expect(r.status).toBe(0)
+      return `${r.stdout}`.trim()
+    }
+    const turnEnd = (message: Record<string, unknown>) => JSON.stringify({ type: "turn_end", message: { role: "assistant", ...message } })
+    expect(await run([turnEnd({ stopReason: "stop", content: [] })])).toBe("kept")
+    expect((await run([turnEnd({ stopReason: "error", content: [] })]))).toBe("discarded")
+    expect(await run([turnEnd({ stopReason: "error", errorMessage: "529 overloaded provider capacity", content: [] })])).toBe("discarded")
+    expect(await run([])).toBe("kept")
+    expect(existsSync(marker)).toBe(false)
   })
 
   // The provider runs under `set -m` in its OWN process group so the worker can

@@ -184,7 +184,10 @@ target_serving_family() {
     codex|claude|grok|composer) printf '%s' "$1" ;;
     cursor) printf 'unknown' ;;
     opencode) printf 'unknown' ;;
-    omp) printf 'omp' ;;
+    # omp routes through the host's session-default provider, which this script
+    # cannot attest; an attested family would let a same-model peer masquerade
+    # as independent (cursor precedent).
+    omp) printf 'unknown' ;;
   esac
 }
 
@@ -952,6 +955,11 @@ def overload_text(text):
     lines = text.splitlines()
     return any(same_line.search(line) for line in lines) or any(split_head.search(line) and split_tail.search(lines[index + 1]) for index, line in enumerate(lines[:-1]))
 
+def omp_nested_overload(message):
+    # omp reports provider overload as a nested turn_end errorMessage, often
+    # without the "API Error"/"HTTP Error" prefix the CLI-shaped regexes need.
+    return route == "omp" and bool(re.search(r"(?:^|\W)529(?:\D|$)", message, re.I)) and bool(re.search(r"overload|capacity", message, re.I))
+
 def provider_error_text(value):
     error = value.get("error")
     if isinstance(error, dict):
@@ -960,6 +968,9 @@ def provider_error_text(value):
         message = error
     elif value.get("type") == "error" or value.get("is_error") is True:
         message = value.get("message", "")
+    elif route == "omp" and value.get("type") == "turn_end":
+        nested = value.get("message")
+        message = nested.get("errorMessage", "") if isinstance(nested, dict) else ""
     else:
         message = ""
     return message if isinstance(message, str) else ""
@@ -967,6 +978,17 @@ def provider_error_text(value):
 def route_terminal_success(value):
     if route == "codex":
         return {"turn.completed": True, "turn.failed": False}.get(value.get("type"))
+    if route == "omp":
+        # omp --mode json exits 0 even on terminal failure; the verdict is
+        # nested in the turn_end message (stopReason/errorMessage, 18.1.13).
+        if value.get("type") != "turn_end":
+            return None
+        message = value.get("message")
+        if not isinstance(message, dict) or message.get("role") != "assistant":
+            return None
+        if message.get("errorMessage") not in (None, False, ""):
+            return False
+        return message.get("stopReason") == "stop"
     return None
 
 def terminal_record(value):
@@ -1010,7 +1032,7 @@ authoritative = next((stream[-1] for stream in terminal_streams if stream), None
 if authoritative is not None:
     if terminal_success(authoritative):
         print("ok")
-    elif str(status(authoritative)) == "529" or overload_text(provider_error_text(authoritative)):
+    elif str(status(authoritative)) == "529" or overload_text(provider_error_text(authoritative)) or omp_nested_overload(provider_error_text(authoritative)):
         print("overloaded")
     else:
         print("failed")
@@ -1075,10 +1097,12 @@ parse_opencode_events() {  # <logfile> <outfile>
   return "$st"
 }
 parse_omp_events() {  # <logfile> <outfile>
-  # omp --mode json streams NDJSON: join streamed text deltas, else the
-  # turn_end message text (shapes verified against omp 18.1.13 output).
+  # omp --mode json streams NDJSON: assistantMessageEvent sits at the TOP level
+  # of message_update events (verified against omp 18.1.13), and thinking_delta
+  # carries the same .delta key — filter to text_delta so joined output is the
+  # answer, not reasoning. Fallback: the turn_end message text.
   local text tmp
-  text="$(jq -rs '[.[] | select(.type=="message_update") | (.message_update.assistantMessageEvent.delta // empty)] | join("")' "$1" 2>/dev/null)" || text=""
+  text="$(jq -rs '[.[] | select(.type=="message_update") | (.assistantMessageEvent | select(.type=="text_delta") | .delta // empty)] | join("")' "$1" 2>/dev/null)" || text=""
   if [ -z "$text" ]; then
     text="$(jq -rs '[.[] | select(.type=="turn_end") | (.message.content[]? | select(.type=="text") | .text // empty)] | join("")' "$1" 2>/dev/null)" || text=""
   fi
@@ -1104,7 +1128,7 @@ attempt_route() {
     grok-cursor|composer)  note="$(route_model "$route")" ;;
     cursor)                note="auto (serving model unverified)" ;;
     opencode)              note="auto (serving model unverified)" ;;
-    omp)                  note="auto (serving model unverified)" ;;
+    omp)                   note="session-default (serving model unverified)" ;;
   esac
   log "peer run: provider=$provider route=$route model=$note lens=adversarial read-only in-tree (idle ${IDLE_SECS}s / attempt hard ${attempt_hard}s); reviewed code/diff may egress to this provider"
   case "$route" in

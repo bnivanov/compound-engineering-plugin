@@ -15,8 +15,8 @@ multiple plausible referents would materially change the POV.
 
 Keep four identities separate for the host and every peer:
 
-- **target** — the user-facing choice (`codex`, `claude`, `grok`, `cursor`, or
-  `composer`);
+- **target** — the user-facing choice (`codex`, `claude`, `grok`, `cursor`,
+  `composer`, `opencode`, or `omp`);
 - **harness/intermediary route** — the CLI or intermediary that runs it;
 - **requested model** — an explicit model or the route's declared default; and
 - **served model** — receipt-verified when available, otherwise `unverified`.
@@ -182,7 +182,7 @@ fail-closes on anything else (including route-shaped guesses like `codex-cli`):
 
 The host harness does not choose the Grok route. Target `grok` binds `grok-cli` when that CLI is installed. Bind `grok-cursor` only when the user asked for Grok through Cursor, or when the grok CLI is absent and Cursor is a sanctioned recipient.
 
-The `omp` route runs the session-default model over the `omp` CLI with CE auth and the ambient sandbox inherited; the run is session-ephemeral (`--no-session`) and exposes no effort flag, so model and effort overrides are invalid for this route. It carries no served-model receipt — report serving model unverified on this route.
+The `omp` route runs the session-default model over the `omp` CLI with CE auth and the ambient sandbox inherited; the run is session-ephemeral (`--no-session`). Model overrides are rejected on this route; effort is not applicable (the worker ignores an effort override on every route, omp included). It carries no served-model receipt and its serving family stays `unknown` — report serving model unverified on this route.
 
 Binary presence proves only that a route is a candidate. Pre-dispatch capability
 evidence may refine the fixed route only when the current host context makes that
