@@ -1,3 +1,5 @@
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
 import { spawnSync } from "node:child_process"
 import { readFile } from "fs/promises"
 import path from "path"
@@ -1624,6 +1626,127 @@ describe("cross-model peer skip legibility", () => {
     expect(attestHost(snippet, { CURSOR_AGENT: "1" })).toBe("cursor unknown")
     expect(attestHost(snippet, { OMPCODE: "1" })).toBe("omp unknown")
     expect(attestHost(snippet, { OMPCODE: "1", CLAUDECODE: "1", GROK_AGENT: "1" })).toBe("omp unknown")
+  })
+
+  // S2: the omp route must emit runnable adapter argv on every worker with the
+  // skill's least-privilege posture, and reject model/effort overrides (the
+  // route inherits the session-default model and exposes no effort flag).
+  const ompRouteWorkers = [
+    {
+      worker: "skills/ce-code-review/scripts/cross-model-adversarial-review.sh",
+      argv: ["--mode json", "--no-session", "--tools read,grep,glob,lsp", "--cwd <repo-root>", "@<prompt-file>"],
+    },
+    {
+      worker: "skills/ce-doc-review/scripts/cross-model-doc-review.sh",
+      argv: ["--mode json", "--no-session", "--no-tools", "--cwd <peer-workdir>", "@<prompt-file>"],
+    },
+    {
+      worker: "skills/ce-pov/scripts/cross-model-pov.sh",
+      argv: ["--mode json", "--no-session", "web_search", "--cwd <read-root>", "@<prompt-file>"],
+    },
+  ]
+  for (const { worker, argv } of ompRouteWorkers) {
+    test(`${worker} emits a runnable least-privilege omp adapter argv`, async () => {
+      const r = spawnSync("bash", [path.join(process.cwd(), worker), "--emit-adapter", "omp"], {
+        encoding: "utf8",
+      })
+      expect(r.status).toBe(0)
+      const out = `${r.stdout ?? ""}`
+      expect(out.startsWith("omp ")).toBe(true)
+      for (const token of argv) expect(out).toContain(token)
+      expect(out).not.toContain("--model")
+    })
+    test(`${worker} rejects model and effort overrides for the omp route`, async () => {
+      const abs = path.join(process.cwd(), worker)
+      // ce-pov validates no effort override on any route (fixed per-route effort),
+      // so omp matches its siblings by ignoring it; code/doc fail closed.
+      const effortWants = worker.includes("ce-pov") ? 0 : 2
+      const effort = spawnSync("bash", [abs, "--emit-adapter", "omp"], {
+        encoding: "utf8",
+        env: { ...process.env, CROSS_MODEL_EFFORT_OVERRIDE: "high" },
+      })
+      expect(effort.status).toBe(effortWants)
+      const model = spawnSync("bash", [abs, "--emit-adapter", "omp"], {
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          CROSS_MODEL_MODEL_OVERRIDE: "some-model",
+          CROSS_MODEL_MODEL_OVERRIDE_TARGET: "omp",
+        },
+      })
+      expect(model.status).toBe(2)
+    })
+  }
+
+  function extractOmpParser(src: string): string {
+    const m = src.match(/^parse_omp_events\(\) \{.*$\n(?:.*\n)*?^\}$/m)
+    expect(m).toBeTruthy()
+    return m![0]
+  }
+
+  // The parser runs the worker's own extracted function against a recorded-shape
+  // omp --mode json envelope (shapes verified against omp 18.1.13 output), so
+  // this guards the shipped parsing logic rather than duplicating it.
+  async function runOmpParser(worker: string, lines: string[]): Promise<{ status: number | null; out: string }> {
+    const src = await readRepoFile(worker)
+    const dir = mkdtempSync(path.join(tmpdir(), "omp-parse-"))
+    const env = path.join(dir, "envelope.ndjson")
+    const out = path.join(dir, "out.json")
+    writeFileSync(env, `${lines.join("\n")}\n`)
+    const script = [
+      extractOmpParser(src),
+      'parse_omp_events "$OMP_PARSE_ENV" "$OMP_PARSE_OUT"',
+    ].join("\n")
+    const r = spawnSync("bash", ["-c", script], {
+      encoding: "utf8",
+      env: { ...process.env, OMP_PARSE_ENV: env, OMP_PARSE_OUT: out },
+    })
+    let parsed = ""
+    try {
+      parsed = readFileSync(out, "utf8")
+    } catch {
+      parsed = ""
+    }
+    return { status: r.status, out: parsed }
+  }
+
+  test("parse_omp_events recovers schema JSON from streamed deltas and turn_end", async () => {
+    const worker = "skills/ce-code-review/scripts/cross-model-adversarial-review.sh"
+    const doc = '{"findings":[{"note":"n"}],"residual_risks":[],"testing_gaps":[]}'
+    const delta = (d: string) =>
+      JSON.stringify({
+        type: "message_update",
+        message_update: { assistantMessageEvent: { type: "text_delta", contentIndex: 1, delta: d } },
+      })
+    const streamed = await runOmpParser(worker, [
+      delta(doc.slice(0, 20)),
+      delta(doc.slice(20)),
+      JSON.stringify({
+        type: "turn_end",
+        message: { role: "assistant", content: [{ type: "text", text: doc }] },
+      }),
+    ])
+    expect(streamed.status).toBe(0)
+    expect(JSON.parse(streamed.out).findings).toEqual([{ note: "n" }])
+    const turnOnly = await runOmpParser(worker, [
+      JSON.stringify({
+        type: "turn_end",
+        message: { role: "assistant", content: [{ type: "thinking", thinking: "" }, { type: "text", text: doc }] },
+      }),
+    ])
+    expect(turnOnly.status).toBe(0)
+    expect(JSON.parse(turnOnly.out).findings).toEqual([{ note: "n" }])
+  })
+
+  test("omp event parsers share the envelope shape across workers", async () => {
+    const [adv, doc] = await Promise.all([
+      readRepoFile("skills/ce-code-review/scripts/cross-model-adversarial-review.sh"),
+      readRepoFile("skills/ce-doc-review/scripts/cross-model-doc-review.sh"),
+    ])
+    expect(extractOmpParser(doc)).toBe(extractOmpParser(adv))
+    const povWorker = await readRepoFile("skills/ce-pov/scripts/cross-model-pov.sh")
+    expect(extractOmpParser(povWorker)).toContain("assistantMessageEvent.delta")
+    expect(extractOmpParser(povWorker)).toContain("recover_pov_json")
   })
 
   // The provider runs under `set -m` in its OWN process group so the worker can
