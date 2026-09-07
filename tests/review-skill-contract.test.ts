@@ -1554,6 +1554,10 @@ describe("cross-model peer skip legibility", () => {
       expect(src).toContain("XHOST_HARNESS=opencode; XHOST_FAMILY=unknown")
       expect(src).not.toContain("XHOST_FAMILY=cursor")
       expect(src).toContain("Never infer serving family from the Cursor brand")
+      expect(src).toContain("XHOST_HARNESS=omp; XHOST_FAMILY=unknown")
+      expect(src).not.toContain("XHOST_FAMILY=omp")
+      expect(src).toContain("Like Cursor, OMP keeps family `unknown`")
+      expect(src).toContain("`<host-harness>` is `codex`, `claude`, `grok`, `cursor`, `omp`, or `unknown`")
     })
   }
 
@@ -1581,7 +1585,7 @@ describe("cross-model peer skip legibility", () => {
 
   function extractHostAttestation(src: string): string {
     const m = src.match(
-      /if \[ "\$\{CLAUDECODE:-\}" = "1" \]; then XHOST_HARNESS=claude; XHOST_FAMILY=claude;\n(?:elif .+\n)*else XHOST_HARNESS=unknown; XHOST_FAMILY=unknown; fi/,
+      /if \[ "\$\{OMPCODE:-\}" = "1" \]; then XHOST_HARNESS=omp; XHOST_FAMILY=unknown;\n(?:elif .+\n)*else XHOST_HARNESS=unknown; XHOST_FAMILY=unknown; fi/,
     )
     expect(m).toBeTruthy()
     return m![0]
@@ -1600,7 +1604,7 @@ describe("cross-model peer skip legibility", () => {
     return (r.stdout ?? "").trim()
   }
 
-  test("cross-model host attestation snippets are identical and map Grok Build to grok", async () => {
+  test("cross-model host attestation snippets are identical and seat OMP first", async () => {
     const snippets = await Promise.all(
       routeTokenPairs.map(async (p) => extractHostAttestation(await readRepoFile(p.reference))),
     )
@@ -1614,9 +1618,12 @@ describe("cross-model peer skip legibility", () => {
     expect(attestHost(snippet, {})).toBe("unknown unknown")
     expect(attestHost(snippet, { GROK_AGENT: "1" })).toBe("grok grok")
     expect(attestHost(snippet, { GROK_SESSION_ID: "sess" })).toBe("grok grok")
+    expect(attestHost(snippet, { CLAUDECODE: "1" })).toBe("claude claude")
     expect(attestHost(snippet, { CLAUDECODE: "1", GROK_AGENT: "1" })).toBe("claude claude")
     expect(attestHost(snippet, { CODEX_SESSION_ID: "sess", GROK_AGENT: "1" })).toBe("codex codex")
     expect(attestHost(snippet, { CURSOR_AGENT: "1" })).toBe("cursor unknown")
+    expect(attestHost(snippet, { OMPCODE: "1" })).toBe("omp unknown")
+    expect(attestHost(snippet, { OMPCODE: "1", CLAUDECODE: "1", GROK_AGENT: "1" })).toBe("omp unknown")
   })
 
   // The provider runs under `set -m` in its OWN process group so the worker can

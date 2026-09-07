@@ -340,8 +340,8 @@ case "$HOST_PROVIDER" in
   *) skip "host serving family '$HOST_PROVIDER' invalid (want codex|claude|grok|composer|unknown)" ;;
 esac
 case "$HOST_HARNESS" in
-  codex|claude|grok|cursor|opencode|unknown) ;;
-  *) skip "host harness '$HOST_HARNESS' invalid (want codex|claude|grok|cursor|opencode|unknown)" ;;
+  codex|claude|grok|cursor|opencode|omp|unknown) ;;
+  *) skip "host harness '$HOST_HARNESS' invalid (want codex|claude|grok|cursor|opencode|omp|unknown)" ;;
 esac
 
 case "$FIXED_ROUTE" in

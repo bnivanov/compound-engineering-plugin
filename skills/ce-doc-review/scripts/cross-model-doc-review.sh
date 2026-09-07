@@ -381,8 +381,8 @@ case "$HOST_PROVIDER" in
   *) skip "host serving family '${HOST_PROVIDER:-<empty>}' invalid (want codex|claude|grok|composer|unknown); skipping cross-model pass" ;;
 esac
 case "$HOST_HARNESS" in
-  codex|claude|grok|cursor|opencode|unknown) ;;
-  *) skip "host harness '$HOST_HARNESS' invalid (want codex|claude|grok|cursor|opencode|unknown); skipping cross-model pass" ;;
+  codex|claude|grok|cursor|opencode|omp|unknown) ;;
+  *) skip "host harness '$HOST_HARNESS' invalid (want codex|claude|grok|cursor|opencode|omp|unknown); skipping cross-model pass" ;;
 esac
 [ "$HOST_PROVIDER" != "unknown" ] || skip "host serving family unattested; automatic cross-model review skipped"
 
