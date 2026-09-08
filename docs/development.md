@@ -9,7 +9,6 @@ The repository's build and validation commands, and how to load a local checkout
 ```bash
 bun install
 bun run test              # full suite, --parallel, exactly as CI runs it
-bun run release:validate  # plugin/marketplace consistency
 bun run plugin:validate   # Claude marketplace + plugin schema (needs `claude` on PATH)
 ```
 

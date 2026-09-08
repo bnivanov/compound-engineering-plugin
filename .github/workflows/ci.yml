@@ -43,10 +43,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-        # Full history so release:validate can read the base-branch (origin/main)
-        # release-please manifest when checking release-as pins for staleness.
+        # <!-- OMP --> fork CI: no release:validate / release-please; default fetch depth is enough.
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -56,10 +55,8 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Validate release metadata
-        run: bun run release:validate
-
       # Canonical schema check: runs `claude plugin validate --strict` against
+
       # the marketplace catalog and the plugin manifest. The CLI must be
       # installed via npm, not bun: `bun x` cannot run this package (bun blocks
       # its required postinstall and cannot resolve its `claude` bin name), and

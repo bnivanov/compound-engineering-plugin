@@ -13,7 +13,6 @@ It also contains:
 ```bash
 bun install
 bun run test              # full test suite (also runs in CI; `--parallel` across worker processes)
-bun run release:validate  # plugin/marketplace consistency (also runs in CI)
 bun run plugin:validate   # Claude marketplace + plugin schema (also runs in CI; needs `claude` on PATH)
 ```
 
@@ -33,7 +32,7 @@ bun run codex:dev -- remove   # remove both supported CE installation surfaces
 ## Working Agreement
 
 - **Branching:** Create a feature branch for any non-trivial change. If already on the correct branch for the task, keep using it; do not create additional branches or worktrees unless explicitly requested.
-- **Merge policy:** All changes to `main` go through pull requests. Direct pushes and direct merges are not allowed; branch protection on `main` enforces this by requiring the `test` status check to pass. The direct path bypasses `release:validate`, the test suite, and PR title validation — past direct merges have caused version drift requiring multi-PR recovery (see `docs/solutions/workflow/release-please-version-drift-recovery.md`).
+- **Merge policy:** All changes to `main` go through pull requests. Direct pushes and direct merges are not allowed; branch protection on `main` enforces this by requiring the `test` status check to pass. The direct path bypasses the test suite and PR title validation.
 - **Contribution gate (non-maintainers):** If you are not a repository maintainer or admin, do not open a PR without a linked issue — file the issue first and reference it from the PR. Adding a **new skill** has a stricter gate: non-maintainers and non-admins must raise a discussion in an issue and get explicit maintainer approval **before** starting the work; do not open a new-skill PR that has not been approved this way. Maintainers and admins are exempt from both gates but still follow the merge policy above.
 - **PR disclosure:** `.github/pull_request_template.md` ends with `## Security Disclosure` and `## Agent Disclosure` sections. Fill both when opening a PR — including PRs authored via `gh pr create --body`/`--body-file`, which bypass the template so nothing pre-fills them. State any security-relevant changes (or "No security-relevant changes"), and the model that did the bulk of the work — your harness plus the most specific model identity your own context gives you, e.g. `Claude Code · claude-opus-4-8` or `Codex CLI · GPT-5`. Copy an exact model ID verbatim when your harness states one; when it exposes only a generic family, report the family and stop. Measured 2026-07-24: Codex and Cursor agents cannot see their running model at all (Codex's "based on GPT-5" is fixed boilerplate), so do not upgrade a family to a version, and do not read config files for one — the configured default is often not the model actually running. Never invent a version or variant. The body above those sections stays freeform — add whatever sections best explain the change.
 - **Safety:** Do not delete or overwrite user data. Avoid destructive commands.
@@ -90,11 +89,11 @@ Do not assume a repo change is "just CLI" or "just plugin" without checking whic
 When changing plugin content:
 
 - Update substantive docs like `README.md` when the plugin behavior, inventory, or usage changes.
-- When adding a user-facing skill, document it: create a `docs/guides/<skill-name>.md` page (purpose, novel mechanics, when to use, chain position — follow the shape of the existing pages), add a catalog row under the right category in `docs/guides/README.md`, and bump the skill count in `tests/release-metadata.test.ts`. `docs/guides/README.md` is the **only** place a skill's prose description is maintained. The root `README.md` carries a grouped overview that lists skill *names* under a category, so a new skill also needs its name added to the right group row and the three stated skill counts bumped (badge, intro, section lead). `tests/release-metadata.test.ts` enforces that every skill name appears in that overview exactly once, that no unknown name appears, and that the three counts match the skill directories under `skills/` (each with a `SKILL.md`) — so the suite catches a missing name, a stale count, or a name left behind during a move. Choosing the *right* group is yours; a test that knew the correct category per skill would be the second inventory this arrangement exists to avoid — the previous three-way sync of full descriptions was unenforced and had already drifted, which is why descriptions now live in exactly one place. Every current user-facing skill has a page, including `lfg` and `ce-dogfood`.
+- When adding a user-facing skill, document it: create a `docs/guides/<skill-name>.md` page (purpose, novel mechanics, when to use, chain position — follow the shape of the existing pages), add a catalog row under the right category in `docs/guides/README.md`. `docs/guides/README.md` is the **only** place a skill's prose description is maintained. The root `README.md` carries a grouped overview that lists skill *names* under a category, so a new skill also needs its name added to the right group row and the three stated skill counts bumped (badge, intro, section lead).
 - When adding, removing, renaming, or changing the meaning/default/consumer of a `.compound-engineering/config.yaml` option, update `skills/ce-setup/references/config-template.yaml`, its byte-identical `.compound-engineering/config.example.yaml` copy, the centralized `docs/guides/configuration.md` reference, and the affected consumer skill docs in the same change. Ordinary keys may also live in optional checkout-local `config.local.yaml` (overrides the repo file). `docs_root` belongs only in `config.yaml`. Durable team instructions still belong in the project's normal agent-instructions mechanism.
 - Do not hand-bump release-owned versions in plugin or marketplace manifests.
 - Do not hand-add release entries to `CHANGELOG.md` or treat it as the canonical source for new releases.
-- Run `bun run release:validate` if agents, commands, skills, MCP servers, or release-owned descriptions/counts may have changed.
+- Run `bun run plugin:validate` if agents, commands, skills, or MCP servers may have changed.
 - When removing a skill, agent, or command, add its name to both cleanup registries so stale flat-install artifacts are swept on upgrade:
   - `STALE_SKILL_DIRS` / `STALE_AGENT_NAMES` / `STALE_PROMPT_FILES` in `src/utils/legacy-cleanup.ts`
   - `EXTRA_LEGACY_ARTIFACTS_BY_PLUGIN["compound-engineering"]` in `src/data/plugin-legacy-artifacts.ts`
@@ -102,7 +101,7 @@ When changing plugin content:
 Useful validation commands:
 
 ```bash
-bun run release:validate
+bun run plugin:validate
 cat .claude-plugin/marketplace.json | jq .
 cat .claude-plugin/plugin.json | jq .
 ```
@@ -176,7 +175,7 @@ Behavioral changes to a plugin skill or skill-local persona (anything under `ski
 
 ## CI and Quality Gates
 
-PR CI (`.github/workflows/ci.yml`) is the merge gate. It runs, in order: PR-title lint (PRs only), `bun run release:validate`, `bun run plugin:validate`, and `bun run test`. Do not invent a parallel local-only mechanical suite — if a check is deterministic and should block merges, put it in one of those steps (usually `bun run test`).
+PR CI (`.github/workflows/ci.yml`) is the merge gate. It runs, in order: PR-title lint (PRs only), `bun run plugin:validate`, and `bun run test`. Do not invent a parallel local-only mechanical suite — if a check is deterministic and should block merges, put it in one of those steps (usually `bun run test`).
 
 The `test` script runs `bun test --parallel`, which distributes test *files* across worker processes (one file still runs its own tests serially, and `--parallel` implies `--isolate`). This is the single biggest lever on CI wall time, because most of the suite is spent blocked on subprocesses — `python3`, `bash`, `git`, and `bun run src/index.ts` — not on CPU. Keeping it in the package script rather than the workflow means CI and a contributor's local run cannot drift apart.
 
@@ -206,7 +205,7 @@ The `ce-work-unit-workspace-*` shards run 10-23s each against that ~36s ceiling,
 
 | Kind of check | Where it lives | Notes |
 |---|---|---|
-| Deterministic invariants (frontmatter, parity, path safety, script behavior, converter/writer output, greppable skill contracts) | `bun test` / `release:validate` / `plugin:validate` | Must pass in CI |
+| Deterministic invariants (frontmatter, parity, path safety, script behavior, converter/writer output, greppable skill contracts) | `bun test` / `plugin:validate` | Must pass in CI |
 | Skill *prose behavior* (routing judgment, restraint, cross-model peer outcomes) | Fresh-agent eval (on-disk skill injected), local / PR evidence | Not a CI job; non-deterministic and needs a model |
 
 That split is intentional. See `docs/solutions/skill-design/portable-agent-skill-authoring.md` ("Evaluate proportionally"). Mechanical checks belong in CI; behavioral agent evals are best-effort evidence, not an exhaustive CI matrix.
@@ -242,7 +241,7 @@ If CI claims a deferred warning or a missing gate, reproduce with the **pinned**
 - **Prefix is based on intent, not file type.** Use conventional prefixes (`feat:`, `fix:`, `docs:`, `refactor:`, etc.) but classify by what the change does, not the file extension. Files under `skills/` and plugin manifests are product code even though they are Markdown or JSON. Reserve `docs:` for files whose sole purpose is documentation (`README.md`, `docs/`, `CHANGELOG.md`).
 - **Type selection — classify by intent, not diff shape.** Where `fix:` and `feat:` could both seem to fit, default to `fix:`: a change that remedies broken or missing behavior is `fix:` even when implemented by adding code, and net additions do not turn a fix into a `feat:`. Reserve `feat:` for capabilities the user could not previously accomplish where nothing was broken. Other conventional types (`chore:`, `refactor:`, `docs:`, `perf:`, `test:`, `ci:`, `build:`, `style:`) remain primary when they describe the change more precisely than either. Heuristic: if a regression test you could write today would have failed *before* the change, it's `fix:`. The user may override this default for a specific change.
 - **Include a component scope.** The scope appears verbatim in the changelog. Pick the narrowest useful label: skill/agent name (`document-review`, `learnings-researcher`), CLI or marketplace area (`cli`, `marketplace`), or shared area when cross-cutting (`review`, `research`, `converters`). Never use `compound-engineering` — it's the entire plugin and tells the reader nothing. Omit scope only when no single label adds clarity.
-- **Never use `!` or a `BREAKING CHANGE:` footer without explicit user confirmation.** These markers trigger release-please's automatic major version bump — a decision the user may not want even when a change is technically breaking. If a change appears breaking, surface that to the user and let them decide whether to apply the marker.
+- **Never use `!` or a `BREAKING CHANGE:` footer without explicit user confirmation.** These markers signal a major version bump — a decision the user may not want even when a change is technically breaking. If a change appears breaking, surface that to the user and let them decide whether to apply the marker.
 
 ## Adding a New Target Provider
 

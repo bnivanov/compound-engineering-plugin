@@ -15,7 +15,6 @@ Compound Engineering is opinionated by design. It's maintained by [@kieranklaass
 ```bash
 bun install
 bun run test              # full suite, --parallel, exactly as CI runs it
-bun run release:validate  # plugin/marketplace consistency
 bun run plugin:validate   # Claude marketplace + plugin schema (needs `claude` on PATH)
 ```
 
@@ -25,17 +24,17 @@ To load your working checkout into a harness for testing, see **[docs/developmen
 
 ## What CI checks
 
-Pull-request CI runs, in order: PR-title lint, `bun run release:validate`, `bun run plugin:validate`, and `bun run test`. All four must pass before a PR can merge.
+Pull-request CI runs, in order: PR-title lint, `bun run plugin:validate`, and `bun run test`. All three must pass before a PR can merge.
 
 Use conventional commit prefixes (`feat:`, `fix:`, `docs:`, `refactor:`, and so on) classified by *intent*, not by file type — files under `skills/` are product code even though they are Markdown. Include a narrow component scope, for example `fix(ce-plan):` or `feat(cli):`.
 
-Do not hand-bump versions in plugin or marketplace manifests, and do not hand-write `CHANGELOG.md` entries. Release automation owns both.
+Do not hand-bump versions in plugin or marketplace manifests, and do not hand-write `CHANGELOG.md` entries. Fork releases are manual SR tags, not release-please.
 
 ## Working on skills
 
 Skills live in `skills/<name>/SKILL.md` and are authored once, then distributed to every supported host. That makes them different from ordinary code: a skill is a set of goals, not a state machine, and it has to work on harnesses with different capabilities. Read `AGENTS.md` before changing anything under `skills/`.
 
-When you add a user-facing skill, document it: add a `docs/guides/<skill-name>.md` page and a catalog row in `docs/guides/README.md`, and bump the skill count in `tests/release-metadata.test.ts`.
+When you add a user-facing skill, document it: add a `docs/guides/<skill-name>.md` page and a catalog row in `docs/guides/README.md`.
 
 ## Reporting security issues
 

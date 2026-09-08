@@ -1,7 +1,7 @@
 {
-  "name": "compound-engineering-plugin",
+  "name": "compound-engineering-omp",
   "owner": {
-    "name": "Kieran Klaassen and Trevin Chow"
+    "name": "FORK_OWNER"
   },
   "metadata": {
     "description": "Plugin marketplace for Claude Code and Codex extensions"
@@ -12,9 +12,9 @@
       "description": "Brainstorm, plan, debug, review, and compound learnings with AI agents",
       "version": "3.24.0",
       "author": {
-        "name": "Kieran Klaassen and Trevin Chow"
+        "name": "FORK_OWNER"
       },
-      "homepage": "https://github.com/EveryInc/compound-engineering-plugin",
+        "homepage": "https://github.com/FORK_OWNER/compound-engineering-omp",
       "tags": [
         "ai-powered",
         "compound-engineering",
