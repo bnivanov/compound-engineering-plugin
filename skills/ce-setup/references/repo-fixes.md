@@ -39,7 +39,7 @@ If `.compound-engineering/config.yaml` does not exist, ask — even when health 
 ```text
 Set up a repo config file for this project?
 This creates .compound-engineering/config.yaml with optional Compound Engineering team defaults.
-Everything starts commented out -- you only enable what you need.
+One key ships active: `cross_model_review_mode: off`, so newly generated configs skip automatic cross-model egress (<!-- OMP --> S6; S6b returns auto). Everything else starts commented out -- you only enable what you need.
 It does not create config.local.yaml.
 
 1. Yes, create it
