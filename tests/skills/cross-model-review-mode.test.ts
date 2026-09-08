@@ -58,17 +58,16 @@ describe("cross_model_review_mode egress gate", () => {
     ]) {
       expect(read(p)).toContain("cross_model_review_mode")
     }
-    // Fork S6: the template ships an ACTIVE off default (not the commented
-    // upstream example) so newly generated configs skip automatic cross-model
-    // egress until S2 returns auto via S6b.
+    // Fork S6b: the template ships an ACTIVE auto default (S2 landed, so the
+    // egress gate is safe to keep open); set `off` for fully local reviews.
     expect(read("skills/ce-setup/references/config-template.yaml")).toMatch(
-      /^cross_model_review_mode: off\s+# auto \| off \(default: auto\)/m,
+      /^cross_model_review_mode: auto\s+# auto \| off \(default: auto\)/m,
     )
     expect(read("skills/ce-setup/references/config-template.yaml")).not.toMatch(
       /^#\s*cross_model_review_mode:/m,
     )
     expect(read(".compound-engineering/config.example.yaml")).toMatch(
-      /^cross_model_review_mode: off\s+# auto \| off \(default: auto\)/m,
+      /^cross_model_review_mode: auto\s+# auto \| off \(default: auto\)/m,
     )
   })
 
@@ -78,8 +77,8 @@ describe("cross_model_review_mode egress gate", () => {
       ".compound-engineering/config.example.yaml",
     ]) {
       const content = read(p)
-      // (a) active off gate for newly generated configs
-      expect(content).toMatch(/^cross_model_review_mode: off/m)
+      // (a) active auto gate for newly generated configs
+      expect(content).toMatch(/^cross_model_review_mode: auto/m)
       // (b) work engine stays commented (native execution default)
       expect(content).toContain("# work_engine_mode: prefer")
       expect(content).not.toMatch(/^work_engine_mode:/m)
