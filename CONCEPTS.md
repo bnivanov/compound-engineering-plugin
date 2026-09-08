@@ -5,7 +5,7 @@ Shared domain vocabulary for this project — entities, named processes, and sta
 ## The plugin and its parts
 
 ### Plugin
-A distributable bundle of Skills, Agents, Commands, and Hooks (optionally MCP servers) described by a single manifest and installed into a coding-agent platform as one unit — the artifact the Converter translates for non-Claude Targets and the Marketplace distributes.
+A distributable bundle of Skills (optionally Agents, Commands, Hooks, MCP servers) described by a single manifest and installed into a coding-agent platform as one unit — the artifact the Marketplace distributes. In this fork the platform is oh-my-pi, which loads the repository directly.
 
 ### Skill
 A user-invoked capability defined in its own directory, and the primary entry point a user reaches for. A Skill orchestrates: it can progressively pull in its own reference files as needed and dispatch generic subagents seeded with Specialist prompt assets. Distinct from an Agent in that a Skill is user-invoked and coordinates, whereas an Agent or subagent is dispatched to perform scoped work.
@@ -16,32 +16,11 @@ A specialized, single-purpose worker running in its own isolated context and ret
 ### Specialist prompt asset
 An internal prompt file owned by one Skill that defines a specialist persona or research/review role for a generic subagent. It is not an externally exposed plugin component: the owning Skill controls when it is loaded, which model or tool policy applies, and how its output is merged.
 
-## Conversion
-
-### Target
-A destination coding-agent platform other than Claude Code (OpenCode, Codex, Pi, Antigravity, Kimi Code, and others) that the repo supports through native plugin metadata or a Converter/Writer pair. Also called a target provider when it uses the conversion path.
-
-A Plugin is installed to a Target at one of two scopes: global (user-wide) or per-workspace.
-
 ### Native plugin surface
-A platform-provided install contract that can consume this repo's committed plugin manifest or marketplace metadata directly, without generating a converted Bundle. When a Target has a native plugin surface, user-facing support usually belongs in platform metadata, release validation, and docs instead of a new Converter and Writer.
-
-### Converter
-The step that transforms a parsed Plugin into one Target's in-memory form, mapping tools, permissions, hooks, and model names explicitly rather than by convention.
-
-### Writer
-The step that emits a Target's converted Bundle onto disk, in that Target's expected paths and merge semantics. Paired with a Converter, one per Target.
-
-### Bundle
-The in-memory converted form of a Plugin for a single Target — the handoff a Converter produces and a Writer consumes.
-
-### Install manifest
-A per-plugin ledger, written by a Writer at install time, of exactly which skill, agent, prompt, and extension paths that install created on a Target — the record later installs consult to tell tool-owned content apart from user-managed content.
-
-The load-bearing invariant is that a Writer never claims a path it did not write: a path the user has replaced (a symlink into a personal fork, a hand-authored directory) is excluded from the manifest and preserved on reinstall rather than overwritten, and the ledger is self-healing — removing the override lets the next install resume tracking that path. A path with no manifest entry — including one from an install predating the mechanism — reads as unowned and is therefore preserved.
+A platform install contract that consumes this repo's committed metadata directly — omp's marketplace catalog and `package.json` plugin manifest. The only install surface this fork supports; user-facing support belongs in platform metadata, tests, and docs.
 
 ### Marketplace
-The catalog metadata listing installable plugins and their versions for distribution, kept consistent with each Plugin's manifest by release validation.
+The catalog metadata listing installable plugins and their versions for distribution, kept in agreement with the Plugin's manifest by the test suite.
 
 ## Compound engineering
 
@@ -261,3 +240,9 @@ Liveness is therefore read from that party's own observable output on the curren
 
 ### Residual
 A review finding a run accepted or deferred rather than fixed, which must reach a durable sink before the run reports itself done — a section in the pull request body, or a ticket in the project's tracker. A finding that lives only in the session is lost when the session ends, so an accepted residual blocks a merge-ready claim until it is recorded somewhere a human will find it.
+
+## Retired
+
+- **Target** — a non-Claude destination platform served by a Converter/Writer pair; retired when the fork pruned to oh-my-pi only (S5, 2026-09).
+- **Converter**, **Writer**, **Bundle** — the parse → in-memory → on-disk pipeline of the removed multi-host CLI; deleted with `src/converters` and `src/targets`.
+- **Install manifest** — the per-plugin ledger a Writer kept of paths it created on a Target; gone with the Writers. omp keeps its own install state, which is omp's concern, not this repo's.

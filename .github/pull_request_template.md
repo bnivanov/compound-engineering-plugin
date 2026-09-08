@@ -6,7 +6,7 @@
 
 ## Security Disclosure
 <!-- Disclose any security-relevant changes in this PR: shell/exec introduced or changed in a skill,
-     path or input handling, converter/writer output, secrets or credential handling, permissions,
+     path or input handling, bundled-script output, secrets or credential handling, permissions,
      or dependency changes — what changed and any residual risk or follow-up.
      If there are none, write "No security-relevant changes." -->
 

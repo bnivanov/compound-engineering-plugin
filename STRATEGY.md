@@ -82,5 +82,5 @@ store itself, not the skills that fill it.
 _Why it serves the approach:_ Compounding is the commitment, and the substrate is where it either
 happens or quietly doesn't.
 
-<!-- Host reach — native manifests, the converter CLI, per-host specs — is maintenance the three
+<!-- Host reach — the OMP manifest, catalog, and load path — is maintenance the three
      tracks depend on, not a fourth track. -->

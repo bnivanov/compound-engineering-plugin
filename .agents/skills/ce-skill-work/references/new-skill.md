@@ -32,7 +32,7 @@ Contrast pairs:
 
 ## Repo inventory (all in the same change)
 
-A user-facing skill needs: `docs/guides/<name>.md` (purpose, novel mechanics, when to use, chain position), a catalog row in `docs/guides/README.md`, and a root `README.md` inventory row. Run `bun run plugin:validate` and `bun run test`.
+A user-facing skill needs: `docs/guides/<name>.md` (purpose, novel mechanics, when to use, chain position), a catalog row in `docs/guides/README.md`, and a root `README.md` inventory row. Run `bun run test`.
 
 ## Validate
 

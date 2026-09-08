@@ -19,11 +19,11 @@ https://github.com/can1357/oh-my-pi/blob/v17.2.9/docs/task-agent-discovery.md
 omp discovers plugins natively. Two committed metadata surfaces in this repository cover it:
 
 - The `package.json#pi` manifest — the same pi package metadata Pi already consumes. omp's shared plugin loader accepts `package.json.omp || package.json.pi`, so the existing `pi` field is the discovery gate that marks this repository as a plugin package.
-- The native omp marketplace catalog at `.omp-plugin/marketplace.json`, which omp reads first. `.claude-plugin/marketplace.json` remains as the Claude Code copy and as omp's fallback when `.omp-plugin/marketplace.json` is absent; the two coexist, and omp ignores the Claude copy when both are present (verified 2026-08-05: discovery output and the cached catalog both come from the `.omp-plugin` copy).
+- The native omp marketplace catalog at `.omp-plugin/marketplace.json`, which omp reads first.
 
 Skill loading is structural, not extension-driven: omp's skill providers scan the plugin package's root `skills/` directory (`omp-plugins` provider for npm/link installs, `claude-plugins` provider for marketplace installs). The bundled extension `.pi/extensions/compound-engineering.ts` is a **no-op on omp** — it registers skill paths through the `resources_discover` hook, and omp implements `ExtensionRunner.emitResourcesDiscover(...)` with no `AgentSession` callsites. The extension still matters in one narrow way: install validates that every declared `extensions` entry resolves and imports to a factory function, and rolls the install back if it does not. So the `pi` block is a discovery gate and an install-time validation risk, but it is not what surfaces the skills.
 
-A dry run of `omp install` against this repository confirms the metadata surfaces resolve. No CE converter, writer, or `--to omp` CLI target exists or is planned: per CONCEPTS.md "Native plugin surface", omp support lives in platform metadata, docs, and release validation instead of a new Converter and Writer.
+A dry run of `omp install` against this repository confirms the metadata surfaces resolve. This fork ships no converter or writer; omp support is platform metadata, docs, and the catalog assertions in `tests/omp-native-install.test.ts`.
 
 ## Updates
 
@@ -34,29 +34,29 @@ catalogVersion = catalog.plugins.find(p => p.name === parsed.name)?.version;
 if (!catalogVersion || catalogVersion === installed.version) continue;
 ```
 
-`.omp-plugin/marketplace.json` therefore carries a release-managed `version` on the plugin entry, bumped by release-please through the root component's `extra-files` (`$.plugins[0].version`). This is what makes `omp plugin upgrade`, the 24h catalog refresh, and `marketplace.autoUpdate` (`off` / `notify` / `auto`) see CE releases at all. Note the default `notify` mode writes update availability only to the debug log — it shows no user-facing notification — so `omp config set marketplace.autoUpdate auto` is the setting that actually keeps an install current. Verified end to end on 17.2.9: with the catalog version bumped, `omp plugin upgrade` reinstalls into a new version-keyed cache directory and repoints the `node_modules` symlink; without it, the same change reports "up to date".
+`.omp-plugin/marketplace.json` therefore carries a manually managed `version` on the plugin entry, bumped together with `package.json` and `plugin.json` when cutting a fork release (see `AGENTS.md` "Release versioning"). This is what makes `omp plugin upgrade`, the 24h catalog refresh, and `marketplace.autoUpdate` (`off` / `notify` / `auto`) see CE releases at all. Note the default `notify` mode writes update availability only to the debug log — it shows no user-facing notification — so `omp config set marketplace.autoUpdate auto` is the setting that actually keeps an install current. Verified end to end on 17.2.9: with the catalog version bumped, `omp plugin upgrade` reinstalls into a new version-keyed cache directory and repoints the `node_modules` symlink; without it, the same change…
 
 Only the marketplace install path has an update story. `omp install <git-url>` (npm-style plugin install) has none — treat it as pinning a snapshot.
 
 ## Install commands
 
-Marketplace flow — the recommended install (marketplace name `compound-engineering-plugin`, plugin name `compound-engineering`, both from `.omp-plugin/marketplace.json`):
+Marketplace flow — the recommended install (marketplace name `compound-engineering-omp`, plugin name `compound-engineering`, both from `.omp-plugin/marketplace.json`):
 
 ```text
-omp plugin marketplace add EveryInc/compound-engineering-plugin
-omp plugin install compound-engineering@compound-engineering-plugin
+omp plugin marketplace add FORK_OWNER/compound-engineering-omp
+omp plugin install compound-engineering@compound-engineering-omp
 ```
 
 Stay current:
 
 ```bash
-omp config set marketplace.autoUpdate auto   # or: omp plugin upgrade compound-engineering@compound-engineering-plugin
+omp config set marketplace.autoUpdate auto   # or: omp plugin upgrade compound-engineering@compound-engineering-omp
 ```
 
 Pin-style direct install from a path or Git URL (no update mechanism; user scope by default):
 
 ```text
-omp install https://github.com/EveryInc/compound-engineering-plugin
+omp install https://github.com/FORK_OWNER/compound-engineering-omp
 ```
 
 Local development link from a checkout:

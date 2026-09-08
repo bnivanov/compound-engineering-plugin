@@ -2,7 +2,7 @@ import { afterAll, describe, expect, setDefaultTimeout, test } from "bun:test"
 import { promises as fs } from "fs"
 import path from "path"
 import os from "os"
-import { materializeClaudePluginFixture } from "./helpers/claude-plugin-fixture"
+import { materializePluginFixture } from "./helpers/plugin-fixture"
 
 setDefaultTimeout(20_000)
 
@@ -38,7 +38,7 @@ const gitEnv = {
 }
 
 const projectRoot = path.join(import.meta.dir, "..")
-const fixture = materializeClaudePluginFixture(path.join(import.meta.dir, "fixtures", "sample-plugin"))
+const fixture = materializePluginFixture(path.join(import.meta.dir, "fixtures", "sample-plugin"))
 const fixtureRoot = fixture.root
 
 afterAll(fixture.cleanup)
@@ -91,9 +91,9 @@ describe("plugin-path", () => {
     const cacheDir = path.join(tempHome, ".cache", "compound-engineering", "branches", "compound-engineering-feat~test-branch")
     const pluginDir = cacheDir
 
-    expect(stderr).toContain("claude --plugin-dir")
+    expect(stderr).toContain("omp plugin link")
     expect(stdout.trim()).toBe(pluginDir)
-    expect(await exists(path.join(pluginDir, ".claude-plugin", "plugin.json"))).toBe(true)
+    expect(await exists(path.join(pluginDir, "plugin.json"))).toBe(true)
   })
 
   test("sanitizes branch names with slashes into stable directory names", async () => {
@@ -131,7 +131,7 @@ describe("plugin-path", () => {
     }
 
     expect(stdout).toContain("compound-engineering-feat~deep~nested~branch")
-    expect(stderr).toContain("claude --plugin-dir")
+    expect(stderr).toContain("omp plugin link")
   })
 
   test("updates existing checkout on re-run", async () => {

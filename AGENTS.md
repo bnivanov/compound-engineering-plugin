@@ -3,31 +3,28 @@
 This repository is the root of the `compound-engineering` coding-agent plugin and the marketplace/catalog metadata used to distribute it.
 
 It also contains:
-- the Bun/TypeScript CLI that converts Claude Code plugins into other agent platform formats
+- the Bun/TypeScript repo tooling CLI (`list`, `plugin-path`) and the shared frontmatter parser
 - shared metadata infrastructure for the CLI, marketplace, and plugin
 
-`AGENTS.md` is the canonical repo instruction file. Root `CLAUDE.md` is a symlink to `AGENTS.md` so Claude Code and other tools that look for `CLAUDE.md` still find it at the expected path. Keep that symlink (do not replace it with a regular file): a real root `CLAUDE.md` makes `claude plugin validate --strict` fail because this checkout is also the plugin root.
+`AGENTS.md` is the canonical repo instruction file; omp loads it as project context.
 
 ## Quick Start
 
 ```bash
 bun install
 bun run test              # full test suite (also runs in CI; `--parallel` across worker processes)
-bun run plugin:validate   # Claude marketplace + plugin schema (also runs in CI; needs `claude` on PATH)
 ```
 
-### Codex Local Plugin Development
+### Local OMP Development
 
-When testing current skill files in Codex, run the repository workflow from the checkout or worktree you intend to test:
+Link the checkout as a live plugin and iterate; skills reload on the next session or `/reload-plugins`:
 
 ```bash
-bun run codex:dev -- local    # link this worktree's skills and remove CE plugin installs
-bun run codex:dev -- status   # show local/remote state and checkout provenance
-bun run codex:dev -- remote   # restore the official marketplace-backed plugin
-bun run codex:dev -- remove   # remove both supported CE installation surfaces
+omp plugin link "$PWD"
+omp install --dry-run --json "$PWD"   # confirm package.json#pi + .pi/extensions resolve
 ```
 
-`refresh` is an idempotent alias for `local`. Local mode manages only the exact `$CODEX_HOME/skills/compound-engineering-local` symlink and Compound Engineering plugin IDs; it must not alter unrelated user skills. The symlink includes modified and untracked files from the selected worktree. Start a new Codex session after switching installation modes. Current Codex versions detect direct skill edits automatically; restart only if an edit does not appear. For live local testing, use this workflow instead of adding the repository as a marketplace: a marketplace install caches a snapshot, while local mode links the current skill files.
+Do not add the checkout as a marketplace for live development — that caches a snapshot. See `docs/development.md` for the sandboxed marketplace check.
 
 ## Working Agreement
 
@@ -36,10 +33,9 @@ bun run codex:dev -- remove   # remove both supported CE installation surfaces
 - **Contribution gate (non-maintainers):** If you are not a repository maintainer or admin, do not open a PR without a linked issue — file the issue first and reference it from the PR. Adding a **new skill** has a stricter gate: non-maintainers and non-admins must raise a discussion in an issue and get explicit maintainer approval **before** starting the work; do not open a new-skill PR that has not been approved this way. Maintainers and admins are exempt from both gates but still follow the merge policy above.
 - **PR disclosure:** `.github/pull_request_template.md` ends with `## Security Disclosure` and `## Agent Disclosure` sections. Fill both when opening a PR — including PRs authored via `gh pr create --body`/`--body-file`, which bypass the template so nothing pre-fills them. State any security-relevant changes (or "No security-relevant changes"), and the model that did the bulk of the work — your harness plus the most specific model identity your own context gives you, e.g. `Claude Code · claude-opus-4-8` or `Codex CLI · GPT-5`. Copy an exact model ID verbatim when your harness states one; when it exposes only a generic family, report the family and stop. Measured 2026-07-24: Codex and Cursor agents cannot see their running model at all (Codex's "based on GPT-5" is fixed boilerplate), so do not upgrade a family to a version, and do not read config files for one — the configured default is often not the model actually running. Never invent a version or variant. The body above those sections stays freeform — add whatever sections best explain the change.
 - **Safety:** Do not delete or overwrite user data. Avoid destructive commands.
-- **Testing:** Run `bun run test` after changes that affect parsing, conversion, output, skill conventions, or other mechanical guards. Local `bun run test` is the same suite CI runs — there is no separate local-only unit-test lane. Prefer it over bare `bun test`: the package script carries `--parallel`, which is where the suite's speed comes from. Bare `bun test <file>` is still the right tool for iterating on one file.
+- **Testing:** Run `bun run test` after changes that affect parsing, output, skill conventions, or other mechanical guards. Local `bun run test` is the same suite CI runs — there is no separate local-only unit-test lane. Prefer it over bare `bun test`: the package script carries `--parallel`, which is where the suite's speed comes from. Bare `bun test <file>` is still the right tool for iterating on one file.
 - **Compounding learnings:** After a solved, verified problem, automatically invoke the `ce-compound` skill with `mode:non-interactive` at the completion checkpoint only when the work produced durable project reasoning that is not readily recoverable from the final code, tests, types, comments, or existing documentation, and losing it would plausibly cause recurrence, material risk, or substantial rediscovery. Apply this counterfactual: if the learning document disappeared, would a future engineer reading the final implementation still be likely to repeat the mistake or redo substantial investigation? If not, do not invoke it. Completion, effort, and diff size alone are not enough. Capture at the checkpoint so a qualifying learning can ship in the PR that produced it, and only where the repository treats captured learnings as tracked, committed knowledge. This repository does: `docs/solutions/` is tracked (see *Repository Docs Convention*). If `ce-compound` is not callable in the current harness (a checkout without the plugin installed or linked), do not block and do not skip silently: say in the completion report that a qualifying learning was left uncaptured, so the author can run it from a plugin-enabled session.
 - **Release versioning:** Fork releases are cut by hand: bump the version in `package.json`, `plugin.json`, and `.omp-plugin/marketplace.json` together, then tag. There is no release automation in this fork. `CHANGELOG.md` is upstream history; fork release notes live on the tag. Use conventional titles such as `feat:` and `fix:`; do not hand-author release notes in routine PRs.
-- **Output Paths:** Keep OpenCode output at `opencode.json` and `.opencode/{agents,skills,plugins}`. For OpenCode, commands go to `~/.config/opencode/commands/<name>.md`; `opencode.json` is deep-merged (never overwritten wholesale).
 - **Scratch Space:** Default to OS temp. Use `.context/` only when explicitly justified by the rules below.
   - **Default: OS temp** — covers most scratch, including per-run throwaway AND cross-invocation reusable, regardless of whether a repo is present or whether other skills may read the files. A stable OS-temp prefix handles cross-skill and cross-invocation coordination equally well as an in-repo path; repo-adjacency is rarely the relevant property.
     - **Per-run throwaway**: `mktemp -d "${TMPDIR:-/tmp}/<prefix>-XXXXXX"` (OS handles cleanup). Use for files consumed once and discarded — captured screenshots, stitched GIFs, intermediate build outputs, recordings, delegation prompts/results, single-run checkpoints. Always pass an explicit template under `${TMPDIR:-/tmp}`. Do not use bare `mktemp`, bare `mktemp -d`, `mktemp -t`, or `mktemp -d -t`: those forms ignore `$TMPDIR` on macOS and can resolve outside a sandbox's writable temp directory.
@@ -54,23 +50,21 @@ bun run codex:dev -- remove   # remove both supported CE installation surfaces
   - **Durable outputs** (plans, specs, learnings, docs, final deliverables) belong in `docs/` or another repo-tracked location, not in either scratch tier.
   - **Cross-platform note:** `/tmp` is writable on macOS (symlink to `/private/tmp`), Linux, and WSL. For per-run throwaway files, use an explicit `${TMPDIR:-/tmp}` template so macOS and sandboxed hosts honor the selected temp parent. Skills authored here assume Unix-like shells (bash on macOS/Linux, or Git Bash on Windows). Native Windows is a supported target for Python interpreter resolution and peer-job detach — never hardcode `python3`; probe execution per `docs/solutions/conventions/resolve-python-interpreter-not-python3.md`.
 - **Character encoding:**
-  - **Identifiers** (file names, agent names, command names): ASCII only -- converters and regex patterns depend on it.
+  - **Identifiers** (file names, agent names, command names): ASCII only -- regex patterns and tests depend on it.
   - **Markdown tables:** Use pipe-delimited (`| col | col |`), never box-drawing characters.
   - **Prose and skill content:** Unicode is fine (emoji, punctuation, etc.). Prefer ASCII arrows (`->`, `<-`) over Unicode arrows in code blocks and terminal examples.
 
 ## Directory Layout
 
 ```
-src/              CLI entry point, parsers, converters, target writers
-skills/           Compound Engineering plugin skills
+src/              Repo tooling CLI (`list`, `plugin-path`) and the frontmatter parser tests share
+skills/           Compound Engineering plugin skills (what omp loads)
 docs/guides/      User-facing plugin guides (catalog and configuration)
-.claude-plugin/   Claude plugin manifest and marketplace catalog metadata
-.codex-plugin/    Codex plugin manifest
-.cursor-plugin/   Cursor plugin manifest and marketplace catalog metadata
-.opencode/        OpenCode package entrypoint and install docs
-.pi/              Pi extension entrypoint
-tests/            Converter, writer, and CLI tests + fixtures
-docs/             Requirements, plans, solutions, and target specs
+.omp-plugin/      omp marketplace catalog (marketplace.json)
+.pi/              Extension entrypoint declared in package.json#pi
+plugin.json       Root Agent Plugins manifest (fork version carrier)
+tests/            Skill-behavior, convention, and OMP manifest tests + fixtures
+docs/             Requirements, plans, solutions, and the omp spec
 CONCEPTS.md       Shared domain vocabulary (glossary of project-specific terms)
 ```
 
@@ -78,9 +72,9 @@ CONCEPTS.md       Shared domain vocabulary (glossary of project-specific terms)
 
 Changes in this repo may affect one or more of these surfaces:
 
-- root plugin content under `skills/`, `AGENTS.md`, `README.md`, and platform manifests
-- marketplace catalogs under `.claude-plugin/`, `.cursor-plugin/`, and `.agents/plugins/`
-- the converter/install CLI in `src/` and `package.json`
+- plugin content under `skills/`, `AGENTS.md`, `README.md`
+- omp load surfaces: `package.json#pi`, `.pi/extensions/compound-engineering.ts`, `.omp-plugin/marketplace.json`, root `plugin.json`
+- repo tooling in `src/` and `tests/`
 
 Do not assume a repo change is "just CLI" or "just plugin" without checking which surface owns the affected files.
 
@@ -93,22 +87,17 @@ When changing plugin content:
 - When adding, removing, renaming, or changing the meaning/default/consumer of a `.compound-engineering/config.yaml` option, update `skills/ce-setup/references/config-template.yaml`, its byte-identical `.compound-engineering/config.example.yaml` copy, the centralized `docs/guides/configuration.md` reference, and the affected consumer skill docs in the same change. Ordinary keys may also live in optional checkout-local `config.local.yaml` (overrides the repo file). `docs_root` belongs only in `config.yaml`. Durable team instructions still belong in the project's normal agent-instructions mechanism.
 - Fork releases are cut by hand: bump the version in `package.json`, `plugin.json`, and `.omp-plugin/marketplace.json` together, then tag. There is no release automation in this fork.
 - `CHANGELOG.md` is upstream history; fork release notes live on the tag.
-- Run `bun run plugin:validate` if agents, commands, skills, or MCP servers may have changed.
-- When removing a skill, agent, or command, add its name to both cleanup registries so stale flat-install artifacts are swept on upgrade:
-  - `STALE_SKILL_DIRS` / `STALE_AGENT_NAMES` / `STALE_PROMPT_FILES` in `src/utils/legacy-cleanup.ts`
-  - `EXTRA_LEGACY_ARTIFACTS_BY_PLUGIN["compound-engineering"]` in `src/data/plugin-legacy-artifacts.ts`
 
 Useful validation commands:
 
 ```bash
-bun run plugin:validate
-cat .claude-plugin/marketplace.json | jq .
-cat .claude-plugin/plugin.json | jq .
+jq . .omp-plugin/marketplace.json
+bun test tests/omp-native-install.test.ts tests/plugin-manifest-conformance.test.ts
 ```
 
 ## Runtime vs Authoring Context
 
-`AGENTS.md`, `CLAUDE.md` (symlink to `AGENTS.md`), and `GEMINI.md` are authoring context for this source repository. Skills are installed into end-user environments, where they run against the user's local instruction files, not this repo's. Behavioral rules that must affect a skill at runtime belong in that skill's `SKILL.md` or files under its own `references/` directory.
+`AGENTS.md` is authoring context for this source repository. Skills are installed into end-user environments, where they run against the user's local instruction files, not this repo's. Behavioral rules that must affect a skill at runtime belong in that skill's `SKILL.md` or files under its own `references/` directory.
 
 ## Working on Skills
 
@@ -149,7 +138,7 @@ When a skill needs to discover a project convention at runtime — the issue tra
 **On the read path, do not name instruction files (`AGENTS.md` / `CLAUDE.md` / `GEMINI.md` / `.cursor/rules`).** Phrase it as "the project's active instructions and conventions already in your context." Three reasons:
 
 - **Redundant.** Every major harness auto-injects the project's root instruction file into context at session start (Claude Code loads `CLAUDE.md`, Codex `AGENTS.md`, Gemini `GEMINI.md`). Telling the agent to "read `AGENTS.md`" asks it to re-open content it already has.
-- **Brittle / not portable.** The filename differs per harness, and this plugin is authored once and converted to all of them. A hardcoded "read `AGENTS.md` (or `CLAUDE.md`)" silently finds nothing on a harness that uses a different name.
+- **Brittle / not portable.** The filename differs per harness, and omp itself honors several of them per project. A hardcoded "read `AGENTS.md` (or `CLAUDE.md`)" silently finds nothing on a harness that uses a different name.
 - **Security smell.** Instructing an agent to go *read named instruction dotfiles* is the exact shape that prompt-injection defenses in some agent frameworks (e.g., Hermes) flag. Referencing context rather than filenames avoids tripping those guards.
 
 **Name a concrete file only where the skill must do something a context reference can't express:**
@@ -169,13 +158,13 @@ Behavioral changes to a plugin skill or skill-local persona (anything under `ski
 
 - **Do NOT edit `~/.claude/plugins/cache/` or `~/.claude/plugins/marketplaces/` to try to force a reload.** Those paths are user machine state, not repo-managed. Modifying them does not reliably bypass the in-session cache (it didn't, in observed behavior), risks being silently overwritten by plugin updates, and is the wrong layer to test from. Inject current disk content into a fresh agent instead; if you genuinely need fresh-loaded behavior of the typed-agent dispatch path, restart the session.
 
-- **A version-matched cache is not automatically stale — confirm by content, not by version.** When this working tree is the local marketplace source, a session (re)start re-copies it into `~/.claude/plugins/cache/.../compound-engineering/<version>/` (a plain copy, no `.git`; `<version>` is the working tree's `.claude-plugin/plugin.json` version), so the loaded plugin can be identical to — and as current as — your edits. Do not assume the running copy is stale just because it lives under the cache path; equally, do not assume a matching `<version>` means it includes your latest change. Version match is necessary but not sufficient: edits within a release do not bump the version, so a matching segment proves only that the cache was built from this release, not that it captured your most recent edit. To know which copy is actually loaded, diff the specific cache file against the working-tree file — identical means the running plugin is your current edit and you can trust it; differing means the session predates the edit, so restart or inject the working-tree files into a fresh agent. Never infer "stale" or "current" from the version segment alone.
+- **A version-matched cache is not automatically stale — confirm by content, not by version.** A marketplace install copies the plugin into `~/.omp/plugins/cache/plugins/<marketplace>___<plugin>___<version>/`; an `omp plugin link` install is a live symlink. Do not assume the running copy is stale just because it lives under the cache — compare a distinctive edited line.
 
-- **Mechanical changes do not have this restriction.** Skill scripts (e.g., `extract-metadata.py`), parser logic, conversion code, and anything `bun test` exercises always run the current source. The caching issue only affects LLM-driven skill prose behavior dispatched through the plugin loader.
+- **Mechanical changes do not have this restriction.** Skill scripts (e.g., `extract-metadata.py`), parser logic, and anything `bun test` exercises always run the current source. The caching issue only affects LLM-driven skill prose behavior dispatched through the plugin loader.
 
 ## CI and Quality Gates
 
-PR CI (`.github/workflows/ci.yml`) is the merge gate. It runs, in order: PR-title lint (PRs only), `bun run plugin:validate`, and `bun run test`. Do not invent a parallel local-only mechanical suite — if a check is deterministic and should block merges, put it in one of those steps (usually `bun run test`).
+PR CI (`.github/workflows/ci.yml`) is the merge gate. It runs, in order: PR-title lint (PRs only) and `bun run test`. Do not invent a parallel local-only mechanical suite — if a check is deterministic and should block merges, put it in one of those steps (usually `bun run test`).
 
 The `test` script runs `bun test --parallel`, which distributes test *files* across worker processes (one file still runs its own tests serially, and `--parallel` implies `--isolate`). This is the single biggest lever on CI wall time, because most of the suite is spent blocked on subprocesses — `python3`, `bash`, `git`, and `bun run src/index.ts` — not on CPU. Keeping it in the package script rather than the workflow means CI and a contributor's local run cannot drift apart.
 
@@ -205,7 +194,7 @@ The `ce-work-unit-workspace-*` shards run 10-23s each against that ~36s ceiling,
 
 | Kind of check | Where it lives | Notes |
 |---|---|---|
-| Deterministic invariants (frontmatter, parity, path safety, script behavior, converter/writer output, greppable skill contracts) | `bun test` / `plugin:validate` | Must pass in CI |
+| Deterministic invariants (frontmatter, parity, path safety, script behavior, OMP catalog/manifest agreement, greppable skill contracts) | `bun test` | Must pass in CI |
 | Skill *prose behavior* (routing judgment, restraint, cross-model peer outcomes) | Fresh-agent eval (on-disk skill injected), local / PR evidence | Not a CI job; non-deterministic and needs a model |
 
 That split is intentional. See `docs/solutions/skill-design/portable-agent-skill-authoring.md` ("Evaluate proportionally"). Mechanical checks belong in CI; behavioral agent evals are best-effort evidence, not an exhaustive CI matrix.
@@ -218,56 +207,21 @@ When a review bot or human finds a greppable invariant that `bun test` missed:
 2. Pin the **smallest falsifiable unit** — a token, enum, path, heading, or one fixture that would have failed on the regressing diff. Do not snapshot whole skill bodies or pin incidental wording.
 3. If the failure needs an LLM to judge, keep it as a behavioral eval; do not fake it as a brittle string test.
 
-### Maintaining `plugin:validate`
+### Maintaining the OMP load surfaces
 
-- `package.json` `plugin:validate` must validate **both** the marketplace catalog and the plugin manifest, with `--strict` on each. Paths: `.claude-plugin/marketplace.json` and `.claude-plugin/plugin.json`. Do **not** use `claude plugin validate .` — that resolves this repo as a marketplace only (because `.claude-plugin/marketplace.json` exists with `source: "./"`) and skips plugin-root checks.
-- CI pins `@anthropic-ai/claude-code` for reproducible schema rules. Bump the pin deliberately when adopting new upstream rules; do not float `@latest`.
-- Root `CLAUDE.md` must remain a **symlink** to `AGENTS.md` (path stays at the repo root where contributors expect it). Upstream warns on a regular-file plugin-root `CLAUDE.md` because it is not loaded as end-user project context; the symlink avoids that warning so `--strict` can stay on. Do not replace the symlink with a regular `@AGENTS.md` shim or relocate the file just for validators.
-- If `--strict` starts failing again on `CLAUDE.md` after an upstream bump, check whether the symlink was materialized into a regular file (Windows/`core.symlinks=false` checkouts) or whether the validator started following symlinks — fix the layout or pin, do not silently drop `--strict`.
-
-### When CI comments look "stale"
-
-If CI claims a deferred warning or a missing gate, reproduce with the **pinned** `claude` version against `.claude-plugin/plugin.json` before treating the comment as current. Marketplace-only validation can hide plugin warnings.
+- `tests/omp-native-install.test.ts` asserts the catalog shape (`name`, single `./` plugin entry, naming rules) and that `.omp-plugin/marketplace.json`, `package.json`, and `plugin.json` agree on `version`. Bump all three together when cutting a release; never one alone.
+- `omp install --dry-run --json .` must keep listing `./.pi/extensions/compound-engineering.ts` and `./skills`; the extension is the key omp loads the plugin through.
 
 ## Coding Conventions
 
-- Prefer explicit mappings over implicit magic when converting between platforms.
-- Keep target-specific behavior in dedicated converters/writers instead of scattering conditionals across unrelated files.
-- Preserve stable output paths and merge semantics for installed targets; do not casually change generated file locations.
-- When adding or changing a target, update fixtures/tests alongside implementation rather than treating docs or examples as sufficient proof.
+- `src/` stays limited to the repo tooling commands (`list`, `plugin-path`) and the frontmatter parser. Plugin loading is OMP-native via `package.json#pi` and `.pi/extensions/compound-engineering.ts`; do not reintroduce converters, per-host writers, or install paths.
 
 ## Commit Conventions
 
 - **Prefix is based on intent, not file type.** Use conventional prefixes (`feat:`, `fix:`, `docs:`, `refactor:`, etc.) but classify by what the change does, not the file extension. Files under `skills/` and plugin manifests are product code even though they are Markdown or JSON. Reserve `docs:` for files whose sole purpose is documentation (`README.md`, `docs/`, `CHANGELOG.md`).
 - **Type selection — classify by intent, not diff shape.** Where `fix:` and `feat:` could both seem to fit, default to `fix:`: a change that remedies broken or missing behavior is `fix:` even when implemented by adding code, and net additions do not turn a fix into a `feat:`. Reserve `feat:` for capabilities the user could not previously accomplish where nothing was broken. Other conventional types (`chore:`, `refactor:`, `docs:`, `perf:`, `test:`, `ci:`, `build:`, `style:`) remain primary when they describe the change more precisely than either. Heuristic: if a regression test you could write today would have failed *before* the change, it's `fix:`. The user may override this default for a specific change.
-- **Include a component scope.** The scope appears verbatim in the changelog. Pick the narrowest useful label: skill/agent name (`document-review`, `learnings-researcher`), CLI or marketplace area (`cli`, `marketplace`), or shared area when cross-cutting (`review`, `research`, `converters`). Never use `compound-engineering` — it's the entire plugin and tells the reader nothing. Omit scope only when no single label adds clarity.
+- **Include a component scope.** The scope appears verbatim in the changelog. Pick the narrowest useful label: skill/agent name (`document-review`, `learnings-researcher`), CLI or marketplace area (`cli`, `marketplace`), or shared area when cross-cutting (`review`, `research`, `omp`). Never use `compound-engineering` — it's the entire plugin and tells the reader nothing. Omit scope only when no single label adds clarity.
 - **Never use `!` or a `BREAKING CHANGE:` footer without explicit user confirmation.** These markers signal a major version bump — a decision the user may not want even when a change is technically breaking. If a change appears breaking, surface that to the user and let them decide whether to apply the marker.
-
-## Adding a New Target Provider
-
-Only add a provider when the target format is stable, documented, and has a clear mapping for tools/permissions/hooks. Use this checklist:
-
-1. **Define the target entry**
-   - Add a new handler in `src/targets/index.ts` with `implemented: false` until complete.
-   - Use a dedicated writer module (e.g., `src/targets/codex.ts`).
-
-2. **Define types and mapping**
-   - Add provider-specific types under `src/types/`.
-   - Implement conversion logic in `src/converters/` (from Claude → provider).
-   - Keep mappings explicit: tools, permissions, hooks/events, model naming.
-
-3. **Wire the CLI**
-   - Ensure `convert` and `install` support `--to <provider>` and `--also`.
-   - Keep behavior consistent with OpenCode (write to a clean provider root).
-
-4. **Tests (required)**
-   - Extend fixtures in `tests/fixtures/sample-plugin`.
-   - Add spec coverage for mappings in `tests/converter.test.ts`.
-   - Add a writer test for the new provider output tree.
-   - Add a CLI test for the provider (similar to `tests/cli.test.ts`).
-
-5. **Docs**
-   - Update README with the new `--to` option and output locations.
 
 ## Specialist Prompt Assets in Skills
 
@@ -295,7 +249,6 @@ Why this matters:
 
 - **Runtime resolution:** Skills execute from the user's working directory, not the skill directory. Cross-directory paths and absolute paths will not resolve as expected.
 - **Unpredictable install paths:** Plugins installed from the marketplace are cached at versioned paths. Absolute paths that worked in the source repo will not match the installed layout, and the version segment changes on every release.
-- **Converter portability:** The CLI copies each skill directory as an isolated unit when converting to other agent platforms. Cross-directory references break because sibling directories are not included in the copy.
 
 If two skills need the same supporting file, duplicate it into each skill's directory. Prefer small, self-contained reference files over shared dependencies.
 
@@ -307,7 +260,7 @@ Use the project's active instructions already in the main agent's context, then 
 
 ## Platform-Specific Variables in Skills
 
-This plugin is authored once and converted for multiple agent platforms (Claude Code, Codex, Gemini CLI, etc.). Do not use platform-specific environment variables or string substitutions (e.g., `${CLAUDE_PLUGIN_ROOT}`, `${CLAUDE_SKILL_DIR}`, `${CLAUDE_SESSION_ID}`, `CODEX_SANDBOX`, `CODEX_SESSION_ID`) in skill content without a graceful fallback that works when the variable is unavailable or unresolved.
+This plugin is authored once for oh-my-pi (omp). Do not use platform-specific environment variables or string substitutions (e.g., `${CLAUDE_PLUGIN_ROOT}`, `${CLAUDE_SKILL_DIR}`, `${CLAUDE_SESSION_ID}`, `CODEX_SANDBOX`, `CODEX_SESSION_ID`) in skill content without a graceful fallback that works when the variable is unavailable or unresolved.
 
 How a bundled-file reference resolves depends on *who* resolves it and whether a shell is involved, so references fall into three tiers. Do not assume a bare `scripts/…` path behaves the same in all three.
 
@@ -329,7 +282,7 @@ An existence guard (`if [ -f "$SKILL_DIR/scripts/my-script.sh" ]; then … else 
 
 `SKILL_DIR` is a **model-filled** value, not a harness variable: every harness loads SKILL.md from a real absolute path the agent knows, so the skill instructs the agent to set `SKILL_DIR` to that directory. This works identically on Claude Code, Codex, and Cursor precisely because it depends on no host-specific variable — `SKILL_DIR`, `CLAUDE_SKILL_DIR`, `CODEX_SKILL_DIR`, `AGENT_SKILL_DIR` are **not** env vars on any of them, yet the script runs because the agent supplies the path. This is the production pattern used by widely-installed cross-host skills (e.g. `last30days`). Two constraints: (1) shell state does **not** persist between separate Bash-tool calls, so `SKILL_DIR` cannot be set once and reused — each invocation must carry the absolute path (set it inline in the same command). (2) A script that needs its *own* directory (to read a sibling file) derives it from `BASH_SOURCE`, not `SKILL_DIR`, since `SKILL_DIR` is the orchestrator's shell var and is not exported to the child process — see `skills/ce-code-review/scripts/cross-model-adversarial-review.sh` for the reference implementation. `last30days` adopted this anchor for its critical multi-host engine after a path-resolution regression; it is the right tool when a script must run *reliably*, which is why it is the tier-3 default — but tiers 1 and 2 deliberately stay lighter.
 
-**Avoid `${CLAUDE_SKILL_DIR}` here — in this cross-agent plugin it is a footgun, not a neutral alternative.** Every skill in this repo is authored once and installed across Claude Code, Codex, Cursor, and Gemini, and `${CLAUDE_SKILL_DIR}` is a Claude-Code-only SKILL.md *content* substitution (not an env var) that is **empty on every other host**. So a `${CLAUDE_SKILL_DIR}`-guarded call's `then` branch quietly never fires off-Claude — the **genuine silent skip** — and a Claude-only mechanism breaks on Codex/Cursor because the converter doesn't rewrite these paths and the native Codex install loads raw `SKILL.md` (no `ce_platforms` filtering). The model-filled `SKILL_DIR` anchor works on every host, so it is the right replacement wherever a `${CLAUDE_SKILL_DIR}`-guarded executed-shell call exists today (tier 3). Do not reach for `${CLAUDE_SKILL_DIR}` as a "portable" option — it isn't. Reach for it only for behavior that is genuinely Claude-Code-only and will *never* run on another harness — which, given this plugin's cross-host install model, is essentially never; treat any new use as a smell to justify or remove.
+**Avoid `${CLAUDE_SKILL_DIR}` here — in this cross-agent plugin it is a footgun, not a neutral alternative.** Every skill in this repo is authored once and runs on oh-my-pi, where it is empty, and `${CLAUDE_SKILL_DIR}` is a Claude-Code-only SKILL.md *content* substitution (not an env var) that is **empty on every other host**. So a `${CLAUDE_SKILL_DIR}`-guarded call's `then` branch quietly never fires off-Claude — the **genuine silent skip** — and a Claude-only mechanism breaks on Codex/Cursor because the converter doesn't rewrite these paths and the native Codex install loads raw `SKILL.md` (no `ce_platforms` filtering). The model-filled `SKILL_DIR` anchor works on every host, so it is the right replacement wherever a `${CLAUDE_SKILL_DIR}`-guarded executed-shell call exists today (tier 3). Do not reach for `${CLAUDE_SKILL_DIR}` as a "portable" option — it isn't. Reach for it only for behavior that is genuinely Claude-Code-only and will *never* run on another harness — which, given this plugin's cross-host install model, is essentially never; treat any new use as a smell to justify or remove.
 
 So: a skill's *core* behavior **can** live in a bundled script across hosts — invoke it via the `SKILL_DIR`-from-read-path anchor. You no longer need to avoid bundled scripts for portability; anchor them instead. Read-time references (`references/*.md`) still resolve against the skill dir on all targets and need no anchor.
 
@@ -354,7 +307,7 @@ So: a skill's *core* behavior **can** live in a bundled script across hosts — 
 This repo builds a plugin *for* developers. Categorize solutions from the perspective of the end user (a developer using the plugin), not a contributor to this repo.
 
 - **`developer-experience/`** — Issues with contributing to *this repo*: local dev setup, shell aliases, test ergonomics, CI friction. If the fix only matters to someone with a checkout of this repo, it belongs here.
-- **`integrations/`** — Issues where plugin output doesn't work correctly on a target platform or OS. Cross-platform bugs, target writer output problems, and converter compatibility issues go here.
+- **`integrations/`** — Issues where a skill misbehaves on the host platform or OS. Cross-platform bugs and host-specific tool behavior go here.
 - **`workflow/`**, **`skill-design/`** — Plugin skill and agent design patterns, workflow improvements.
 
-When in doubt: if the bug affects someone running `bun install compound-engineering` or `bun convert`, it's an integration or product issue, not developer-experience.
+When in doubt: if the bug affects someone running the installed plugin, it's an integration or product issue, not developer-experience.
