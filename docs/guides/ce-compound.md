@@ -16,7 +16,7 @@ It is optional. A completed or non-trivial fix is not enough: skip it when the f
 |----------|--------|
 | What does it do? | Documents a solved problem to `docs/solutions/[category]/[filename].md` with structured frontmatter, bug-track or knowledge-track sections, and cross-references |
 | When to use it | After a verified solution produces durable reasoning that the final implementation does not readily reveal and that would be costly or risky to lose |
-| What it produces | One doc in `docs/solutions/`, plus optional `CONCEPTS.md` vocabulary capture. Interactive Full may also edit `AGENTS.md`/`CLAUDE.md` for discoverability after consent. |
+| What it produces | One doc in `docs/solutions/`, plus optional `CONCEPTS.md` vocabulary capture. Interactive Full may also edit `AGENTS.md` for discoverability after consent. |
 | What's next | No menu. Optional `/ce-compound-refresh` if the new learning suggests an older doc may be stale. |
 
 ---
@@ -88,7 +88,7 @@ Most teams solve the same problem twice, sometimes with the same person, because
 
 ### Two modes, agent-selected
 
-Full mode runs three research subagents in parallel (Context Analyzer, Solution Extractor, Related Docs Finder), plus an automatic session-history probe across Claude Code, Codex, Cursor, Pi, and oh-my-pi (omp). It cross-references existing docs, detects duplicates, and runs specialized reviews.
+Full mode runs three research subagents in parallel (Context Analyzer, Solution Extractor, Related Docs Finder), plus an automatic session-history probe across OMP sessions. It cross-references existing docs, detects duplicates, and runs specialized reviews.
 
 Lightweight mode writes the same doc type in a single pass. No subagents, no overlap detection, no session-history research, no semantic grounding validation.
 
@@ -115,13 +115,13 @@ The Related Docs Finder scores overlap with existing `docs/solutions/` content a
 - Moderate overlap (2-3 dimensions): create the new doc, flag for consolidation review (a possible `ce-compound-refresh` trigger).
 - Low or none: create the new doc normally.
 
-Every run also checks whether the project's instruction file (`AGENTS.md` or `CLAUDE.md`) would lead a future agent to discover `docs/solutions/`. If not, interactive Full proposes the smallest addition that surfaces the knowledge store, asks for consent, and applies it. Non-interactive reports `Instruction-file edit: gap noted, not applied` without editing. Lightweight tips only.
+Every run also checks whether the project's instruction file (`AGENTS.md`) would lead a future agent to discover `docs/solutions/`. If not, interactive Full proposes the smallest addition that surfaces the knowledge store, asks for consent, and applies it. Non-interactive reports `Instruction-file edit: gap noted, not applied` without editing. Lightweight tips only.
 
 Before the doc compounds, its claims get checked against the tree. A deterministic script checks cited repo paths, commit SHAs, relative links, and dangling scaffold (flags are adjudicated, not auto-failed). Then a read-only validator subagent (Full mode, including non-interactive Full) verifies code-behavior claims by quoting the defining source line, and merge-state claims against remote truth. Lightweight keeps the deterministic check and skips the validator subagent.
 
 ### Session history, refresh, and the capture checkpoint
 
-Full mode always runs a cheap two-stage session-history probe. A discovery-and-metadata pass runs in parallel with the research subagents. It lists Claude sessions from `~/.claude/projects/` (or `CLAUDE_CONFIG_DIR/projects` when that env var is set) and keeps the ones whose recorded `cwd` is the repo root, a parent of it, or a path inside it, so sessions started from a parent directory count. Codex sessions come from `~/.codex/sessions/` (or `CODEX_HOME/sessions` when set) plus `~/.agents/sessions/`. It escalates to extraction and synthesis only when a candidate session clears a relevance bar: current-branch match or at least two topic-keyword hits. On a hit, findings fold into "What Didn't Work" (bug track) or "Context" (knowledge track). Lightweight skips all of this.
+Full mode always runs a cheap two-stage session-history probe. A discovery-and-metadata pass runs in parallel with the research subagents. It lists Pi and OMP sessions from the Pi and OMP session roots (`$PI_CODING_AGENT_SESSION_DIR`, `$PI_CODING_AGENT_DIR`, or `$HOME/.omp/agent/sessions/`, including named-profile roots) and keeps the ones whose recorded `cwd` is the repo root, a parent of it, or a path inside it, so sessions started from a parent directory count. It escalates to extraction and synthesis only when a candidate session clears a relevance bar: current-branch match or at least two topic-keyword hits. On a hit, findings fold into "What Didn't Work" (bug track) or "Context" (knowledge track). Lightweight skips all of this.
 
 After capturing the new learning, `ce-compound` checks whether the learning suggests a specific older doc may now be stale. Only then does it recommend or invoke `/ce-compound-refresh`, with a narrow scope hint. It does not run refresh by default.
 
@@ -176,7 +176,7 @@ The output feeds back upstream: `/ce-plan` reads `docs/solutions/` during Phase 
 
 Completion phrases such as "that worked" and "it's fixed" mark a useful checkpoint, but they are not sufficient triggers. Add a standing instruction when you want the agent to evaluate the durable-learning gate at that checkpoint without waiting for you to ask.
 
-Put it in the repo's `AGENTS.md`/`CLAUDE.md`, or in your harness's global instruction file (for example `~/.claude/CLAUDE.md`, `~/.agents/AGENTS.md`, or `~/.codex/AGENTS.md`) to make it apply in every repo. Pick the variant that matches how much of a checkpoint you want. `ce-setup` offers to add either variant to the repo file for you, verbatim.
+Put it in the repo's `AGENTS.md`, or in your global instruction file to make it apply in every repo. Pick the variant that matches how much of a checkpoint you want. `ce-setup` offers to add either variant to the repo file for you, verbatim.
 
 Offer first (the agent asks before capturing):
 
@@ -188,7 +188,7 @@ Run it automatically (no prompt):
 
 Use `mode:non-interactive depth:lightweight` instead when the standing workflow accepts reduced research and validation in exchange for a single-pass, no-subagent closure.
 
-Auto-run writes to `docs/solutions/` (and may touch `CONCEPTS.md`) without asking. Non-interactive never edits `AGENTS.md`/`CLAUDE.md`. If discoverability is missing it reports `gap noted, not applied` so a later interactive run can apply it with consent. Passing `mode:non-interactive` as an argument is the explicit form; the skill also honors a clear "run headless / without prompts" request, but the token removes all doubt. Without a non-interactive signal the run stays interactive and can stop for the one-time discoverability-consent prompt.
+Auto-run writes to `docs/solutions/` (and may touch `CONCEPTS.md`) without asking. Non-interactive never edits `AGENTS.md`. If discoverability is missing it reports `gap noted, not applied` so a later interactive run can apply it with consent. Passing `mode:non-interactive` as an argument is the explicit form; the skill also honors a clear "run headless / without prompts" request, but the token removes all doubt. Without a non-interactive signal the run stays interactive and can stop for the one-time discoverability-consent prompt.
 
 A few phrases in those standing lines are load-bearing:
 
@@ -209,7 +209,7 @@ That is the default root; the store follows `docs_root` if it is set in `config.
 
 The doc carries YAML frontmatter (`module`, `tags`, `problem_type`, and so on) for searchability. `scripts/validate-frontmatter.py` catches silent corruption, and `scripts/validate-doc-claims.py` checks the body's cited paths, SHAs, links, and drafting scaffold against the tree.
 
-In interactive Full mode, the skill may also make a small edit to `AGENTS.md`/`CLAUDE.md` if the discoverability check finds the knowledge store is not surfaced and you consent. Non-interactive and lightweight never apply that edit.
+In interactive Full mode, the skill may also make a small edit to `AGENTS.md` if the discoverability check finds the knowledge store is not surfaced and you consent. Non-interactive and lightweight never apply that edit.
 
 ---
 

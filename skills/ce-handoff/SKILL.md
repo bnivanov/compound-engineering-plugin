@@ -27,7 +27,7 @@ Point at plans, issues, commits, diffs, documentation, and files rather than rep
 
 Creation is complete only after confirming the destination contains the handoff. Then report its final path or URL, retention or access limits, and continuity warnings together. Give a succinct, context-specific summary of what the generated handoff captures, so the user can verify its substance without opening it. Managed `/tmp` storage is OS-managed and not permanent. If continuity depends on a fragile worktree, warn the user without mutation: do not commit, stash, copy, preserve, or tear down anything automatically.
 
-**User-runnable invocation rendering.** For the copyable resume command below, default to `/ce-handoff resume <source>`; use `$ce-handoff resume <source>` only when the active host is Codex or explicitly documents dollar-prefixed skill invocation. Render it as the fenced command below and output one form only.
+**User-runnable invocation rendering.** For the copyable resume command below, render as `/skill:ce-handoff resume <source>`. Render it as the fenced command below and output one form only.
 
 End the creation response with one fenced, copyable command using the final path or URL and the rendering rule above:
 

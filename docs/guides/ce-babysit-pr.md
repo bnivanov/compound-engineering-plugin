@@ -65,7 +65,7 @@ Hand-babysitting, or a naive loop, usually fails in the same ways:
 - Wait for the whole CI run, *then* read comments. A comment fix pushes and retriggers CI, so that wait burned a cycle
 - CI goes green, the loop says ready, and review lands after
 - The watcher reimplements feedback resolution and CI debugging, then drifts from those skills
-- An in-session `sleep` loop cannot run in a sandboxed GUI harness, and Claude Code blocks foreground `sleep`
+- An in-session `sleep` loop cannot run in a sandboxed GUI harness, and a foreground `sleep` never wakes the next tick
 - The run stops and you cannot tell what it did, or you get a wall of per-thread receipts
 
 ## The Solution

@@ -69,7 +69,7 @@ An empty invoke uses the current conversation if one is already underway (includ
 /ce-plan add a background email digest at 8am UTC confirm:auto
 
 # Keep the session on your usual model; author the plan on a named one
-/ce-plan turn the notification mute requirements into an implementation-ready plan, use fable
+/ce-plan turn the notification mute requirements into an implementation-ready plan, use <model-alias>
 ```
 
 Start with `ce-brainstorm` when the product shape is still unsettled. Direct planning works best when the intended outcome is already clear.
@@ -170,7 +170,7 @@ Skip `ce-plan` when:
 
 ## Make It Automatic
 
-If you want planning to run on its own before implementation, add a standing instruction to your agent's instruction file (the repo's `AGENTS.md`/`CLAUDE.md`, or your global one). The activation condition is what keeps small changes cheap:
+If you want planning to run on its own before implementation, add a standing instruction to your agent's instruction file (the repo's `AGENTS.md`, or your global one). The activation condition is what keeps small changes cheap:
 
 > Before implementing work that spans several files or carries a design decision, invoke the `ce-plan` skill. Skip it for a change already specified down to the files it touches that touches no risk surface (authentication, payments, migrations, external contracts); do that directly or with the `ce-work` skill.
 
@@ -247,7 +247,7 @@ Plenty of work never goes through a brainstorm. Direct invocations that work wel
 | `<task in another repo>` | Cross-repo announcement; plan lands in the target |
 | `output:html` | Write the plan as a single self-contained HTML file instead of markdown. Exclusive: the plan is `.md` or `.html`, never both. Default is markdown. Set `plan_output: html` in CE config (`config.local.yaml` then `config.yaml`) to make HTML the default. Pipeline mode (LFG, `disable-model-invocation`) always forces markdown. See the [configuration reference](./configuration.md). |
 | `confirm:auto` | Skip the pre-plan scoping-confirmation pause for this run. The skill writes the scope summary for itself, records inferred scope under `Assumptions`, announces it is proceeding, and keeps going. Genuine blockers and the post-plan menu still appear. Use `confirm:ask` to force the gate on for one run. Set `plan_skip_scoping_confirm: true` in CE config to make skipping the default. |
-| `use fable` / `have opus plan this` | Elevate only the interpret-findings-then-author step to that model. Also settable as `plan_model: <model>` in CE config. A prompt request overrides the config key. |
+| `use <model-alias>` / `have <model-alias> plan this` | Elevate only the interpret-findings-then-author step to that model. Also settable as `plan_model: <model-alias>` in CE config. A prompt request overrides the config key. |
 
 ---
 
@@ -275,9 +275,9 @@ No. Proof is on the non-software wrap-up menu (save, publish, or both). Software
 
 ## Model elevation
 
-When you want a specific model for the heavy reasoning step, `ce-plan` can author the plan on that model instead of your session model. Only the interpret-findings-then-author step is dispatched, with read access so it can verify its brief. Dialogue and research stay on your session model. Name a model in the prompt (`use fable`, `have opus plan this`) or set `plan_model: <model>` in CE config; a prompt request overrides the config key.
+When you want a specific model for the heavy reasoning step, `ce-plan` can author the plan on that model instead of your session model. Only the interpret-findings-then-author step is dispatched, with read access so it can verify its brief. Dialogue and research stay on your session model. Name a model in the prompt (`use <model-alias>`, `have <model-alias> plan this`) or set `plan_model: <model-alias>` in CE config; a prompt request overrides the config key.
 
-This works on any harness. The host serves the chosen model natively where it can, otherwise it invokes the Claude CLI (which must be installed and authenticated), otherwise it runs the step on your session model and says which precondition was unmet.
+On OMP, a set key reports the requested alias as unresolvable and runs the step inline on the session model. For stronger reasoning, run the session on a stronger model or dispatch a `planner` agent natively.
 
 ## See Also
 

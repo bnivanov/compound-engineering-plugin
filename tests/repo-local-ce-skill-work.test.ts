@@ -118,7 +118,7 @@ describe("repo-local ce-skill-work skill", () => {
     const agents = readFileSync(path.join(ROOT, "AGENTS.md"), "utf8")
     expect(agents).toMatch(/Before creating, editing, reviewing, or acting on review feedback for anything under `skills\/\*\*`, invoke the repo-local `ce-skill-work` skill/)
     expect(agents).toContain(".agents/skills/ce-skill-work/")
-    expect(agents).toContain("`.claude/skills` is a symlink to `.agents/skills`")
+    expect(agents).toMatch(/which OMP discovers directly as a repo-local skill/i)
     expect(agents).toMatch(/### Reviewing a skill change \(bots and humans\)/)
     expect(agents).toMatch(/A case a stated condition already covers is not a finding/)
   })

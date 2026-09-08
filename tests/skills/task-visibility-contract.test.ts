@@ -35,7 +35,7 @@ const lfgTaskVisibility = readRepoFile("skills/lfg/references/task-visibility.md
 describe("task visibility contract", () => {
   test("material workflow skills own a portable task surface", () => {
     for (const skill of Object.values(skills)) {
-      expect(skill).toMatch(/task-tracking capability/i)
+      expect(skill).toMatch(/task-tracking capability|todo tool|task tool/i)
     }
   })
 

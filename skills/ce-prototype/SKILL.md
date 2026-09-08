@@ -17,7 +17,7 @@ Build a throwaway prototype at the fidelity that can answer this question, befor
 
 If there is no person to experience the prototype — LFG, `mode:pipeline`, or any unattended run — stop. Do not start a preview or invent how it should feel. Return that this skill needs a human.
 
-**User-runnable invocation rendering.** The attended re-run in that refusal and the next-skill recommendation when the user applies print invocation syntax. Default to `/ce-prototype`, `/ce-brainstorm`, and `/ce-plan`; use `$ce-prototype`, `$ce-brainstorm`, and `$ce-plan` only on Codex or a host that documents dollar-prefixed skill invocation. Render only the invocation as inline code; output one form only.
+**User-runnable invocation rendering.** The attended re-run in that refusal and the next-skill recommendation when the user applies print invocation syntax. Use `/skill:ce-prototype`, `/skill:ce-brainstorm`, and `/skill:ce-plan`. Render only the invocation as inline code; output one form only.
 
 ## Scope the question
 

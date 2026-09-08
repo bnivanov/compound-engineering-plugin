@@ -1,6 +1,6 @@
-# `.claude/launch.json` schema
+# `launch.json` schema
 
-Polish reads `.claude/launch.json` at the repo root to resolve the dev-server start command. The schema is a subset of VS Code's `launch.json` format — chosen because Claude Code, Cursor, and VS Code all understand it and because users often already have one for editor integration.
+Polish reads `launch.json` at the repo root to resolve the dev-server start command. The schema is a subset of VS Code's `launch.json` format — chosen because users often already have one for editor integration.
 
 ## Top-level shape
 
@@ -33,7 +33,7 @@ Polish reads `.claude/launch.json` at the repo root to resolve the dev-server st
 
 ## Stub template (written on first run when user accepts)
 
-When auto-detection completes a missing tuple fact and the user confirms "Save this as `.claude/launch.json`?", polish writes the completed tuple. Preserve facts from a selected configuration and add only what was resolved; use the recipe templates below when auto-detection supplied the command. These templates intentionally hard-code common defaults — users can edit them later.
+When auto-detection completes a missing tuple fact and the user confirms "Save this as `launch.json`?", polish writes the completed tuple. Preserve facts from a selected configuration and add only what was resolved; use the recipe templates below when auto-detection supplied the command. These templates intentionally hard-code common defaults — users can edit them later.
 
 ### Rails stub
 
@@ -167,11 +167,11 @@ When auto-detection completes a missing tuple fact and the user confirms "Save t
 
 Polish does not use `type`, `request`, `console`, `stopOnEntry`, or any of the other VS Code fields. Including them is harmless — polish ignores them — but the stub writer never adds them. The fields polish cares about are the ones that describe *how to start a long-running dev server on a known port*, which is a smaller surface than what VS Code uses for debug-stepping.
 
-## Cross-IDE notes
+## Why a dedicated `launch.json`
 
-`.claude/launch.json` is not yet a fully unified standard across Claude Code, Cursor, VS Code, and Codex. Polish leads with `.claude/launch.json` because:
-- Claude Code, Cursor, and VS Code can all read it as a launch config
+Polish leads with a dedicated repo-root `launch.json` because:
 - It sits at a clean repo-root trust boundary (user-authored, not auto-detected)
+- It is not the editor's debug config: polish ignores VS Code debug fields (`type`, `request`, `console`, `stopOnEntry`), so sharing `.vscode/launch.json` would select unusable configurations and pollute the debug picker with dev-server entries
 - Users who prefer `.vscode/launch.json` can symlink or mirror the two files manually
 
-If a cross-IDE standard emerges (e.g., `.workspace/launch.json`), the stub writer and reader can swap paths without touching the rest of the skill.
+If the launch-config location ever changes, the stub writer and reader can swap paths without touching the rest of the skill.

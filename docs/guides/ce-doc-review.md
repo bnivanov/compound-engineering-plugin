@@ -141,17 +141,13 @@ Decisions you examined and settled carry a `session-settled:` annotation. The sa
 
 Findings lead with a recommendation and a one-sentence consequence that names no opaque token. Document IDs (`R6`, `U3`) keep the ID and get a handle. Code symbols are translated to the role they play. You can decide Apply / Defer / Skip without opening the reviewed codebase.
 
-### Cross-model judgment pass
+### Cross-model judgment pass (OMP-only)
 
-When the **conditional judgment trio** (adversarial, product-lens, security-lens) activates, those lenses also run through one different model provider than the host, in a separate read-only process. Agreement between a peer return and its in-process twin is the strongest promotion signal in synthesis. Coherence, scope-guardian, and feasibility stay single-model so the pass does not spawn a peer on every review.
+Cross-model independence on OMP is dispatching a `reviewer` agent; the worker provides evidence transport only. When the conditional judgment trio (adversarial, product-lens, security-lens) activates, those lenses can run as explicit `reviewer` reads of their own briefs. Agreement between a reviewer return and its in-process twin is the strongest promotion signal in synthesis. Coherence, scope-guardian, and feasibility stay single-model so the pass does not spawn a reviewer on every review.
 
-A single **whole-document sweep** has one different-provider peer review the entire document as a general reviewer, folding in as `whole-doc-<provider>`. On unified plans the focused trio peers are sliced to match their in-process twins. The sweep reads the whole document.
+A single whole-document sweep runs as one explicit `reviewer` general read of the entire document, folding in as `whole-doc-omp`. On unified plans the focused trio reads are sliced to match their in-process twins. The sweep reads the whole document.
 
-The pass needs a peer *agent* CLI (`codex`, `claude`, `grok`, `cursor-agent`, or `opencode`). An API key alone does not enable it, and Gemini has no standalone target. Peers are found on `PATH` or inside the Codex desktop app bundle; see the [prerequisite note in `ce-code-review`](./ce-code-review.md#cross-model-adversarial-pass).
-
-`cross_model_review_mode: off` in CE config keeps this pass from running at all. No peer is resolved and nothing leaves the host; the in-process reviewers cover the lens and Coverage says the pass was disabled by checkout config. A direct request in conversation for a peer overrides it for one run. Which target runs the peer is auto-chosen and overridable: conversation, `cross_model_peer:` in CE config, active project instructions, then `codex → claude → grok → composer`. `Cursor` means `cursor-agent` using its configured default/Auto model. `Composer` means a Composer model through Cursor. `Grok` binds the native grok CLI when it is installed; Grok through Cursor is a different route, used when asked or when the grok CLI is missing and Cursor is allowed. `cross_model_model:` and `cross_model_effort:` in CE config pin that target's model (e.g. `fable` for claude or `gpt-5.6-sol` for codex, or a namespace-qualified codex id such as `openai.gpt-5.6-sol` when that CLI routes through a non-default `model_provider`) and reasoning effort; a value the peer cannot honor skips the pass with a stated reason rather than substituting. See the [configuration reference](./configuration.md).
-
-The pass embeds the document into the peer prompt and sends it to an external provider. `CROSS_MODEL_PEERS` restricts which providers may receive content. Peers are strictly read-only. Failures never block the review; an exact provider-overload 529 gets one same-route retry, never an unbounded retry loop. A second target remains opt-in (`CROSS_MODEL_MAX_PEERS=2`).
+`cross_model_review_mode: off` in CE config keeps this pass from running automatically; the in-process reviewers cover the lenses and Coverage says the pass was disabled by checkout config. A direct request in conversation for a separate read overrides `off` for one run. Route selection for an explicit read is conversation-only. Reviewer reads are strictly read-only. Failures never block the review.
 
 ---
 

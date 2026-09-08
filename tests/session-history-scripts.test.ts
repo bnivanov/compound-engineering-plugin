@@ -263,43 +263,6 @@ function createPiToolCallAndCustomSession(): string {
 // extract-metadata.py
 // ---------------------------------------------------------------------------
 describe("extract-metadata", () => {
-  test("detects Claude Code platform and extracts branch", async () => {
-    const { stdout, exitCode } = await runScript("extract-metadata.py", [
-      path.join(FIXTURES_DIR, "claude-session.jsonl"),
-    ])
-    expect(exitCode).toBe(0)
-    const lines = parseJsonLines(stdout)
-    const session = lines.find((l) => !l._meta)
-    expect(session.platform).toBe("claude")
-    expect(session.branch).toBe("feat/auth-fix")
-    expect(session.session).toBe("test-claude-session-1")
-    expect(session.ts).toContain("2026-04-05")
-    expect(session.cwd).toBe("/Users/test/Code/my-repo")
-  })
-
-  test("detects Codex platform and extracts CWD", async () => {
-    const { stdout, exitCode } = await runScript("extract-metadata.py", [
-      path.join(FIXTURES_DIR, "codex-session.jsonl"),
-    ])
-    expect(exitCode).toBe(0)
-    const lines = parseJsonLines(stdout)
-    const session = lines.find((l) => !l._meta)
-    expect(session.platform).toBe("codex")
-    expect(session.cwd).toBe("/Users/test/Code/my-repo")
-    expect(session.model).toBe("gpt-5.4")
-    expect(session.session).toBe("test-codex-session-1")
-  })
-
-  test("detects Cursor platform", async () => {
-    const { stdout, exitCode } = await runScript("extract-metadata.py", [
-      path.join(FIXTURES_DIR, "cursor-session.jsonl"),
-    ])
-    expect(exitCode).toBe(0)
-    const lines = parseJsonLines(stdout)
-    const session = lines.find((l) => !l._meta)
-    expect(session.platform).toBe("cursor")
-  })
-
   test("detects Pi platform and extracts CWD", async () => {
     const { stdout, exitCode } = await runScript("extract-metadata.py", [
       path.join(FIXTURES_DIR, "pi-session.jsonl"),
@@ -333,30 +296,24 @@ describe("extract-metadata", () => {
 
   test("batch mode processes multiple files", async () => {
     const { stdout, exitCode } = await runScript("extract-metadata.py", [
-      path.join(FIXTURES_DIR, "claude-session.jsonl"),
-      path.join(FIXTURES_DIR, "codex-session.jsonl"),
-      path.join(FIXTURES_DIR, "cursor-session.jsonl"),
       path.join(FIXTURES_DIR, "pi-session.jsonl"),
       path.join(FIXTURES_DIR, "omp-session.jsonl"),
     ])
     expect(exitCode).toBe(0)
     const lines = parseJsonLines(stdout)
     const meta = lines.find((l) => l._meta)
-    expect(meta.files_processed).toBe(5)
+    expect(meta.files_processed).toBe(2)
     expect(meta.parse_errors).toBe(0)
     const platforms = lines.filter((l) => !l._meta).map((l) => l.platform)
-    expect(platforms).toContain("claude")
-    expect(platforms).toContain("codex")
-    expect(platforms).toContain("cursor")
     expect(platforms).toContain("pi")
     expect(platforms).toContain("omp")
   })
 
-  test("--cwd-filter excludes non-matching Codex sessions", async () => {
+  test("--cwd-filter excludes non-matching omp sessions", async () => {
     const { stdout, exitCode } = await runScript("extract-metadata.py", [
       "--cwd-filter",
       "other-repo",
-      path.join(FIXTURES_DIR, "codex-session.jsonl"),
+      path.join(FIXTURES_DIR, "omp-session.jsonl"),
     ])
     expect(exitCode).toBe(0)
     const lines = parseJsonLines(stdout)
@@ -366,11 +323,11 @@ describe("extract-metadata", () => {
     expect(sessions.length).toBe(0)
   })
 
-  test("--cwd-filter keeps matching Codex sessions", async () => {
+  test("--cwd-filter keeps matching omp sessions", async () => {
     const { stdout, exitCode } = await runScript("extract-metadata.py", [
       "--cwd-filter",
       "my-repo",
-      path.join(FIXTURES_DIR, "codex-session.jsonl"),
+      path.join(FIXTURES_DIR, "omp-session.jsonl"),
     ])
     expect(exitCode).toBe(0)
     const lines = parseJsonLines(stdout)
@@ -422,32 +379,18 @@ describe("extract-metadata", () => {
 
   const cwdFilterCases = [
     {
-      name: "keeps Claude sessions whose cwd is an ancestor of the repo",
-      fixture: "claude-session.jsonl",
+      name: "keeps Pi sessions whose cwd is an ancestor of the repo",
+      fixture: "pi-session.jsonl",
       cwd: "/Users/test/Code",
       filter: "/Users/test/Code/my-repo",
       keep: "/Users/test/Code",
     },
     {
-      name: "keeps Claude sessions whose cwd is inside the repo",
-      fixture: "claude-session.jsonl",
+      name: "keeps Pi sessions whose cwd is inside the repo",
+      fixture: "pi-session.jsonl",
       cwd: "/Users/test/Code/my-repo/packages/app",
       filter: "/Users/test/Code/my-repo",
       keep: "/Users/test/Code/my-repo/packages/app",
-    },
-    {
-      name: "excludes sibling Claude repos when given an absolute repo root",
-      fixture: "claude-session.jsonl",
-      cwd: "/Users/test/Code/my-repo-old",
-      filter: "/Users/test/Code/my-repo",
-      keep: null,
-    },
-    {
-      name: "basename match uses path-component boundaries",
-      fixture: "codex-session.jsonl",
-      cwd: "/Users/test/Code/my-repo-old",
-      filter: "my-repo",
-      keep: null,
     },
     {
       name: "excludes sibling Pi repos when given an absolute repo root",
@@ -457,8 +400,15 @@ describe("extract-metadata", () => {
       keep: null,
     },
     {
+      name: "basename match uses path-component boundaries",
+      fixture: "pi-session.jsonl",
+      cwd: "/Users/test/Code/my-repo-old",
+      filter: "my-repo",
+      keep: null,
+    },
+    {
       name: "treats Windows drive paths as case-insensitive",
-      fixture: "claude-session.jsonl",
+      fixture: "pi-session.jsonl",
       cwd: "C:/Users/Me/Repo",
       filter: "c:/users/me/repo",
       keep: "C:/Users/Me/Repo",
@@ -484,15 +434,17 @@ describe("extract-metadata", () => {
     })
   }
 
-  test("--cwd-filter drops Claude sessions that have no recorded cwd", async () => {
+  test("--cwd-filter drops Pi sessions that have no recorded cwd", async () => {
+    // Pi detection requires the session header `cwd` key; an empty value is
+    // the detectable no-cwd form and must be dropped when --cwd-filter is set.
     const tempDir = await fs.promises.mkdtemp(
-      path.join(os.tmpdir(), "claude-no-cwd-")
+      path.join(os.tmpdir(), "pi-no-cwd-")
     )
-    const sessionPath = path.join(tempDir, "claude-session.jsonl")
+    const sessionPath = path.join(tempDir, "pi-session.jsonl")
     try {
       const body = (await Bun.file(
-        path.join(FIXTURES_DIR, "claude-session.jsonl")
-      ).text()).replace(',"cwd":"/Users/test/Code/my-repo"', "")
+        path.join(FIXTURES_DIR, "pi-session.jsonl")
+      ).text()).replace('"cwd":"/Users/test/Code/my-repo"', '"cwd":""')
       await fs.promises.writeFile(sessionPath, body)
       const { stdout, exitCode } = await runScript("extract-metadata.py", [
         "--cwd-filter",
@@ -506,17 +458,6 @@ describe("extract-metadata", () => {
     } finally {
       await fs.promises.rm(tempDir, { recursive: true, force: true })
     }
-  })
-
-  test("--cwd-filter still keeps Cursor sessions that have no cwd", async () => {
-    const { stdout, exitCode } = await runScript("extract-metadata.py", [
-      "--cwd-filter",
-      "/Users/test/Code/my-repo",
-      path.join(FIXTURES_DIR, "cursor-session.jsonl"),
-    ])
-    expect(exitCode).toBe(0)
-    const lines = parseJsonLines(stdout)
-    expect(lines.filter((l) => !l._meta).length).toBe(1)
   })
 
   test("reports clean zero-file result for empty stdin", async () => {
@@ -540,16 +481,14 @@ describe("extract-metadata", () => {
       const { stdout, exitCode } = await runScript("extract-metadata.py", [
         "--keyword",
         "middleware",
-        path.join(FIXTURES_DIR, "claude-session.jsonl"),
-        path.join(FIXTURES_DIR, "codex-session.jsonl"),
-        path.join(FIXTURES_DIR, "cursor-session.jsonl"),
         path.join(FIXTURES_DIR, "pi-session.jsonl"),
+        path.join(FIXTURES_DIR, "omp-session.jsonl"),
       ])
       expect(exitCode).toBe(0)
       const lines = parseJsonLines(stdout)
       const sessions = lines.filter((l) => !l._meta)
-      // All four fixtures mention middleware.
-      expect(sessions.length).toBe(4)
+      // Both Pi and omp fixtures mention middleware.
+      expect(sessions.length).toBe(2)
       for (const session of sessions) {
         expect(session.match_count).toBeGreaterThan(0)
         expect(session.keyword_matches.middleware).toBeGreaterThan(0)
@@ -560,8 +499,8 @@ describe("extract-metadata", () => {
       const { stdout, exitCode } = await runScript("extract-metadata.py", [
         "--keyword",
         "no_such_token_xyz_42",
-        path.join(FIXTURES_DIR, "claude-session.jsonl"),
-        path.join(FIXTURES_DIR, "codex-session.jsonl"),
+        path.join(FIXTURES_DIR, "pi-session.jsonl"),
+        path.join(FIXTURES_DIR, "omp-session.jsonl"),
       ])
       expect(exitCode).toBe(0)
       const lines = parseJsonLines(stdout)
@@ -576,7 +515,7 @@ describe("extract-metadata", () => {
       const { stdout, exitCode } = await runScript("extract-metadata.py", [
         "--keyword",
         "auth,no_such_token_xyz_42",
-        path.join(FIXTURES_DIR, "claude-session.jsonl"),
+        path.join(FIXTURES_DIR, "pi-session.jsonl"),
       ])
       expect(exitCode).toBe(0)
       const lines = parseJsonLines(stdout)
@@ -590,7 +529,7 @@ describe("extract-metadata", () => {
       const { stdout, exitCode } = await runScript("extract-metadata.py", [
         "--keyword",
         "AUTH",
-        path.join(FIXTURES_DIR, "claude-session.jsonl"),
+        path.join(FIXTURES_DIR, "pi-session.jsonl"),
       ])
       expect(exitCode).toBe(0)
       const lines = parseJsonLines(stdout)
@@ -790,8 +729,8 @@ describe("extract-metadata", () => {
       const { stdout, exitCode } = await runScript("extract-metadata.py", [
         "--keyword",
         "middleware",
-        path.join(FIXTURES_DIR, "claude-session.jsonl"),
-        path.join(FIXTURES_DIR, "codex-session.jsonl"),
+        path.join(FIXTURES_DIR, "pi-session.jsonl"),
+        path.join(FIXTURES_DIR, "omp-session.jsonl"),
       ])
       expect(exitCode).toBe(0)
       const lines = parseJsonLines(stdout)
@@ -803,7 +742,7 @@ describe("extract-metadata", () => {
 
     test("without --keyword, output shape is unchanged (no match_count field)", async () => {
       const { stdout, exitCode } = await runScript("extract-metadata.py", [
-        path.join(FIXTURES_DIR, "claude-session.jsonl"),
+        path.join(FIXTURES_DIR, "pi-session.jsonl"),
       ])
       expect(exitCode).toBe(0)
       const lines = parseJsonLines(stdout)
@@ -818,13 +757,14 @@ describe("extract-metadata", () => {
     // not JSONL metadata fields or tool-call internals. Otherwise common topic
     // words like "session" false-positive on every file via sessionId.
     test("does not match JSONL metadata field names", async () => {
-      // sessionId, gitBranch, uuid, parentUuid, timestamp are JSONL field names
-      // present in every Claude session file. None should match.
-      for (const metaToken of ["sessionId", "gitBranch", "parentUuid"]) {
+      // parentId, toolCall, model_change are JSONL structural keys present in
+      // every Pi session file. None appear in user/assistant prose, so none
+      // should match.
+      for (const metaToken of ["parentId", "toolCall", "model_change"]) {
         const { stdout, exitCode } = await runScript("extract-metadata.py", [
           "--keyword",
           metaToken,
-          path.join(FIXTURES_DIR, "claude-session.jsonl"),
+          path.join(FIXTURES_DIR, "pi-session.jsonl"),
         ])
         expect(exitCode).toBe(0)
         const lines = parseJsonLines(stdout)
@@ -835,44 +775,30 @@ describe("extract-metadata", () => {
       }
     })
 
-    test("does not match against tool_use names or tool inputs", async () => {
-      // The Claude fixture invokes Read and Edit tools. Those tool names should
-      // not produce matches — they are tool-call internals, not user content.
-      const { stdout, exitCode } = await runScript("extract-metadata.py", [
-        "--keyword",
-        "Edit",
-        path.join(FIXTURES_DIR, "claude-session.jsonl"),
-      ])
-      expect(exitCode).toBe(0)
-      const lines = parseJsonLines(stdout)
-      const sessions = lines.filter((l) => !l._meta)
-      // Either excluded entirely (zero match) or match_count: 0
-      if (sessions.length > 0) {
-        expect(sessions[0].keyword_matches.Edit).toBe(0)
-      }
-    })
-
-    test("does not match Codex system_instruction wrapper text", async () => {
-      // The Codex fixture's first user message is wrapped in
-      // <system_instruction>You are working inside Conductor.</system_instruction>
-      // which is Codex/Conductor boilerplate, not user-authored content.
-      // "Conductor" only appears inside that wrapper, so it must not match.
-      const { stdout, exitCode } = await runScript("extract-metadata.py", [
-        "--keyword",
-        "Conductor",
-        path.join(FIXTURES_DIR, "codex-session.jsonl"),
-      ])
-      expect(exitCode).toBe(0)
-      const lines = parseJsonLines(stdout)
-      const sessions = lines.filter((l) => !l._meta)
-      // Either excluded entirely (zero match) or match_count: 0
-      if (sessions.length > 0) {
-        expect(sessions[0].keyword_matches.Conductor).toBe(0)
+    test("does not match Pi tool output or thinking blocks", async () => {
+      // The Pi fixture's toolResult carries "file contents here" and its
+      // assistant block carries a thinking part. Both are stripped from the
+      // searchable text: only user/assistant prose plus toolCall targets
+      // are indexed.
+      for (const hidden of ["file contents here", "internal reasoning should not be extracted"]) {
+        const { stdout, exitCode } = await runScript("extract-metadata.py", [
+          "--keyword",
+          hidden,
+          path.join(FIXTURES_DIR, "pi-session.jsonl"),
+        ])
+        expect(exitCode).toBe(0)
+        const lines = parseJsonLines(stdout)
+        const sessions = lines.filter((l) => !l._meta)
+        if (sessions.length > 0) {
+          expect(sessions[0].keyword_matches[hidden]).toBe(0)
+        } else {
+          expect(lines.find((l) => l._meta).files_matched).toBe(0)
+        }
       }
     })
 
     test("--cwd-filter is applied before keyword scan (skips full-file scan for filtered sessions)", async () => {
-      // Codex discovery returns sessions across all repos, so --cwd-filter
+      // Pi/omp discovery returns sessions across all repos, so --cwd-filter
       // must be evaluated before the expensive full-file keyword scan to
       // avoid scanning sessions that are immediately discarded. Verify the
       // observable contract: a session that fails --cwd-filter is counted
@@ -883,7 +809,7 @@ describe("extract-metadata", () => {
         "other-repo",
         "--keyword",
         "auth",
-        path.join(FIXTURES_DIR, "codex-session.jsonl"),
+        path.join(FIXTURES_DIR, "pi-session.jsonl"),
       ])
       expect(exitCode).toBe(0)
       const lines = parseJsonLines(stdout)
@@ -912,13 +838,13 @@ describe("extract-metadata", () => {
     })
 
     test("matches against actual user/assistant content", async () => {
-      // The Claude fixture's first user message says "fix the auth bug" and
-      // assistant text mentions "auth module" and "middleware". These ARE
+      // The Pi fixture's first user message says "fix the auth bug in
+      // middleware" and assistant text mentions "auth middleware". These ARE
       // user-visible content and must match.
       const { stdout, exitCode } = await runScript("extract-metadata.py", [
         "--keyword",
         "auth",
-        path.join(FIXTURES_DIR, "claude-session.jsonl"),
+        path.join(FIXTURES_DIR, "pi-session.jsonl"),
       ])
       expect(exitCode).toBe(0)
       const lines = parseJsonLines(stdout)
@@ -946,146 +872,6 @@ describe("extract-metadata", () => {
 // extract-skeleton.py
 // ---------------------------------------------------------------------------
 describe("extract-skeleton", () => {
-  test("extracts Claude user and assistant messages", async () => {
-    const fixture = await Bun.file(
-      path.join(FIXTURES_DIR, "claude-session.jsonl")
-    ).text()
-    const { stdout, exitCode } = await runScript(
-      "extract-skeleton.py",
-      [],
-      fixture
-    )
-    expect(exitCode).toBe(0)
-    expect(stdout).toContain("[user] fix the auth bug")
-    expect(stdout).toContain("[assistant] I'll investigate the auth module.")
-    expect(stdout).toContain(
-      "[assistant] The middleware fix is applied and working."
-    )
-  })
-
-  test("extracts Claude tool calls with targets", async () => {
-    const fixture = await Bun.file(
-      path.join(FIXTURES_DIR, "claude-session.jsonl")
-    ).text()
-    const { stdout } = await runScript("extract-skeleton.py", [], fixture)
-    expect(stdout).toContain("[tool] Read")
-    expect(stdout).toContain("auth.ts")
-  })
-
-  test("detects Claude sessions whose metadata preamble exceeds ten records", async () => {
-    // Issue #923: current Claude Code session files front-load more than ten
-    // non-message metadata records (last-prompt, custom-title, attachments,
-    // ...) before the first user/assistant record. Detection must keep
-    // scanning until a decisive record appears — a scan capped at the first
-    // ten lines misroutes these sessions to the codex handler and returns an
-    // empty skeleton with parse_errors: 0.
-    const preamble = [
-      "last-prompt",
-      "custom-title",
-      "agent-name",
-      "mode",
-      "permission-mode",
-      "attachment",
-      "attachment",
-      "attachment",
-      "attachment",
-      "attachment",
-      "attachment",
-      "attachment",
-    ]
-      .map((t) => JSON.stringify({ type: t, value: "x" }))
-      .join("\n")
-    const fixture = await Bun.file(
-      path.join(FIXTURES_DIR, "claude-session.jsonl")
-    ).text()
-    const { stdout, exitCode } = await runScript(
-      "extract-skeleton.py",
-      [],
-      preamble + "\n" + fixture
-    )
-    expect(exitCode).toBe(0)
-    expect(stdout).toContain("[user] fix the auth bug")
-    expect(stdout).toContain("[assistant] I'll investigate the auth module.")
-  })
-
-  test("strips local-command-stdout from Claude output", async () => {
-    const fixture = await Bun.file(
-      path.join(FIXTURES_DIR, "claude-session.jsonl")
-    ).text()
-    const { stdout } = await runScript("extract-skeleton.py", [], fixture)
-    expect(stdout).not.toContain("local-command-stdout")
-    expect(stdout).not.toContain("Server restarted")
-  })
-
-  test("strips task-notification from Claude output", async () => {
-    const fixture = await Bun.file(
-      path.join(FIXTURES_DIR, "claude-session.jsonl")
-    ).text()
-    const { stdout } = await runScript("extract-skeleton.py", [], fixture)
-    expect(stdout).not.toContain("task-notification")
-    expect(stdout).not.toContain("abc123")
-  })
-
-  test("strips local-command-caveat from Claude output", async () => {
-    const fixture = await Bun.file(
-      path.join(FIXTURES_DIR, "claude-session.jsonl")
-    ).text()
-    const { stdout } = await runScript("extract-skeleton.py", [], fixture)
-    expect(stdout).not.toContain("local-command-caveat")
-    expect(stdout).not.toContain("Caveat: The messages below")
-  })
-
-  test("extracts Codex user and assistant messages", async () => {
-    const fixture = await Bun.file(
-      path.join(FIXTURES_DIR, "codex-session.jsonl")
-    ).text()
-    const { stdout } = await runScript("extract-skeleton.py", [], fixture)
-    expect(stdout).toContain("[user] Fix the auth bug in middleware")
-    expect(stdout).not.toContain("system_instruction")
-    expect(stdout).toContain(
-      "[assistant] Reading the middleware file to understand the auth flow."
-    )
-  })
-
-  test("deduplicates Codex function_call/exec_command_end", async () => {
-    const fixture = await Bun.file(
-      path.join(FIXTURES_DIR, "codex-session.jsonl")
-    ).text()
-    const { stdout } = await runScript("extract-skeleton.py", [], fixture)
-    // Should have exec results (from exec_command_end) but not function_call entries
-    const toolLines = stdout
-      .split("\n")
-      .filter((l: string) => l.includes("[tool]"))
-    // Each exec_command_end produces one tool line
-    expect(toolLines.length).toBeGreaterThan(0)
-    // function_call lines should NOT appear (they're skipped)
-    expect(stdout).not.toContain("exec_command:")
-  })
-
-  test("extracts Cursor messages and strips user_query tags", async () => {
-    const fixture = await Bun.file(
-      path.join(FIXTURES_DIR, "cursor-session.jsonl")
-    ).text()
-    const { stdout } = await runScript("extract-skeleton.py", [], fixture)
-    expect(stdout).toContain("[user] Explain the auth middleware")
-    expect(stdout).not.toContain("user_query")
-    expect(stdout).toContain("[assistant] The auth middleware validates JWT")
-  })
-
-  test("skips Cursor [REDACTED] blocks", async () => {
-    const fixture = await Bun.file(
-      path.join(FIXTURES_DIR, "cursor-session.jsonl")
-    ).text()
-    const { stdout } = await runScript("extract-skeleton.py", [], fixture)
-    // [REDACTED] on its own should not appear as an assistant message
-    const assistantLines = stdout
-      .split("\n")
-      .filter((l: string) => l.includes("[assistant]"))
-    for (const line of assistantLines) {
-      expect(line).not.toMatch(/\[assistant\]\s*\[REDACTED\]$/)
-    }
-  })
-
   test("extracts Pi user, assistant, and tool messages", async () => {
     const fixture = await Bun.file(
       path.join(FIXTURES_DIR, "pi-session.jsonl")
@@ -1225,7 +1011,7 @@ describe("extract-skeleton", () => {
 
   test("outputs _meta with stats", async () => {
     const fixture = await Bun.file(
-      path.join(FIXTURES_DIR, "claude-session.jsonl")
+      path.join(FIXTURES_DIR, "pi-session.jsonl")
     ).text()
     const { stdout } = await runScript("extract-skeleton.py", [], fixture)
     const lines = stdout.trim().split("\n")
@@ -1237,51 +1023,31 @@ describe("extract-skeleton", () => {
   })
 
   test("collapses 3+ consecutive same-tool calls", async () => {
-    // Create a fixture with 4 consecutive Read calls
+    // Four consecutive Pi toolCall entries with the same name collapse into
+    // a single "[tools] 4x read" line instead of four separate tool lines.
     const lines = [
       JSON.stringify({
-        type: "assistant",
+        type: "session",
+        version: 3,
+        id: "collapse",
+        timestamp: "2026-04-07T09:00:00.000Z",
+        cwd: "/Users/test/Code/my-repo",
+      }),
+      JSON.stringify({
+        type: "message",
+        id: "a1",
+        parentId: null,
+        timestamp: "2026-04-07T09:01:00.000Z",
         message: {
           role: "assistant",
           content: [
-            { type: "text", text: "Reading multiple files." },
-            {
-              type: "tool_use",
-              name: "Read",
-              input: { file_path: "/a/file1.ts" },
-            },
-            {
-              type: "tool_use",
-              name: "Read",
-              input: { file_path: "/a/file2.ts" },
-            },
-            {
-              type: "tool_use",
-              name: "Read",
-              input: { file_path: "/a/file3.ts" },
-            },
-            {
-              type: "tool_use",
-              name: "Read",
-              input: { file_path: "/a/file4.ts" },
-            },
+            { type: "toolCall", id: "t1", name: "read", arguments: { path: "/a/file1.ts" } },
+            { type: "toolCall", id: "t2", name: "read", arguments: { path: "/a/file2.ts" } },
+            { type: "toolCall", id: "t3", name: "read", arguments: { path: "/a/file3.ts" } },
+            { type: "toolCall", id: "t4", name: "read", arguments: { path: "/a/file4.ts" } },
           ],
+          timestamp: 1775542860000,
         },
-        timestamp: "2026-04-05T10:00:00.000Z",
-      }),
-      JSON.stringify({
-        type: "user",
-        message: {
-          role: "user",
-          content: [
-            { type: "tool_result", tool_use_id: "t1", is_error: false },
-            { type: "tool_result", tool_use_id: "t2", is_error: false },
-            { type: "tool_result", tool_use_id: "t3", is_error: false },
-            { type: "tool_result", tool_use_id: "t4", is_error: false },
-            { type: "text", text: "looks good" },
-          ],
-        },
-        timestamp: "2026-04-05T10:00:01.000Z",
       }),
     ]
     const { stdout } = await runScript(
@@ -1289,130 +1055,39 @@ describe("extract-skeleton", () => {
       [],
       lines.join("\n")
     )
-    expect(stdout).toContain("[tools] 4x Read")
-    expect(stdout).toContain("all ok")
+    expect(stdout).toContain("[tools] 4x read")
   })
 
-  // Regression: issue #805 — some Claude Code / MCP tool inputs put a dict in
-  // fields the summarizer slices (`command`, `query`, `prompt`, `pattern`).
-  // `dict[:80]` raises TypeError: unhashable type: 'slice'. The fix guards
-  // every slice with isinstance(value, str); dict-shaped fields fall through
-  // to the next candidate or empty target without crashing the extraction.
-  test("does not crash when Claude tool input has a dict-shaped query", async () => {
+  // Regression: issue #805 - some tool inputs put a dict in fields the
+  // summarizer slices (`command`, `query`, `prompt`, `pattern`). `dict[:80]`
+  // raises TypeError. The fix guards every slice with isinstance(value, str);
+  // dict-shaped fields fall through to the next candidate or empty target
+  // without crashing the extraction.
+  test("does not crash when Pi toolCall args hold a dict-shaped query", async () => {
     const lines = [
       JSON.stringify({
-        type: "assistant",
+        type: "session",
+        version: 3,
+        id: "dict-query",
+        timestamp: "2026-04-07T09:00:00.000Z",
+        cwd: "/Users/test/Code/my-repo",
+      }),
+      JSON.stringify({
+        type: "message",
+        id: "a1",
+        parentId: null,
+        timestamp: "2026-04-07T09:01:00.000Z",
         message: {
           role: "assistant",
           content: [
             {
-              type: "tool_use",
+              type: "toolCall",
               id: "t1",
-              name: "WebSearch",
-              input: { query: { foo: "bar" } },
-            },
-          ],
-        },
-        timestamp: "2026-05-08T10:00:00.000Z",
-      }),
-    ]
-    const { stdout, exitCode, stderr } = await runScript(
-      "extract-skeleton.py",
-      [],
-      lines.join("\n")
-    )
-    expect(exitCode).toBe(0)
-    expect(stderr).not.toContain("TypeError")
-    expect(stdout).toContain("[tool] WebSearch")
-    const metaLine = stdout.trim().split("\n").at(-1)!
-    expect(JSON.parse(metaLine).parse_errors).toBe(0)
-  })
-
-  test("dict-shaped command/prompt/pattern fields do not crash and fall back to empty target", async () => {
-    const lines = [
-      JSON.stringify({
-        type: "assistant",
-        message: {
-          role: "assistant",
-          content: [
-            {
-              type: "tool_use",
-              id: "c1",
-              name: "Bash",
-              input: { command: { cmd: "ls" } },
-            },
-            {
-              type: "tool_use",
-              id: "p1",
-              name: "Task",
-              input: { prompt: { description: "x" } },
-            },
-            {
-              type: "tool_use",
-              id: "g1",
-              name: "Grep",
-              input: { pattern: { regex: "foo" } },
-            },
-          ],
-        },
-        timestamp: "2026-05-08T10:00:01.000Z",
-      }),
-    ]
-    const { stdout, exitCode } = await runScript(
-      "extract-skeleton.py",
-      [],
-      lines.join("\n")
-    )
-    expect(exitCode).toBe(0)
-    expect(stdout).toContain("[tool] Bash")
-    expect(stdout).toContain("[tool] Task")
-    expect(stdout).toContain("[tool] Grep")
-  })
-
-  test("falls through dict-shaped query to a later string field", async () => {
-    // When `query` is a dict, the summarizer must skip it and try `prompt`.
-    const lines = [
-      JSON.stringify({
-        type: "assistant",
-        message: {
-          role: "assistant",
-          content: [
-            {
-              type: "tool_use",
-              id: "x1",
-              name: "MCPTool",
-              input: {
-                query: { structured: true },
-                prompt: "fallback prompt text",
-              },
-            },
-          ],
-        },
-        timestamp: "2026-05-08T10:00:02.000Z",
-      }),
-    ]
-    const { stdout, exitCode } = await runScript(
-      "extract-skeleton.py",
-      [],
-      lines.join("\n")
-    )
-    expect(exitCode).toBe(0)
-    expect(stdout).toContain("fallback prompt text")
-  })
-
-  test("dict-shaped Cursor tool inputs do not crash", async () => {
-    // Same exposure exists in handle_cursor's tool_use path.
-    const lines = [
-      JSON.stringify({
-        role: "assistant",
-        message: {
-          content: [
-            {
-              type: "tool_use",
               name: "search",
-              input: { pattern: { regex: "foo" }, glob_pattern: { type: "x" } },
+              arguments: { query: { foo: "bar" } },
             },
           ],
+          timestamp: 1775542860000,
         },
       }),
     ]
@@ -1424,70 +1099,93 @@ describe("extract-skeleton", () => {
     expect(exitCode).toBe(0)
     expect(stderr).not.toContain("TypeError")
     expect(stdout).toContain("[tool] search")
+    const metaLine = stdout.trim().split("\n").at(-1)!
+    expect(JSON.parse(metaLine).parse_errors).toBe(0)
   })
+
+  test("dict-shaped command/prompt/pattern fields do not crash and fall back to empty target", async () => {
+    const lines = [
+      JSON.stringify({
+        type: "session",
+        version: 3,
+        id: "dict-fields",
+        timestamp: "2026-04-07T09:00:00.000Z",
+        cwd: "/Users/test/Code/my-repo",
+      }),
+      JSON.stringify({
+        type: "message",
+        id: "a1",
+        parentId: null,
+        timestamp: "2026-04-07T09:01:00.000Z",
+        message: {
+          role: "assistant",
+          content: [
+            { type: "toolCall", id: "c1", name: "bash", arguments: { command: { cmd: "ls" } } },
+            { type: "toolCall", id: "p1", name: "task", arguments: { prompt: { description: "x" } } },
+            { type: "toolCall", id: "g1", name: "grep", arguments: { pattern: { regex: "foo" } } },
+          ],
+          timestamp: 1775542860000,
+        },
+      }),
+    ]
+    const { stdout, exitCode } = await runScript(
+      "extract-skeleton.py",
+      [],
+      lines.join("\n")
+    )
+    expect(exitCode).toBe(0)
+    expect(stdout).toContain("[tool] bash")
+    expect(stdout).toContain("[tool] task")
+    expect(stdout).toContain("[tool] grep")
+  })
+
+  test("falls through dict-shaped query to a later string field", async () => {
+    // When `query` is a dict, the summarizer must skip it and try `prompt`.
+    const lines = [
+      JSON.stringify({
+        type: "session",
+        version: 3,
+        id: "dict-fallback",
+        timestamp: "2026-04-07T09:00:00.000Z",
+        cwd: "/Users/test/Code/my-repo",
+      }),
+      JSON.stringify({
+        type: "message",
+        id: "a1",
+        parentId: null,
+        timestamp: "2026-04-07T09:01:00.000Z",
+        message: {
+          role: "assistant",
+          content: [
+            {
+              type: "toolCall",
+              id: "x1",
+              name: "search",
+              arguments: {
+                query: { structured: true },
+                prompt: "fallback prompt text",
+              },
+            },
+          ],
+          timestamp: 1775542860000,
+        },
+      }),
+    ]
+    const { stdout, exitCode } = await runScript(
+      "extract-skeleton.py",
+      [],
+      lines.join("\n")
+    )
+    expect(exitCode).toBe(0)
+    expect(stdout).toContain("fallback prompt text")
+  })
+
 })
 
 // ---------------------------------------------------------------------------
 // extract-errors.py
 // ---------------------------------------------------------------------------
 describe("extract-errors", () => {
-  test("extracts Claude tool errors", async () => {
-    const fixture = await Bun.file(
-      path.join(FIXTURES_DIR, "claude-session.jsonl")
-    ).text()
-    const { stdout, exitCode } = await runScript(
-      "extract-errors.py",
-      [],
-      fixture
-    )
-    expect(exitCode).toBe(0)
-    expect(stdout).toContain("[error]")
-    expect(stdout).toContain("String to replace not found")
-  })
-
-  test("Claude errors are summarized, not raw", async () => {
-    const fixture = await Bun.file(
-      path.join(FIXTURES_DIR, "claude-session.jsonl")
-    ).text()
-    const { stdout } = await runScript("extract-errors.py", [], fixture)
-    const errorLines = stdout
-      .split("\n")
-      .filter((l: string) => l.includes("[error]"))
-    for (const line of errorLines) {
-      // No line should exceed 250 chars (200 char summary + timestamp + prefix)
-      expect(line.length).toBeLessThan(250)
-    }
-  })
-
-  test("extracts Codex command errors", async () => {
-    const fixture = await Bun.file(
-      path.join(FIXTURES_DIR, "codex-session.jsonl")
-    ).text()
-    const { stdout, exitCode } = await runScript(
-      "extract-errors.py",
-      [],
-      fixture
-    )
-    expect(exitCode).toBe(0)
-    expect(stdout).toContain("[error]")
-    expect(stdout).toContain("exit=1")
-  })
-
-  test("Cursor produces no errors (tool results not logged)", async () => {
-    const fixture = await Bun.file(
-      path.join(FIXTURES_DIR, "cursor-session.jsonl")
-    ).text()
-    const { stdout, exitCode } = await runScript(
-      "extract-errors.py",
-      [],
-      fixture
-    )
-    expect(exitCode).toBe(0)
-    const lines = stdout.trim().split("\n")
-    const meta = JSON.parse(lines[lines.length - 1])
-    expect(meta.errors_found).toBe(0)
-  })
-
   test("extracts Pi tool result errors", async () => {
     const fixture = await Bun.file(
       path.join(FIXTURES_DIR, "pi-session.jsonl")
@@ -1588,7 +1286,7 @@ describe("extract-errors", () => {
 
   test("outputs _meta with error count", async () => {
     const fixture = await Bun.file(
-      path.join(FIXTURES_DIR, "claude-session.jsonl")
+      path.join(FIXTURES_DIR, "pi-session.jsonl")
     ).text()
     const { stdout } = await runScript("extract-errors.py", [], fixture)
     const lines = stdout.trim().split("\n")
@@ -1623,7 +1321,7 @@ describe("UTF-8 session content under a non-UTF-8 locale (#1258)", () => {
 
   test("extract-metadata.py reads a UTF-8 session file without crashing", async () => {
     const base = await Bun.file(
-      path.join(FIXTURES_DIR, "claude-session.jsonl")
+      path.join(FIXTURES_DIR, "pi-session.jsonl")
     ).text()
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ce-utf8-meta-"))
     const file = path.join(dir, "session.jsonl")
@@ -1647,7 +1345,7 @@ describe("UTF-8 session content under a non-UTF-8 locale (#1258)", () => {
 
   test("extract-skeleton.py --output round-trips UTF-8 content without crashing", async () => {
     const base = await Bun.file(
-      path.join(FIXTURES_DIR, "claude-session.jsonl")
+      path.join(FIXTURES_DIR, "pi-session.jsonl")
     ).text()
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ce-utf8-skel-"))
     const out = path.join(dir, "out.txt")
@@ -1730,7 +1428,7 @@ describe("--output PATH mode", () => {
 
   test("extract-skeleton writes file and emits status to stdout", async () => {
     const fixture = await Bun.file(
-      path.join(FIXTURES_DIR, "claude-session.jsonl")
+      path.join(FIXTURES_DIR, "pi-session.jsonl")
     ).text()
     const outPath = tmpFile()
     const { stdout, exitCode } = await runScript(
@@ -1760,7 +1458,7 @@ describe("--output PATH mode", () => {
 
   test("extract-errors writes file and emits status to stdout", async () => {
     const fixture = await Bun.file(
-      path.join(FIXTURES_DIR, "claude-session.jsonl")
+      path.join(FIXTURES_DIR, "pi-session.jsonl")
     ).text()
     const outPath = tmpFile()
     const { stdout, exitCode } = await runScript(
@@ -1785,7 +1483,7 @@ describe("--output PATH mode", () => {
 
   test("extract-skeleton stdout-mode still works when --output is omitted", async () => {
     const fixture = await Bun.file(
-      path.join(FIXTURES_DIR, "claude-session.jsonl")
+      path.join(FIXTURES_DIR, "pi-session.jsonl")
     ).text()
     const { stdout, exitCode } = await runScript(
       "extract-skeleton.py",
@@ -1793,7 +1491,7 @@ describe("--output PATH mode", () => {
       fixture
     )
     expect(exitCode).toBe(0)
-    // No status JSON with `wrote` field — stdout has the body and ends with inner _meta
+    // No status JSON with `wrote` field - stdout has the body and ends with inner _meta
     expect(stdout).not.toMatch(/"wrote":/)
     const lines = stdout.trim().split("\n")
     const meta = JSON.parse(lines[lines.length - 1])
@@ -1806,9 +1504,9 @@ describe("--output PATH mode", () => {
 // Cross-platform auto-detection
 // ---------------------------------------------------------------------------
 describe("auto-detection", () => {
-  test("all supported platforms are auto-detected", async () => {
-    const fixtures = ["claude-session", "codex-session", "cursor-session", "pi-session", "omp-session"]
-    const expected = ["claude", "codex", "cursor", "pi", "omp"]
+  test("pi and omp platforms are auto-detected", async () => {
+    const fixtures = ["pi-session", "omp-session"]
+    const expected = ["pi", "omp"]
 
     for (let i = 0; i < fixtures.length; i++) {
       const fixturePath = path.join(FIXTURES_DIR, `${fixtures[i]}.jsonl`)
@@ -1844,8 +1542,10 @@ describe("discover-sessions", () => {
     const proc = Bun.spawn(["bash", scriptPath, ...args], {
       env: {
         ...process.env,
-        CLAUDE_CONFIG_DIR: "",
-        CODEX_HOME: "",
+        PI_CODING_AGENT_DIR: "",
+        PI_CODING_AGENT_SESSION_DIR: "",
+        PI_CONFIG_DIR: "",
+        XDG_DATA_HOME: "",
         ...env,
       },
       stdout: "pipe",
@@ -1858,23 +1558,13 @@ describe("discover-sessions", () => {
   }
 
   test("returns zero files for nonexistent repo without error", async () => {
-    const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), "claude-home-"))
-    await fs.promises.mkdir(path.join(tempHome, ".claude/projects"), {
+    const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), "pi-home-"))
+    await fs.promises.mkdir(path.join(tempHome, ".pi/agent/sessions"), {
       recursive: true,
     })
     const { stdout, stderr, exitCode } = await runDiscover(
-      ["nonexistent-repo-xyz", "7", "--platform", "claude"],
+      ["nonexistent-repo-xyz", "7", "--platform", "pi"],
       { HOME: tempHome }
-    )
-    expect(exitCode).toBe(0)
-    expect(stderr).toBe("")
-    const files = stdout.trim().split("\n").filter((l) => l.trim())
-    expect(files.length).toBe(0)
-  })
-
-  test("returns zero files for nonexistent repo on cursor", async () => {
-    const { stdout, stderr, exitCode } = await runDiscover(
-      ["nonexistent-repo-xyz", "7", "--platform", "cursor"]
     )
     expect(exitCode).toBe(0)
     expect(stderr).toBe("")
@@ -1895,29 +1585,9 @@ describe("discover-sessions", () => {
     }
   })
 
-  test("--platform claude restricts to claude dirs only", async () => {
-    const { stdout } = await runDiscover(
-      ["compound-engineering-plugin", "7", "--platform", "claude"]
-    )
-    const files = stdout.trim().split("\n").filter((l) => l.trim())
-    for (const file of files) {
-      expect(file).toContain(".claude/projects")
-    }
-  })
-
-  test("--platform codex restricts to codex dirs only", async () => {
-    const { stdout } = await runDiscover(
-      ["compound-engineering-plugin", "7", "--platform", "codex"]
-    )
-    const files = stdout.trim().split("\n").filter((l) => l.trim())
-    for (const file of files) {
-      expect(file).toMatch(/\.codex\/sessions|\.agents\/sessions/)
-    }
-  })
-
   test("fails on unknown platform", async () => {
     const { exitCode, stderr } = await runDiscover(
-      ["compound-engineering-plugin", "7", "--platform", "windsurf"]
+      ["compound-engineering-plugin", "7", "--platform", "bogus-platform"]
     )
     expect(exitCode).toBe(1)
     expect(stderr).toContain("Unknown platform")
@@ -2368,211 +2038,4 @@ describe("discover-sessions", () => {
     expect(files).toEqual([agentSession])
   })
 
-  async function writeClaudeSessionUnder(
-    configRoot: string,
-    projectDir: string,
-    name = "2026-04-07T09-00-00-000Z_test.jsonl"
-  ): Promise<string> {
-    const sessionPath = path.join(configRoot, "projects", projectDir, name)
-    await fs.promises.mkdir(path.dirname(sessionPath), { recursive: true })
-    await fs.promises.writeFile(sessionPath, "{}\n")
-    return sessionPath
-  }
-
-  async function writeClaudeSession(
-    home: string,
-    projectDir: string,
-    name = "2026-04-07T09-00-00-000Z_test.jsonl"
-  ): Promise<string> {
-    return writeClaudeSessionUnder(path.join(home, ".claude"), projectDir, name)
-  }
-
-  async function writeCodexSession(
-    sessionsRoot: string,
-    name = "2026-04-07T09-00-00-000Z_test.jsonl"
-  ): Promise<string> {
-    const sessionPath = path.join(sessionsRoot, name)
-    await fs.promises.mkdir(path.dirname(sessionPath), { recursive: true })
-    await fs.promises.writeFile(sessionPath, "{}\n")
-    return sessionPath
-  }
-
-  test("--platform claude honors CLAUDE_CONFIG_DIR over ~/.claude", async () => {
-    const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), "claude-home-"))
-    const configDir = fs.mkdtempSync(path.join(os.tmpdir(), "claude-config-"))
-    const relocated = await writeClaudeSessionUnder(configDir, "-relocated")
-    const ignored = await writeClaudeSession(tempHome, "-default-home")
-
-    const { stdout, stderr, exitCode } = await runDiscover(
-      ["my-repo", "7", "--platform", "claude"],
-      { HOME: tempHome, CLAUDE_CONFIG_DIR: configDir }
-    )
-
-    expect(exitCode).toBe(0)
-    expect(stderr).toBe("")
-    const files = stdout.trim().split("\n").filter((l) => l.trim())
-    expect(files).toEqual([relocated])
-    expect(files).not.toContain(ignored)
-  })
-
-  test("--platform codex honors CODEX_HOME over ~/.codex and still scans ~/.agents/sessions", async () => {
-    const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), "codex-home-"))
-    const profileHome = fs.mkdtempSync(path.join(os.tmpdir(), "codex-profile-"))
-    const relocated = await writeCodexSession(
-      path.join(profileHome, "sessions")
-    )
-    const ignored = await writeCodexSession(
-      path.join(tempHome, ".codex/sessions")
-    )
-    const agents = await writeCodexSession(
-      path.join(tempHome, ".agents/sessions")
-    )
-
-    const { stdout, stderr, exitCode } = await runDiscover(
-      ["my-repo", "7", "--platform", "codex"],
-      { HOME: tempHome, CODEX_HOME: profileHome }
-    )
-
-    expect(exitCode).toBe(0)
-    expect(stderr).toBe("")
-    const files = stdout.trim().split("\n").filter((l) => l.trim()).sort()
-    expect(files).toEqual([agents, relocated].sort())
-    expect(files).not.toContain(ignored)
-  })
-
-  test("--platform claude lists every recent jsonl under ~/.claude/projects", async () => {
-    // Folder names are an undocumented encoder of session CWD. Discovery
-    // lists them all; extract-metadata.py --cwd-filter attributes by the
-    // recorded cwd, including parent-started sessions whose folder has no
-    // repo basename.
-    const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), "claude-home-"))
-    const parentSession = await writeClaudeSession(tempHome, "-Users-test-Code")
-    const rootSession = await writeClaudeSession(
-      tempHome,
-      "-Users-test-Code-my-repo"
-    )
-    const siblingSession = await writeClaudeSession(
-      tempHome,
-      "-Users-test-Other"
-    )
-
-    const { stdout, stderr, exitCode } = await runDiscover(
-      [
-        "my-repo",
-        "7",
-        "--cwd",
-        "/Users/test/Code/my-repo",
-        "--platform",
-        "claude",
-      ],
-      { HOME: tempHome }
-    )
-
-    expect(exitCode).toBe(0)
-    expect(stderr).toBe("")
-    const files = stdout.trim().split("\n").filter((l) => l.trim()).sort()
-    expect(files).toEqual(
-      [parentSession, rootSession, siblingSession].sort()
-    )
-  })
-
-  test("--platform claude listing does not depend on --cwd or repo name", async () => {
-    const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), "claude-home-"))
-    const parentSession = await writeClaudeSession(tempHome, "-Users-test-Code")
-    const namedSession = await writeClaudeSession(
-      tempHome,
-      "-somewhere-else-my-repo"
-    )
-
-    const withCwd = await runDiscover(
-      [
-        "my-repo",
-        "7",
-        "--cwd",
-        "/Users/test/Code/my-repo",
-        "--platform",
-        "claude",
-      ],
-      { HOME: tempHome }
-    )
-    const withoutCwd = await runDiscover(
-      ["unrelated-name", "7", "--platform", "claude"],
-      { HOME: tempHome }
-    )
-
-    expect(withCwd.exitCode).toBe(0)
-    expect(withoutCwd.exitCode).toBe(0)
-    expect(withCwd.stderr).toBe("")
-    expect(withoutCwd.stderr).toBe("")
-    const expected = [parentSession, namedSession].sort()
-    expect(
-      withCwd.stdout.trim().split("\n").filter((l) => l.trim()).sort()
-    ).toEqual(expected)
-    expect(
-      withoutCwd.stdout.trim().split("\n").filter((l) => l.trim()).sort()
-    ).toEqual(expected)
-  })
-
-  test("discover then extract keeps parent-cwd Claude sessions and drops siblings", async () => {
-    const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), "claude-home-"))
-    const fixture = await Bun.file(
-      path.join(FIXTURES_DIR, "claude-session.jsonl")
-    ).text()
-    const writeSession = async (dir: string, cwd: string, name: string) => {
-      const sessionPath = path.join(
-        tempHome,
-        ".claude/projects",
-        dir,
-        `${name}.jsonl`
-      )
-      await fs.promises.mkdir(path.dirname(sessionPath), { recursive: true })
-      await fs.promises.writeFile(
-        sessionPath,
-        fixture
-          .replace('"cwd":"/Users/test/Code/my-repo"', `"cwd":"${cwd}"`)
-          .replace(
-            '"sessionId":"test-claude-session-1"',
-            `"sessionId":"${name}"`
-          )
-      )
-      return sessionPath
-    }
-    const parentPath = await writeSession(
-      "-Users-test-Code",
-      "/Users/test/Code",
-      "parent"
-    )
-    const rootPath = await writeSession(
-      "-Users-test-Code-my-repo",
-      "/Users/test/Code/my-repo",
-      "root"
-    )
-    await writeSession(
-      "-Users-test-Code-my-repo-old",
-      "/Users/test/Code/my-repo-old",
-      "sibling"
-    )
-
-    const discovered = await runDiscover(
-      ["my-repo", "7", "--platform", "claude"],
-      { HOME: tempHome }
-    )
-    expect(discovered.exitCode).toBe(0)
-    const files = discovered.stdout.trim().split("\n").filter((l) => l.trim())
-    expect(files.length).toBe(3)
-
-    const extracted = await runScript("extract-metadata.py", [
-      "--cwd-filter",
-      "/Users/test/Code/my-repo",
-      ...files,
-    ])
-    expect(extracted.exitCode).toBe(0)
-    const lines = parseJsonLines(extracted.stdout)
-    const sessions = lines.filter((l) => !l._meta)
-    expect(sessions.map((s) => s.session).sort()).toEqual(["parent", "root"])
-    expect(sessions.map((s) => s.file).sort()).toEqual(
-      [parentPath, rootPath].sort()
-    )
-    expect(lines.find((l) => l._meta).filtered_by_cwd).toBe(1)
-  })
 })

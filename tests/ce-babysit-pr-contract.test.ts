@@ -475,20 +475,26 @@ describe("ce-babysit-pr cross-skill contract parity", () => {
     expect(stackCommands).toMatch(/merge-queue[\s\S]{0,160}OPEN[\s\S]{0,160}MERGED/i)
   })
 
-  test("user-facing resume commands render for the active host", async () => {
-    const [babysit, watchLoop] = await Promise.all([
+  test("user-facing resume commands render the single native form", async () => {
+    const [babysit, watchLoop, setup] = await Promise.all([
       readBabysit(),
       readRepoFile(WATCH_LOOP),
+      readRepoFile("skills/ce-babysit-pr/references/setup.md"),
     ])
 
-    for (const text of [babysit, watchLoop]) {
+    expect(babysit).toContain("/skill:ce-babysit-pr <url>")
+    expect(babysit).toMatch(/non-target posture/i)
+    expect(babysit).toMatch(/render only the invocation as inline code/i)
+    expect(babysit).not.toContain("$ce-babysit-pr")
+    expect(babysit).not.toMatch(/[`"']\/ce-babysit-pr/)
+
+    for (const text of [watchLoop, setup]) {
       const renderingRule = text.match(/\*\*User-runnable resume syntax\.\*\*[^\n]+/)?.[0]
       expect(renderingRule).toBeDefined()
-      expect(renderingRule).toContain("/ce-babysit-pr <url>")
-      expect(renderingRule).toContain("$ce-babysit-pr <url> [posture:…]")
-      expect(renderingRule).not.toContain("/skill:ce-babysit-pr")
-      expect(renderingRule).toMatch(/Codex[\s\S]+output one form only/i)
-      expect(text).toContain("exec '<host-rendered resume invocation>'")
+      expect(renderingRule).toContain("/skill:ce-babysit-pr <url>")
+      expect(renderingRule).toMatch(/posture:stack-ready/)
+      expect(renderingRule).toMatch(/render only the invocation as inline code/i)
+      expect(renderingRule).not.toContain("$ce-babysit-pr")
     }
   })
 

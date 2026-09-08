@@ -178,17 +178,14 @@ required_fields:
                 default: []
                 description: "Additional scoring fields to log (not optimized against)"
         optional_children:
-          # OMP: this enum is provider-family vocabulary the OMP dispatcher cannot
-          # honor (no per-agent model parameter), so judges inherit the dispatching
-          # agent. Independence (separate context) is preserved; cost-tiering is
-          # not. Agent/tier names land in S10.
           model:
             type: enum
             values:
-              - haiku
-              - sonnet
-            default: haiku
-            description: "Model to use for judge evaluation. Haiku is cheaper and faster; Sonnet is more nuanced."
+              - scout
+              - task
+              - inherit
+            default: inherit
+            description: "Agent tier used for judge evaluation. Scout is cheaper and faster; task is more nuanced; inherit reuses the dispatching agent."
           sample_size:
             type: integer
             default: 10
@@ -376,20 +373,12 @@ optional_fields:
         type: enum
         values:
           - worktree  # git worktrees for isolation (default)
-          - codex     # Codex sandboxes for isolation
         default: worktree
       max_concurrent:
         type: integer
         default: 4
         minimum: 1
-        description: "Maximum experiments to run in parallel. Capped at 6 for worktree backend. 8+ only valid for Codex backend."
-      codex_security:
-        type: enum
-        values:
-          - full-auto                                # --full-auto (workspace write)
-          - yolo                                     # --dangerously-bypass-approvals-and-sandbox
-        default: null
-        description: "Codex security posture. If null, user is asked once per session."
+        description: "Maximum experiments to run in parallel. Capped at 6."
 
   parallel:
     type: object

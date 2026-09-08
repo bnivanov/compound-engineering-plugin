@@ -66,23 +66,6 @@ describe("ce-setup check-health", () => {
     }
   }
 
-  test("reports the legacy Codex tool map and keeps the verdict from reading all-clear", async () => {
-    const result = await runWithCodexAgents(
-      [
-        "my notes",
-        "<!-- BEGIN COMPOUND CODEX TOOL MAP -->",
-        "Task (subagent dispatch): run sequentially in main thread",
-        "<!-- END COMPOUND CODEX TOOL MAP -->",
-        "",
-      ].join("\n"),
-    )
-
-    expect(result.exitCode).toBe(0)
-    expect(result.stdout).toContain("Legacy Compound Codex tool map in")
-    expect(result.stdout).toContain("references/legacy-codex-tool-map.md")
-    expect(result.stdout).toContain("legacy Codex tool map above still needs attention")
-  })
-
   test("reports no tool map without an ordered pair of standalone sentinel lines", async () => {
     const result = await runWithCodexAgents(
       [
@@ -151,23 +134,30 @@ describe("ce-setup check-health", () => {
       expect(docs).toContain(`\`${key}\``)
     }
     expect(docs).toContain("AGENTS.md")
-    expect(docs).toContain("CLAUDE.md")
+    expect(docs).not.toContain("CLAUDE.md")
+    // Retired routing keys are documented only as removed, never as live options.
+    for (const retired of [
+      "cross_model_peer",
+      "cross_model_model",
+      "cross_model_effort",
+      "work_engine_mode",
+      "work_engine_preferences",
+    ]) {
+      expect(docs).not.toContain(`\`${retired}\``)
+      expect(docs).not.toContain(`${retired}:`)
+    }
     expect(setupDocs).toContain("./configuration.md")
     expect(catalog).toContain("./configuration.md")
     expect(instructions).toContain("docs/guides/configuration.md")
 
     for (const consumer of [
       "ce-brainstorm",
-      "ce-code-review",
       "ce-commit-push-pr",
-      "ce-doc-review",
       "ce-ideate",
       "ce-plan",
       "ce-product-pulse",
       "ce-promote",
       "ce-sweep",
-      "ce-work",
-      "lfg",
     ]) {
       const consumerDocs = await readFile(path.join(repoRoot, "docs", "guides", `${consumer}.md`), "utf8")
       expect(consumerDocs).toContain("./configuration.md")
@@ -194,10 +184,9 @@ describe("ce-setup check-health", () => {
     expect(template).not.toContain("fable_nudge")
   })
 
-  test("routes retired and malformed dormant engine settings into preference repair", async () => {
-    // Split by load-time: Step 3 decides whether Phase 2 runs at all, so it stays in the
-    // always-loaded body; Step 6a is the repair procedure and lives in the reference the
-    // body requires before any repo-local write.
+  test("routes retired routing keys into the stale-key removal procedure", async () => {
+    // Split by load-time: Step 3 decides whether Phase 2 runs at all, so the repair
+    // procedure lives in the reference the body requires before any repo-local write.
     const skill = await readFile(path.join(repoRoot, "skills", "ce-setup", "SKILL.md"), "utf8")
     const repoFixes = await readFile(
       path.join(repoRoot, "skills", "ce-setup", "references", "repo-fixes.md"),
@@ -206,35 +195,34 @@ describe("ce-setup check-health", () => {
     const step3 = skill.match(/### Step 3:[\s\S]*?(?=## Phase 2)/)?.[0] ?? ""
     const step6a = repoFixes.match(/### Step 6a:[\s\S]*?(?=### Step 7:)/)?.[0] ?? ""
 
-    for (const section of [step3, step6a]) {
-      expect(section).toContain("retired scalar routing keys")
-      expect(section).toContain("malformed dormant `work_engine_preferences`")
+    expect(step3).toContain("Decide Whether Fixes Are Needed")
+    expect(step6a).toContain("### Step 6a: Remove Stale CE Work and Cross-Model Keys")
+    for (const key of [
+      "cross_model_peer",
+      "cross_model_model",
+      "cross_model_effort",
+      "work_engine_mode",
+      "work_engine_preferences",
+    ]) {
+      expect(step6a).toContain(key)
     }
-    expect(step6a).toContain("remove any retired scalar routing keys")
-    expect(step6a).toContain("remove malformed dormant preferences")
+    expect(step6a).toContain("ce-work now runs native")
+    expect(step6a).toContain("Remove each listed key from the layer that sets it")
   })
 
-  test("documents the cross-model configuration and lifecycle without overstating worktree isolation", async () => {
-    const [ceWork, lfg, readme] = await Promise.all([
-      readFile(ceWorkDocs, "utf8"),
-      readFile(lfgDocs, "utf8"),
-      readFile(path.join(repoRoot, "README.md"), "utf8"),
-    ])
+  test("documents the native-only configuration and lifecycle without overstating worktree isolation", async () => {
+    const [ceWork, lfg] = await Promise.all([readFile(ceWorkDocs, "utf8"), readFile(lfgDocs, "utf8")])
 
-    for (const key of ["work_engine_mode", "work_engine_preferences", "harness", "model"]) {
-      expect(ceWork).toContain(key)
+    expect(ceWork).toContain("Implementation always runs natively on the session model")
+    expect(ceWork).toContain("Retired routing keys are no longer read")
+    for (const key of ["work_engine_mode", "work_engine_preferences", "cross_model_peer"]) {
+      expect(ceWork).not.toContain(key)
     }
-    expect(ceWork).not.toContain("work_engine_target")
-    expect(ceWork).not.toContain("work_engine_model")
-    expect(ceWork).toContain("not a security sandbox")
-    expect(ceWork).toContain("does not create a temporary worktree for every unit")
-    expect(ceWork).toContain("two-hour hard cap")
-    expect(ceWork).toContain("resume exactly once")
-    expect(ceWork).toContain("reap and ownership-checked cleanup")
-    expect(ceWork).toContain("synthetic transport commit")
-    expect(lfg).toContain("mode:return-to-caller implementation_engine:<compact-json> <plan-path>")
+    expect(ceWork).toContain("Does `ce-work` create a detached worktree for every unit?")
+    expect(ceWork).toContain("Synchronous native implementation stays in the active checkout")
+    expect(ceWork).toContain("Are those isolated workspaces a security sandbox?")
+    expect(lfg).toContain("mode:return-to-caller <plan-path>")
     expect(lfg).toContain("Neither carrier becomes plan content")
-    expect(readme).toContain("qualified cross-model author")
     expect(ceWork).not.toMatch(/every (implementation )?unit (gets|uses|runs in) (a )?(detached )?worktree/i)
   })
 
@@ -351,38 +339,13 @@ describe("ce-setup check-health", () => {
     return root
   }
 
-  test("warns on an active retired fable key and names its replacement", async () => {
-    const root = await repoWithLocalConfig("plan_use_fable: true\n")
+  test("commented retired keys warn nothing and exit 0", async () => {
+    const root = await repoWithLocalConfig("# work_engine_mode: prefer\n")
     try {
       const result = await runCheckHealth(root, "/usr/bin:/bin")
-      expect(result.stdout).toContain("Retired config key 'plan_use_fable'")
-      expect(result.stdout).toContain("plan_model")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
-
-  test("commented or missing work-engine keys preserve native execution", async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), "ce-setup-health-"))
-
-    try {
-      await initConfiguredRepo(root, await readFile(configTemplate, "utf8"))
-
-      const result = await runCheckHealth(root, "/usr/bin:/bin")
-
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain("CE Work implementation engine: native (setting is commented or missing)")
-      expect(result.stdout).not.toContain("prefer ->")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
-
-  test("does not warn on a commented retired key", async () => {
-    const root = await repoWithLocalConfig("# plan_use_fable: true\n")
-    try {
-      const result = await runCheckHealth(root, "/usr/bin:/bin")
       expect(result.stdout).not.toContain("Retired config key")
+      expect(result.stdout).toContain("Project config healthy")
     } finally {
       await rm(root, { recursive: true, force: true })
     }
@@ -412,294 +375,59 @@ describe("ce-setup check-health", () => {
     }
   })
 
-  test("missing local config preserves native execution", async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), "ce-setup-health-"))
-
-    try {
-      await initGitRepo(root)
-      await mkdir(path.join(root, ".compound-engineering"), { recursive: true })
-      await copyFile(configTemplate, path.join(root, ".compound-engineering", "config.example.yaml"))
-
-      const result = await runCheckHealth(root, "/usr/bin:/bin")
-
-      expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain("CE Work implementation engine: native (setting is commented or missing)")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
-
   test.each([
-    ["off", "CE Work implementation engine: native (standing preference is off)"],
-    ["prefer", "CE Work implementation engine: prefer -> cursor@composer, codex@gpt-5.6, claude@default"],
-    ["require", "CE Work implementation engine: require -> cursor@composer, codex@gpt-5.6, claude@default"],
-  ])("resolves active %s mode with ordered harness/model preferences", async (mode, expected) => {
-    const root = await mkdtemp(path.join(os.tmpdir(), "ce-setup-health-"))
-
+    "cross_model_peer",
+    "cross_model_model",
+    "cross_model_effort",
+    "work_engine_mode",
+    "work_engine_preferences",
+  ])("warns on retired key %s in the local config layer and still exits 0", async (key) => {
+    const root = await repoWithLocalConfig(`${key}: stale-value\n`)
     try {
-      await initConfiguredRepo(
-        root,
-        `work_engine_mode: ${mode}\nwork_engine_preferences:\n  - harness: cursor\n    model: composer\n  - harness: codex\n    model: "gpt-5.6"\n  - harness: claude\n`,
-      )
-
       const result = await runCheckHealth(root, "/usr/bin:/bin")
-
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain(expected)
-      if (mode === "off") {
-        expect(result.stdout).toContain("ordered preferences ignored while standing mode is off")
-      }
+      expect(result.stdout).toContain(`Retired config key '${key}'`)
+      expect(result.stdout).toContain("1 project issue(s) found")
     } finally {
       await rm(root, { recursive: true, force: true })
     }
   })
 
-  test("invalid local mode continues to tracked, then native when tracked is unset", async () => {
+  test("warns on a retired key in the tracked config.yaml layer", async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), "ce-setup-health-"))
-
-    try {
-      await initConfiguredRepo(root, "work_engine_mode: sometimes\nwork_engine_preferences:\n  - harness: codex\n")
-
-      const result = await runCheckHealth(root, "/usr/bin:/bin")
-
-      expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain("CE Work implementation engine: native (setting is commented or missing")
-      expect(result.stdout).not.toContain("invalid mode 'sometimes'")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
-
-  test("invalid local mode yields to a valid tracked mode", async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), "ce-setup-health-"))
-
     try {
       await initGitRepo(root)
       await mkdir(path.join(root, ".compound-engineering"), { recursive: true })
       await copyFile(configTemplate, path.join(root, ".compound-engineering", "config.example.yaml"))
-      await writeFile(
-        path.join(root, ".compound-engineering", "config.yaml"),
-        "work_engine_mode: prefer\nwork_engine_preferences:\n  - harness: claude\n",
-      )
-      await writeFile(path.join(root, ".compound-engineering", "config.local.yaml"), "work_engine_mode: sometimes\n")
-      await writeFile(path.join(root, ".gitignore"), ".compound-engineering/*.local.yaml\n")
-
+      await writeFile(path.join(root, ".compound-engineering", "config.yaml"), "work_engine_mode: prefer\n")
       const result = await runCheckHealth(root, "/usr/bin:/bin")
-
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain("CE Work implementation engine: prefer -> claude@default")
+      expect(result.stdout).toContain("Retired config key 'work_engine_mode'")
+      expect(result.stdout).toContain("1 project issue(s) found")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("warns on a retired key regardless of value, without validating it", async () => {
+    const root = await repoWithLocalConfig("work_engine_mode: sometimes\n")
+    try {
+      const result = await runCheckHealth(root, "/usr/bin:/bin")
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toContain("Retired config key 'work_engine_mode'")
       expect(result.stdout).not.toContain("invalid mode")
     } finally {
       await rm(root, { recursive: true, force: true })
     }
   })
 
-  test("enabled mode without ordered preferences is unavailable", async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), "ce-setup-health-"))
-
+  test("ignores unknown keys and exits 0", async () => {
+    const root = await repoWithLocalConfig("some_future_key: true\n")
     try {
-      await initConfiguredRepo(root, "work_engine_mode: prefer\n")
-
       const result = await runCheckHealth(root, "/usr/bin:/bin")
-
       expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain("CE Work implementation engine unavailable: prefer requires work_engine_preferences")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
-
-  test("diagnoses retired scalar routing keys instead of treating them as preferences", async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), "ce-setup-health-"))
-
-    try {
-      await initConfiguredRepo(root, "work_engine_mode: prefer\nwork_engine_target: codex\nwork_engine_model: gpt-5.4-mini\n")
-
-      const result = await runCheckHealth(root, "/usr/bin:/bin")
-
-      expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain(
-        "CE Work implementation engine unavailable: prefer cannot use retired scalar routing; migrate work_engine_target, work_engine_model to work_engine_preferences",
-      )
-      expect(result.stdout).toContain(
-        "retired config key(s) work_engine_target, work_engine_model detected; migrate routing to work_engine_preferences entries with harness and optional model fields, then remove the retired keys",
-      )
-      expect(result.stdout).not.toContain("prefer requires work_engine_preferences")
-      expect(result.stdout).toContain("1 project issue(s) found")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
-
-  test("reports retired scalar keys even when ordered preferences are valid", async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), "ce-setup-health-"))
-
-    try {
-      await initConfiguredRepo(
-        root,
-        "work_engine_mode: prefer\nwork_engine_target: claude\nwork_engine_preferences:\n  - harness: codex\n",
-      )
-
-      const result = await runCheckHealth(root, "/usr/bin:/bin")
-
-      expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain("CE Work implementation engine: prefer -> codex@default")
-      expect(result.stdout).toContain("retired config key(s) work_engine_target detected")
-      expect(result.stdout).toContain("1 project issue(s) found")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
-
-  test.each(["", "work_engine_mode: off\n"])(
-    "surfaces malformed dormant preferences when mode is missing or off (%s)",
-    async (modeConfig) => {
-      const root = await mkdtemp(path.join(os.tmpdir(), "ce-setup-health-"))
-
-      try {
-        await initConfiguredRepo(root, `${modeConfig}work_engine_preferences:\n  - model: composer\n`)
-
-        const result = await runCheckHealth(root, "/usr/bin:/bin")
-
-        expect(result.exitCode).toBe(0)
-        expect(result.stdout).toContain(
-          "invalid dormant work_engine_preferences: model 'composer' has no harness in work_engine_preferences",
-        )
-        expect(result.stdout).not.toContain("ordered preferences ignored while standing mode is off")
-        expect(result.stdout).toContain("1 project issue(s) found")
-      } finally {
-        await rm(root, { recursive: true, force: true })
-      }
-    },
-  )
-
-  test("enabled mode with an invalid harness is unavailable rather than guessed", async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), "ce-setup-health-"))
-
-    try {
-      await initConfiguredRepo(root, "work_engine_mode: require\nwork_engine_preferences:\n  - harness: mystery-harness\n")
-
-      const result = await runCheckHealth(root, "/usr/bin:/bin")
-
-      expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain("invalid harness 'mystery-harness' in work_engine_preferences")
-      expect(result.stdout).not.toContain("require -> mystery-harness@default")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
-
-  test("rejects a model entry that is not attached to a harness", async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), "ce-setup-health-"))
-
-    try {
-      await initConfiguredRepo(root, "work_engine_mode: prefer\nwork_engine_preferences:\n  - model: composer\n")
-
-      const result = await runCheckHealth(root, "/usr/bin:/bin")
-
-      expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain("model 'composer' has no harness in work_engine_preferences")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
-
-  test.each([
-    ["zero-indented sequence", "work_engine_preferences:\n- harness: cursor\n  model: custom-1\n- harness: claude\n"],
-    ["mapping keys in either order", "work_engine_preferences:\n  - model: custom-1\n    harness: cursor\n  - harness: claude\n"],
-  ])("accepts %s", async (_name, preferences) => {
-    const root = await mkdtemp(path.join(os.tmpdir(), "ce-setup-health-"))
-
-    try {
-      await initConfiguredRepo(root, `work_engine_mode: prefer\n${preferences}`)
-      const result = await runCheckHealth(root, "/usr/bin:/bin")
-
-      expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain("CE Work implementation engine: prefer -> cursor@custom-1, claude@default")
-      expect(result.stdout).not.toContain("project issue(s) found")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
-
-  test.each(["model@beta", "$(touch)", "-model-flag"])('rejects adapter-unsafe model token "%s"', async (model) => {
-    const root = await mkdtemp(path.join(os.tmpdir(), "ce-setup-health-"))
-
-    try {
-      await initConfiguredRepo(root, `work_engine_mode: prefer\nwork_engine_preferences:\n  - harness: cursor\n    model: '${model}'\n`)
-      const result = await runCheckHealth(root, "/usr/bin:/bin")
-
-      expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain(`invalid model '${model}' in work_engine_preferences`)
-      expect(result.stdout).not.toContain(`prefer -> cursor@${model}`)
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
-
-  test("tracked-only work_engine_mode prefer is honored", async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), "ce-setup-health-"))
-
-    try {
-      await initGitRepo(root)
-      await mkdir(path.join(root, ".compound-engineering"), { recursive: true })
-      await copyFile(configTemplate, path.join(root, ".compound-engineering", "config.example.yaml"))
-      await writeFile(
-        path.join(root, ".compound-engineering", "config.yaml"),
-        "work_engine_mode: prefer\nwork_engine_preferences:\n  - harness: cursor\n    model: composer\n",
-      )
-
-      const result = await runCheckHealth(root, "/usr/bin:/bin")
-
-      expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain("CE Work implementation engine: prefer -> cursor@composer")
-      expect(result.stdout).toContain(".compound-engineering/config.yaml exists")
-      expect(result.stdout).not.toContain("project issue(s) found")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
-
-  test("resolves local mode and tracked preferences independently", async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), "ce-setup-health-"))
-
-    try {
-      await initGitRepo(root)
-      await mkdir(path.join(root, ".compound-engineering"), { recursive: true })
-      await copyFile(configTemplate, path.join(root, ".compound-engineering", "config.example.yaml"))
-      await writeFile(path.join(root, ".compound-engineering", "config.yaml"), "work_engine_preferences:\n  - harness: claude\n")
-      await writeFile(path.join(root, ".compound-engineering", "config.local.yaml"), "work_engine_mode: prefer\n")
-      await writeFile(path.join(root, ".gitignore"), ".compound-engineering/*.local.yaml\n")
-
-      const result = await runCheckHealth(root, "/usr/bin:/bin")
-
-      expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain("CE Work implementation engine: prefer -> claude@default")
-      expect(result.stdout).not.toContain("implementation engine unavailable")
-    } finally {
-      await rm(root, { recursive: true, force: true })
-    }
-  })
-
-  test("empty local work_engine_preferences replaces the team list", async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), "ce-setup-health-"))
-
-    try {
-      await initGitRepo(root)
-      await mkdir(path.join(root, ".compound-engineering"), { recursive: true })
-      await copyFile(configTemplate, path.join(root, ".compound-engineering", "config.example.yaml"))
-      await writeFile(
-        path.join(root, ".compound-engineering", "config.yaml"),
-        "work_engine_mode: prefer\nwork_engine_preferences:\n  - harness: claude\n",
-      )
-      await writeFile(path.join(root, ".compound-engineering", "config.local.yaml"), "work_engine_preferences: []\n")
-      await writeFile(path.join(root, ".gitignore"), ".compound-engineering/*.local.yaml\n")
-
-      const result = await runCheckHealth(root, "/usr/bin:/bin")
-
-      expect(result.exitCode).toBe(0)
-      expect(result.stdout).toContain("prefer requires work_engine_preferences")
-      expect(result.stdout).not.toContain("prefer -> claude@default")
+      expect(result.stdout).not.toContain("Retired config key")
+      expect(result.stdout).toContain("Project config healthy")
     } finally {
       await rm(root, { recursive: true, force: true })
     }

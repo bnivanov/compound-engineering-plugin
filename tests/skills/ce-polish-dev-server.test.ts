@@ -80,8 +80,7 @@ describe("read-launch-json.sh", () => {
 
   test("emits __INVALID_LAUNCH_JSON__ for malformed JSON", async () => {
     const repo = await initRepo()
-    const launchPath = path.join(repo, ".claude", "launch.json")
-    await fs.mkdir(path.dirname(launchPath), { recursive: true })
+    const launchPath = path.join(repo, "launch.json")
     await fs.writeFile(launchPath, "{ not valid json ")
     const result = await runCommand(["bash", readLaunchJson], repo)
     expect(result.exitCode).toBe(0)
@@ -90,7 +89,7 @@ describe("read-launch-json.sh", () => {
 
   test("emits __MISSING_CONFIGURATIONS__ when configurations array is absent", async () => {
     const repo = await initRepo()
-    await writeJson(path.join(repo, ".claude", "launch.json"), { version: "0.2.0" })
+    await writeJson(path.join(repo, "launch.json"), { version: "0.2.0" })
     const result = await runCommand(["bash", readLaunchJson], repo)
     expect(result.exitCode).toBe(0)
     expect(result.stdout.trim()).toBe("__MISSING_CONFIGURATIONS__")
@@ -104,7 +103,7 @@ describe("read-launch-json.sh", () => {
       runtimeArgs: [],
       port: 3000,
     }
-    await writeJson(path.join(repo, ".claude", "launch.json"), {
+    await writeJson(path.join(repo, "launch.json"), {
       version: "0.2.0",
       configurations: [config],
     })
@@ -118,7 +117,7 @@ describe("read-launch-json.sh", () => {
 
   test("emits __MULTIPLE_CONFIGS__ and name list when called without arg", async () => {
     const repo = await initRepo()
-    await writeJson(path.join(repo, ".claude", "launch.json"), {
+    await writeJson(path.join(repo, "launch.json"), {
       version: "0.2.0",
       configurations: [
         { name: "web", runtimeExecutable: "bin/dev", port: 3000 },
@@ -138,7 +137,7 @@ describe("read-launch-json.sh", () => {
     const repo = await initRepo()
     const web = { name: "web", runtimeExecutable: "bin/dev", port: 3000 }
     const worker = { name: "worker", runtimeExecutable: "bundle", port: 0 }
-    await writeJson(path.join(repo, ".claude", "launch.json"), {
+    await writeJson(path.join(repo, "launch.json"), {
       version: "0.2.0",
       configurations: [web, worker],
     })
@@ -150,7 +149,7 @@ describe("read-launch-json.sh", () => {
 
   test("emits __CONFIG_NOT_FOUND__ when the named config does not exist in a multi-config file", async () => {
     const repo = await initRepo()
-    await writeJson(path.join(repo, ".claude", "launch.json"), {
+    await writeJson(path.join(repo, "launch.json"), {
       version: "0.2.0",
       configurations: [
         { name: "web", runtimeExecutable: "bin/dev", port: 3000 },

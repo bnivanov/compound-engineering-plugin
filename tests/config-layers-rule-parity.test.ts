@@ -20,9 +20,6 @@ const CONSUMERS = [
   // there, and a run that reached the gate on Step 4's memory alone handed off
   // against a standing `auto_babysit: false` (#1601).
   "skills/ce-commit-push-pr/references/apply-and-handoff.md",
-  // ce-work resolves the ordinary engine keys inside the reference its route-resolution
-  // gate mandates before any implementation write.
-  "skills/ce-work/references/execution-engines.md",
   "skills/ce-promote/references/spiral-cli.md",
   "skills/ce-code-review/references/cross-model-review.md",
   "skills/ce-doc-review/references/cross-model-review.md",

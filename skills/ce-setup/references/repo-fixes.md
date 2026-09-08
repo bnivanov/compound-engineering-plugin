@@ -10,7 +10,6 @@ When the bundled `scripts/check-health` is unavailable, perform these checks by 
 4. Check whether `.compound-engineering/config.yaml` exists.
 5. Check whether `.compound-engineering/config.local.yaml` exists and, if it does, whether `git check-ignore -q .compound-engineering/config.local.yaml` succeeds.
 6. Compare `.compound-engineering/config.example.yaml` with `references/config-template.yaml` when the template is readable; otherwise report that the example refresh must be done manually.
-7. Report a legacy Compound Codex tool map when `${CODEX_HOME:-$HOME/.codex}/AGENTS.md` contains a standalone `<!-- BEGIN COMPOUND CODEX TOOL MAP -->` line followed by a standalone `<!-- END COMPOUND CODEX TOOL MAP -->` line.
 
 This file is read at two points: from Step 2 whenever the bundled health script is unavailable, for the inline equivalent above; and before any Phase 2 write, once Step 3 has decided that a writable checkout exists and which reported issues need remediation. Ask with the blocking question tool named in SKILL.md. Maintaining the generated example files is the work this phase does on its own — Step 5's refresh and its removal of the superseded `config.local.example.yaml`. Every change to a user-owned file is offered and applied only if the user approves.
 
@@ -52,9 +51,9 @@ If `config.local.yaml` already exists, leave it. After creating (or if both file
 
 Do not create `config.local.yaml`.
 
-### Step 6a: Repair Invalid CE Work Preferences
+### Step 6a: Remove Stale CE Work and Cross-Model Keys
 
-When the health report marks the CE Work implementation engine unavailable or invalid, detects retired scalar routing keys, or reports malformed dormant `work_engine_preferences`, do not guess the intended recipients. Explain the exact reported problem, derive a valid ordered `work_engine_preferences` block from the user's stated harness/model order (or remove malformed dormant preferences and use `work_engine_mode: off` when they want native-by-default), remove any retired scalar routing keys, and show the complete replacement block. Edit the layer that supplied the failing value. If the bad ordinary key is only in `config.yaml`, edit that file after preview. Do not hide a broken team value behind a new local override. Preserve every unrelated setting. Re-run the health check and require it to report either native or the intended normalized ordered list before setup is complete.
+When the health report lists retired config keys (`cross_model_peer`, `cross_model_model`, `cross_model_effort`, `work_engine_mode`, `work_engine_preferences`), explain that ce-work now runs native and those keys are no longer read. Remove each listed key from the layer that sets it (`config.yaml`, `config.local.yaml`, or both) and show the resulting block. If the stale key is only in `config.yaml`, edit that file after preview. Do not hide a stale team value behind a new local override. Preserve every unrelated setting. Re-run the health check to confirm the warning clears.
 
 ### Step 6b: Repair Invalid `docs_root`
 
@@ -84,7 +83,7 @@ Unlike Step 7 this does not wait for the path to exist. The skill about to write
 
 ### Step 9: Point Agents At The Knowledge Store, And Offer The Compounding Directive
 
-Runs whenever the repository has a root agent-instructions file (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, or the equivalent this project uses). When one file only `@`-includes another, the substantive file is the target. No such file: skip this step and say so in the summary; setup never creates one.
+Runs whenever the repository has a root agent-instructions file (e.g., `AGENTS.md`). When one file only `@`-includes another, the substantive file is the target. No such file: skip this step and say so in the summary; setup never creates one.
 
 **Outcome:** an agent that reads the file learns that the knowledge store exists at the resolved `<root>/solutions/` and when it is relevant, and the file carries a standing instruction for capturing learnings if the user wants one. Both additions are offered separately, previewed with their exact placement, and applied only on approval.
 

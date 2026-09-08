@@ -174,7 +174,7 @@ No open decisions — [when a file was earned: writing the requirements-only pla
 
 When a file was earned, proceed to Phase 3 doc-write in the same turn — do NOT end the turn waiting for an acknowledgment; otherwise present Phase 4's handoff. The "interrupt if wrong" affordance means the user can revise after the result lands, not before.
 
-Ask the user open-ended on Path B (no `AskUserQuestion` menu). The justification is Interaction Rule 5(a) in `references/interaction-rules.md` — an option menu would unintentionally influence the user's feedback toward the parts the menu lists.
+Ask the user open-ended on Path B (no `ask` tool menu). The justification is Interaction Rule 5(a) in `references/interaction-rules.md` (an option menu would unintentionally influence the user's feedback toward the parts the menu lists).
 
 ### Worked example: compression from internal draft to scoping synthesis (Standard tier)
 

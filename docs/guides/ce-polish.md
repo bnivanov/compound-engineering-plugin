@@ -36,7 +36,7 @@ Arguments only pick which branch to sit on. The loop after that is always the sa
 /ce-polish feat/notification-settings
 ```
 
-If it cannot work out how to start the project, it asks. A `.claude/launch.json` with a usable command, working directory, environment, and numeric port skips detection next time.
+If it cannot work out how to start the project, it asks. A `launch.json` with a usable command, working directory, environment, and numeric port skips detection next time.
 
 ---
 
@@ -56,7 +56,7 @@ Late-stage feel fits none of the other skills. Code review does not tell you the
 
 ## How it finds the startup command
 
-It needs four facts to start a server: command, working directory, environment, and port. A `.claude/launch.json` configuration that supplies a usable tuple goes straight to startup. When a fact is missing, only the mechanism that can supply it runs: framework classification and the port resolver supply a missing port, and detection plus package-manager resolution fill in a missing command. A project it cannot classify gets one question, not a setup interview.
+It needs four facts to start a server: command, working directory, environment, and port. A `launch.json` configuration that supplies a usable tuple goes straight to startup. When a fact is missing, only the mechanism that can supply it runs: framework classification and the port resolver supply a missing port, and detection plus package-manager resolution fill in a missing command. A project it cannot classify gets one question, not a setup interview.
 
 If the harness can open a browser, it opens the verified actual URL. If not, or the handoff fails, it prints the URL. The server is up either way.
 
@@ -68,7 +68,7 @@ There is no scoring rubric and no checklist. You name what is wrong; it changes 
 
 The notification settings page works. Spacing is tight, the off toggle is easy to miss, and the empty-state copy is dry. You run `/ce-polish` on the feature branch.
 
-No `.claude/launch.json`. It detects Next.js, resolves `pnpm`, starts `pnpm dev` on port 3000, verifies the actual URL, and opens it.
+No `launch.json`. It detects Next.js, resolves `pnpm`, starts `pnpm dev` on port 3000, verifies the actual URL, and opens it.
 
 You go to `/settings/notifications`. "The toggle rows are too tight." It edits the component; hot reload updates. "The off state needs to look more off." Another edit. "This empty-state copy is sterile." It rewrites the copy.
 
@@ -121,12 +121,12 @@ Required: a startable local dev server. Browser opening and inspection come from
 ## FAQ
 
 **What if my framework is not detected?**
-It asks how to start. Put the command, working directory, environment, and port in `.claude/launch.json` if you want the next run to skip detection.
+It asks how to start. Put the command, working directory, environment, and port in `launch.json` if you want the next run to skip detection.
 
 **Does it work without browser automation?**
 Yes. It prints the URL when the harness cannot open a browser, and you describe what you see when it cannot inspect the page. Hot reload still applies.
 
-**What about Cursor, VS Code, or a plain terminal?**
+**What about VS Code or a plain terminal?**
 Same answer. Framework detection and server start do not depend on the browser handoff.
 
 **Why no PR at the end?**

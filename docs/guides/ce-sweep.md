@@ -148,7 +148,7 @@ Default paths (`docs/` is the artifact root unless `docs_root` is set):
 - Plan: `docs/plans/feedback-sweep-plan.md`
 - Committed state fallback: `docs/feedback-sweep/state.yml`
 
-On Codex, the handoff is `$lfg` with the same plan path.
+On OMP, the handoff is `/skill:lfg` with the same plan path.
 
 ---
 

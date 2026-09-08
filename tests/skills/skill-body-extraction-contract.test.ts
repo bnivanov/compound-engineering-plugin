@@ -70,7 +70,7 @@ describe("remaining skill body extractions", () => {
     expect(run).toMatch(/ambiguous declarations remain in disambiguation/i)
     expect(run).toMatch(/for `unknown`, ask only for the unresolved tuple facts and do not guess/i)
     expect(run).toMatch(/operationally or leaves its required fact unknown, report that blocker/i)
-    expect(run).toMatch(/offer once to save the completed tuple as `.claude\/launch.json`/i)
+    expect(run).toMatch(/offer once to save the completed tuple as `launch.json`/i)
     expect(detection).toMatch(/runs only while the startup tuple's port remains unresolved/i)
     expect(detection).toMatch(/never replaces a selected command, working directory, or environment/i)
     for (const recipe of recipes) {

@@ -49,7 +49,7 @@ Bare invoke always creates. `resume` never creates. An explicit path or URL is a
 # "Find the handoff about the authentication migration"
 ```
 
-On Codex, the copyable resume line uses `$ce-handoff resume <source>` when that host uses dollar-prefixed skills.
+On OMP, the copyable resume line uses `/skill:ce-handoff resume <source>`.
 
 ---
 

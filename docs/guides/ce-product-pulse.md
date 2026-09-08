@@ -192,7 +192,7 @@ A 40-metric dashboard spreads attention. Four sections on one page force a choic
 **What's the relationship to `STRATEGY.md`?**
 The first-run interview seeds product name and key metrics from it (or from the first of `VISION.md`, `PRODUCT.md` when it is absent — the same rule every report re-resolves). Each later pulse re-reads those metrics from that source. Pending ones render as `no data`. Excluded ones stay in the strategy file and do not appear.
 
-**What about non-Claude-Code platforms?**
+**What about other harnesses?**
 It runs anywhere you have read-only data-source tools. Config is resolved from the repo at runtime. The interview hands scheduling off to whatever the harness exposes.
 
 ---

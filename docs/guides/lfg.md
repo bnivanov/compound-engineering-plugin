@@ -24,33 +24,20 @@ It works best after `/ce-brainstorm`, because the pipeline can then plan against
 
 ## Example invocations
 
-The usual path is a brainstorm followed by an empty `/lfg`. A plan path enriches that artifact, then ships. Stage assignments change who authors planning or implementation; the rest of the pipeline stays on `lfg`.
+The usual path is a brainstorm followed by an empty `/lfg`. A plan path enriches that artifact, then ships. Planning and implementation both stay native on OMP.
 
 ```text
 # Most common: settle requirements, then ship from that context
 /ce-brainstorm design account-level notification controls for enterprise teams
 /lfg
 
-# Same handoff, but author the plan on a named model (implementation stays native)
-/lfg plan with fable
-
 # Clear, already-bounded software task. Weaker product context than a brainstorm.
 /lfg add a CSV export button to the account reports page
 
 # Enrich a requirements-only plan in place, then ship it
 /lfg docs/plans/feedback-sweep-plan.md
-
-# Preference: try Codex for implementation, fall back to native if that route is down
-/lfg add account-level notification mute settings, use Codex for implementation
-
-# Requirement: only Composer may implement. If that route is unavailable, lfg stops.
-/lfg implement the settled plan, but only use Composer for implementation
-
-# Both stages, each to its own model or harness
-/lfg add mute settings, plan with fable and use Codex for implementation
 ```
 
-An unscoped "use fable" or "with Codex" binds to implementation only, and `lfg` says so in its opening line. Assigning a harness to planning ("plan with Codex") is not supported and blocks.
 
 ---
 
@@ -79,7 +66,7 @@ An invalidating settlement conflict from planning or review stops the pipeline b
 
 No git remote: commit locally and skip push, PR creation, and CI watch. That is a terminal local-only path, not an error to retry.
 
-`lfg` never launches `/goal` itself. If goal-mode is the right engine, `ce-work` chooses it and must still return control.
+`lfg` never launches `/goal` itself. `ce-work` runs native (inline/subagent) inside the pipeline and must still return control.
 
 ---
 
@@ -89,13 +76,11 @@ No git remote: commit locally and skip push, PR creation, and CI watch. That is 
 
 Planning has to land an implementation-ready code plan. Implementation has to return evidence for behavior changes. Review is report-only by design. `lfg` applies the eligible fixes, persists what it will not apply, then owns the one push/PR/CI tail. Stages do not get to skip ahead to coding.
 
-### You can route two stages, not the whole run
+### Native stages, one shipping tail
 
-Planning can be authored on a named model (`plan with fable`) via `ce-plan`'s model elevation. Implementation can be sent to a harness (`use Codex for implementation` as a preference, `only use Composer for implementation` as a requirement). `cursor` means the Cursor harness with its default model; `composer` means a Composer-family model through Cursor. Unscoped assignments bind to implementation only; in an interactive run that is genuinely ambiguous, `lfg` asks one question, then runs hands-off, while a headless run applies the implementation default and discloses it. With no stage instruction, `ce-plan` uses its `plan_model` config and `ce-work` follows session and project instructions, then checkout-local `work_engine_mode` and `work_engine_preferences`. See [Implementation routing](./configuration.md#implementation-routing).
+Planning and implementation both stay native on OMP. `ce-plan` uses its `plan_model` config (a set key reports the requested alias as unresolvable and runs inline) and `ce-work` always runs on the session model. See [`ce-work`](./ce-work.md#choose-the-implementation-author) for the native execution contract.
 
-Both a preference and a requirement fall back to the current harness/session model with one disclosure when the external route cannot run. A requirement keeps the requested external identity fixed while viable; it never authorizes another external recipient, and `lfg` does not ask whether to weaken the route. A plain mention of a model in feature text, a quote, a comparison, or a filename does not activate routing. See [`ce-work`](./ce-work.md#choose-the-implementation-author) for fallback, timeouts, and detached-worktree behavior.
-
-On string-only hosts the implementation seam is `mode:return-to-caller implementation_engine:<compact-json> <plan-path>`. The `plan_model:<alias>` carrier rides beside, never inside, `ce-plan`'s request. Neither carrier becomes plan content, a settled product decision, or review input.
+On string-only hosts the implementation seam is `mode:return-to-caller <plan-path>`. The `plan_model:<alias>` carrier rides beside, never inside, `ce-plan`'s request. Neither carrier becomes plan content, a settled product decision, or review input.
 
 ### Residuals and CI leftovers outlive the session
 
@@ -168,7 +153,6 @@ Direct invocation is fine for a clear software task. The planner has less produc
 | _(empty)_ | Plans from current context (including a just-finished brainstorm), then runs the pipeline if the plan is an implementation-ready code plan |
 | `<feature description>` | Passed to `/ce-plan`, then the pipeline |
 | `<requirements-only plan path>` | `/ce-plan` enriches that file in place, then the pipeline |
-| `<description or path> + stage assignment` | Routing words are stripped from the product request. A scoped planning directive goes to `ce-plan`. A scoped implementation directive goes to `ce-work`. An unscoped assignment binds to implementation only. |
 
 Output: code changes, commits, and usually a PR. No configured git remote: local commits only. If CI is still red after the bounded repair loop, unresolved failures are recorded before the run ends.
 
@@ -188,8 +172,8 @@ The pipeline stops. Non-software tasks, requirements-only leftovers, knowledge-w
 **What happens if there is no `origin`?**
 Local commits only. No push, no PR, no CI watch.
 
-**Can I send planning to Codex?**
-No. Planning accepts a model alias (`fable`, `opus`), not a harness. Implementation is the stage that can change harness.
+**Can I route a stage to another harness?**
+No. Planning and implementation both stay native on OMP.
 
 ---
 

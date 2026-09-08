@@ -16,7 +16,7 @@ Proof is a collaborative document editor for humans and agents. It is reached th
 
 **Done:** the operation is confirmed at its own level, and the user has the result plus a short summary. A create is confirmed by the `tokenUrl` it returned. A mutation is confirmed by `ok: true`; on a `202` or a `partial: true` response, confirm by re-reading `v3/document`. A pull is confirmed by the local file it wrote, and a read by the content it returned.
 
-**Read `references/api.md` before the first Proof read or mutation, HTTP or MCP.** It owns the endpoints — `share/markdown`, the v3 document and edit surfaces, presence, title, and `DELETE /api/documents/<slug>` — along with the operation tables, the error and retry classes, and the `curl` permission hint for Claude Code.
+**Read `references/api.md` before the first Proof read or mutation, HTTP or MCP.** It owns the endpoints -- `share/markdown`, the v3 document and edit surfaces, presence, title, and `DELETE /api/documents/<slug>` -- along with the operation tables, the error and retry classes, and the `curl` permission hint for the host.
 
 **Read `references/workflows.md`** before reviewing a shared doc, before creating and sharing one, and before pulling a doc to a local file. Those flows have exact recipes there.
 

@@ -42,7 +42,7 @@ Everything below happens before LFG outputs `<promise>DONE</promise>`.
 
 ### Rendering the user-runnable invocations
 
-For the two handoffs below, default to `/ce-explain <name>` / `/ce-babysit-pr <pr-url>`. Use `$ce-explain <name>` / `$ce-babysit-pr <pr-url>` only when the active host is Codex or explicitly documents dollar-prefixed skill invocation. Render only the invocation as inline code and output one form only.
+For the two handoffs below, use `/skill:ce-explain <name>` / `/skill:ce-babysit-pr <pr-url>`. Render only the invocation as inline code and output one form only.
 
 ### New concepts
 

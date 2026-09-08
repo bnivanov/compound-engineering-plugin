@@ -11,7 +11,7 @@ allowed-tools:
   - Grep
   - Bash
   - Agent
-  - AskUserQuestion
+  - ask
 ---
 
 # Feedback Sweep
@@ -86,7 +86,7 @@ Everything state *can* record continues. A failed ack marks the item `ack_deferr
 
 #### 2i. Wrap-up
 
-**User-runnable invocation rendering.** In the handoff below, default to `/lfg <root>/plans/feedback-sweep-plan.md`; use `$lfg <root>/plans/feedback-sweep-plan.md` only on Codex or a host documenting dollar-prefixed invocation. Render only the invocation as inline code and output one form only.
+**User-runnable invocation rendering.** In the handoff below, render `/skill:lfg <root>/plans/feedback-sweep-plan.md`. Render only the invocation as inline code and output one form only.
 
 `git add` only the plan, plus the repo-internal `<state>` — never `-A`. A commit failure is reported, not fatal, and never blocks `run-record` or `lease-release`. Always emit the summary with every field `references/run.md` lists, ending with the plan path and this handoff line:
 

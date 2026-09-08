@@ -169,7 +169,7 @@ describe("ce-handoff portable runtime contract", () => {
     expect(corpus).toMatch(/succinct, context-specific summary.*generated handoff captures.*without opening it/i)
     expect(corpus).toMatch(/do not impose a fixed summary template/i)
     expect(skill).toMatch(/End the creation response.*fenced, copyable command/i)
-    expect(skill).toContain("/ce-handoff resume <source>")
+    expect(skill).toContain("/skill:ce-handoff resume <source>")
     expect(corpus).toMatch(/Do not generate a longer resume prompt/i)
   })
 

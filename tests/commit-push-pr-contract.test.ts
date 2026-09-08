@@ -404,10 +404,10 @@ describe("PR concept teaching contract", () => {
     expect(trailerEnd).toBeGreaterThan(trailerStart)
     expect(trailer).toContain("New concepts:")
     expect(trailer).toContain("using the rendering rule above")
-    expect(trailer).toContain("$ce-explain <name>")
-    expect(trailer).toContain("/ce-explain <name>")
-    expect(trailer).not.toContain("/skill:ce-explain")
-    expect(trailer).toMatch(/default to `\/ce-explain <name>`[\s\S]{0,220}Codex[\s\S]{0,260}output one form only/i)
+    expect(trailer).toContain("/skill:ce-explain <name>")
+    expect(trailer).toMatch(/render only the invocation as inline code/i)
+    expect(trailer).not.toContain("$ce-explain")
+    expect(trailer).not.toMatch(/[`"']\/ce-explain/)
   })
 
   test("SKILL.md archival transition guards ordering, gitignore, and modes", async () => {

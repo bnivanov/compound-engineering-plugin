@@ -9,7 +9,7 @@ allowed-tools:
   - Glob
   - Grep
   - Bash
-  - AskUserQuestion
+  - ask
 ---
 
 # Product Pulse

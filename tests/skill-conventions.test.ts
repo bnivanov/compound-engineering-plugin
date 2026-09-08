@@ -146,26 +146,33 @@ const AGENTS_MD_REF = `AGENTS.md (repo root)`
 describe("user-facing skill invocation authoring contract", () => {
   test("authoring guidance separates semantic routing from host-rendered user copy", () => {
     for (const text of [ROOT_AGENTS, PORTABLE_AUTHORING_GUIDE]) {
-      expect(text).toContain("$skill-name")
       expect(text).toContain("/skill-name")
       expect(text).toMatch(/agent-to-agent|skill-to-skill/i)
       expect(text).toMatch(/format formal skill names as inline code/i)
       expect(text).toContain("`ce-plan`")
       expect(text).toMatch(/in prose, render only the invocation as inline code[^\n]*fenced block/i)
       expect(text).toMatch(/active host|active harness/i)
-      expect(text).toMatch(/default to `\/skill-name`[\s\S]{0,160}Codex[\s\S]{0,160}dollar-prefixed/i)
       expect(text).toContain("`/skill:ce-polish`")
-      expect(text).toMatch(/oh-my-pi \(`omp`\)[^\n]*\/skill:<name>`[^\n]*disable-model-invocation/i)
       expect(text).toMatch(/\/goal[\s\S]{0,180}(built-in|exception)|built-in[\s\S]{0,180}\/goal/i)
       expect(text).toMatch(/smallest section[\s\S]{0,180}do not repeat[\s\S]{0,180}separately loaded reference/i)
     }
+    expect(PORTABLE_AUTHORING_GUIDE).toContain("$skill-name")
+    expect(PORTABLE_AUTHORING_GUIDE).toMatch(/default to `\/skill-name`[\s\S]{0,160}Codex[\s\S]{0,160}dollar-prefixed/i)
+    expect(PORTABLE_AUTHORING_GUIDE).toMatch(/oh-my-pi \(`omp`\)[^\n]*\/skill:<name>`[^\n]*disable-model-invocation/i)
+    expect(ROOT_AGENTS).toContain("default to `/skill-name`")
+    expect(ROOT_AGENTS).toMatch(/On OMP, keep the default form for model-visible targets/i)
+    expect(ROOT_AGENTS).toMatch(/\/skill:<name>` only when the target is not model-visible/i)
+    expect(ROOT_AGENTS).not.toContain("$skill-name")
+    expect(ROOT_AGENTS).not.toContain("Codex")
   })
 
   test("README distinguishes model-routed copy from deterministic OMP invocation", () => {
-    expect(ROOT_README).toMatch(/README uses `\/skill-name`[\s\S]{0,180}Codex[\s\S]{0,120}`\$skill-name`/i)
-    expect(ROOT_README).toContain("`$ce-plan` and `$lfg`")
-    expect(ROOT_README).toMatch(/oh-my-pi \(omp\)[^\n]*`\/skill:<name>`[^\n]*(?:manual-only|deterministic)/i)
-    expect(ROOT_README).toMatch(/\/goal[\s\S]{0,80}Codex built-in/i)
+    expect(ROOT_README).toContain("this README uses `/skill-name` shorthand in examples")
+    expect(ROOT_README).toContain("`/skill:ce-plan` and `/skill:lfg`")
+    expect(ROOT_README).toMatch(/omp's native deterministic command is `\/skill:<name>`/i)
+    expect(ROOT_README).toMatch(/manual-only or hidden skills require the native form/i)
+    expect(ROOT_README).not.toContain("$skill-name")
+    expect(ROOT_README).not.toContain("Codex")
   })
 })
 

@@ -153,139 +153,6 @@ resolve_docs_root() {
   docs_root_status="configured"
 }
 
-# Report whether a retired top-level key is still present without interpreting
-# its value. Detection is intentionally separate from routing so legacy scalar
-# settings can receive a migration diagnostic without remaining supported.
-has_flat_config_key() {
-  local config_file="$1"
-  local config_key="$2"
-  awk -v key="$config_key" '
-    $0 ~ "^" key "[[:space:]]*:" { found = 1 }
-    END { exit(found ? 0 : 1) }
-  ' "$config_file"
-}
-
-# First non-empty ordinary scalar across local then tracked. Empty/commented
-# local continues to tracked. Sets ordinary_value and ordinary_source.
-resolve_ordinary_scalar() {
-  local local_file="$1"
-  local tracked_file="$2"
-  local config_key="$3"
-  local value=""
-  ordinary_value=""
-  ordinary_source=""
-  if [ -f "$local_file" ]; then
-    value=$(read_flat_config_value "$local_file" "$config_key")
-    if [ -n "$value" ]; then
-      ordinary_value="$value"
-      ordinary_source="config.local.yaml"
-      return
-    fi
-  fi
-  if [ -f "$tracked_file" ]; then
-    value=$(read_flat_config_value "$tracked_file" "$config_key")
-    if [ -n "$value" ]; then
-      ordinary_value="$value"
-      ordinary_source="config.yaml"
-    fi
-  fi
-}
-
-# Present list/map key (including `[]`) wins that layer. Sets
-# structured_file, or empty when neither layer sets the key.
-resolve_structured_layer() {
-  local local_file="$1"
-  local tracked_file="$2"
-  local config_key="$3"
-  structured_file=""
-  if [ -f "$local_file" ] && has_flat_config_key "$local_file" "$config_key"; then
-    structured_file="$local_file"
-    return
-  fi
-  if [ -f "$tracked_file" ] && has_flat_config_key "$tracked_file" "$config_key"; then
-    structured_file="$tracked_file"
-  fi
-}
-
-# Read the narrow YAML sequence used by work_engine_preferences. The local
-# config remains human-authored YAML, but setup health needs only this one
-# deterministic shape rather than a general parser.
-read_work_engine_preferences() {
-  local config_file="$1"
-  awk '
-    function trim(value) {
-      sub(/^[[:space:]]+/, "", value)
-      sub(/[[:space:]]+$/, "", value)
-      return value
-    }
-    function scalar(value) {
-      sub(/[[:space:]]+#.*$/, "", value)
-      value = trim(value)
-      if (value ~ /^".*"$/ || value ~ /^\047.*\047$/) {
-        value = substr(value, 2, length(value) - 2)
-      }
-      return value
-    }
-    function emit_item() {
-      if (!have_item) return
-      if (harness == "" && model != "") {
-        print "ERROR\tmodel \047" model "\047 has no harness in work_engine_preferences"
-      } else if (harness == "") {
-        print "ERROR\tempty item in work_engine_preferences"
-      } else {
-        print "ITEM\t" harness "\t" (model == "" ? "default" : model)
-      }
-      have_item = 0
-      harness = ""
-      model = ""
-    }
-    /^[^[:space:]#-][^:]*[[:space:]]*:/ {
-      if (active) {
-        emit_item()
-        active = 0
-      }
-    }
-    /^work_engine_preferences[[:space:]]*:/ {
-      active = 1
-      next
-    }
-    active {
-      line = $0
-      if (line ~ /^[[:space:]]*($|#)/) next
-      if (line ~ /^[[:space:]]*-[[:space:]]*harness[[:space:]]*:/) {
-        emit_item()
-        sub(/^[[:space:]]*-[[:space:]]*harness[[:space:]]*:[[:space:]]*/, "", line)
-        harness = scalar(line)
-        have_item = 1
-        next
-      }
-      if (line ~ /^[[:space:]]*-[[:space:]]*model[[:space:]]*:/) {
-        emit_item()
-        sub(/^[[:space:]]*-[[:space:]]*model[[:space:]]*:[[:space:]]*/, "", line)
-        model = scalar(line)
-        have_item = 1
-        next
-      }
-      if (line ~ /^[[:space:]]+model[[:space:]]*:/) {
-        sub(/^[[:space:]]+model[[:space:]]*:[[:space:]]*/, "", line)
-        model = scalar(line)
-        if (!have_item) have_item = 1
-        next
-      }
-      if (line ~ /^[[:space:]]+harness[[:space:]]*:/) {
-        sub(/^[[:space:]]+harness[[:space:]]*:[[:space:]]*/, "", line)
-        harness = scalar(line)
-        if (!have_item) have_item = 1
-        next
-      }
-      print "ERROR\tunsupported work_engine_preferences entry: " trim(line)
-    }
-    END {
-      if (active) emit_item()
-    }
-  ' "$config_file"
-}
-
 has_brew=$(command -v brew >/dev/null 2>&1 && echo "yes" || echo "no")
 in_repo=$(git rev-parse --is-inside-work-tree >/dev/null 2>&1 && echo "yes" || echo "no")
 # <!-- OMP --> S3: OMP-native capability floor. Under OMP the agent already
@@ -293,23 +160,6 @@ in_repo=$(git rev-parse --is-inside-work-tree >/dev/null 2>&1 && echo "yes" || e
 # (xd://ast_edit + lsp), so agent-browser/ast-grep install advice never applies.
 is_omp="no"
 [ "${OMPCODE:-}" = "1" ] && is_omp="yes"
-
-# Retired Bun-era Codex tool map (#1099). The block is present only when a
-# standalone BEGIN line is followed by a standalone END line.
-has_codex_tool_map() {
-  awk '
-    { sub(/\r$/, "") }
-    $0 == "<!-- BEGIN COMPOUND CODEX TOOL MAP -->" { seen = 1 }
-    seen && $0 == "<!-- END COMPOUND CODEX TOOL MAP -->" { found = 1; exit }
-    END { exit found ? 0 : 1 }
-  ' "$1"
-}
-
-codex_agents_file="${CODEX_HOME:-$HOME/.codex}/AGENTS.md"
-legacy_codex_map="no"
-if [ -f "$codex_agents_file" ] && has_codex_tool_map "$codex_agents_file"; then
-  legacy_codex_map="yes"
-fi
 
 # =====================================================
 #  Check optional capabilities
@@ -349,11 +199,6 @@ scratch_gitignore="skip"
 local_cfg="skip"
 example_cfg="skip"
 retired_keys=()
-work_engine_cfg="skip"
-work_engine_detail=""
-work_engine_preferences_note=""
-work_engine_preferences_note_level="detail"
-work_engine_migration_note=""
 docs_root_status="skip"
 docs_root_value=""
 docs_root_source=""
@@ -391,119 +236,6 @@ if [ "$in_repo" = "yes" ]; then
   tracked_cfg="missing"
   [ -f "$tracked_config_path" ] && tracked_cfg="present"
 
-  resolve_ordinary_scalar "$local_config_path" "$tracked_config_path" "work_engine_mode"
-  work_engine_mode="$ordinary_value"
-  case "$work_engine_mode" in
-    ""|off|prefer|require) ;;
-    *)
-      if [ "$ordinary_source" = "config.local.yaml" ]; then
-        if [ -f "$tracked_config_path" ]; then
-          work_engine_mode=$(read_flat_config_value "$tracked_config_path" "work_engine_mode")
-        else
-          work_engine_mode=""
-        fi
-      fi
-      ;;
-  esac
-
-  resolve_structured_layer "$local_config_path" "$tracked_config_path" "work_engine_preferences"
-  work_engine_preferences_count=0
-  work_engine_preferences_detail=""
-  work_engine_preferences_error=""
-  retired_work_engine_keys=""
-  for retired_key in work_engine_target work_engine_model; do
-    if { [ -f "$local_config_path" ] && has_flat_config_key "$local_config_path" "$retired_key"; } || \
-       { [ -f "$tracked_config_path" ] && has_flat_config_key "$tracked_config_path" "$retired_key"; }; then
-      if [ -n "$retired_work_engine_keys" ]; then
-        retired_work_engine_keys="${retired_work_engine_keys}, ${retired_key}"
-      else
-        retired_work_engine_keys="$retired_key"
-      fi
-    fi
-  done
-  if [ -n "$retired_work_engine_keys" ]; then
-    work_engine_migration_note="retired config key(s) ${retired_work_engine_keys} detected; migrate routing to work_engine_preferences entries with harness and optional model fields, then remove the retired keys"
-    project_issues=$((project_issues + 1))
-  fi
-  if [ -n "$structured_file" ]; then
-    while IFS=$'\t' read -r preference_kind preference_harness preference_model; do
-      case "$preference_kind" in
-        ITEM)
-          work_engine_preferences_count=$((work_engine_preferences_count + 1))
-          case "$preference_harness" in
-            codex|claude|grok|cursor|opencode) ;;
-            *)
-              [ -z "$work_engine_preferences_error" ] && work_engine_preferences_error="invalid harness '$preference_harness' in work_engine_preferences"
-              ;;
-          esac
-          if [ "$preference_model" != "default" ]; then
-            case "$preference_model" in
-              [A-Za-z0-9]*)
-                case "$preference_model" in
-                  *[!A-Za-z0-9._:/-]*)
-                    [ -z "$work_engine_preferences_error" ] && work_engine_preferences_error="invalid model '$preference_model' in work_engine_preferences"
-                    ;;
-                esac
-                ;;
-              *)
-                [ -z "$work_engine_preferences_error" ] && work_engine_preferences_error="invalid model '$preference_model' in work_engine_preferences"
-                ;;
-            esac
-          fi
-          preference_display="${preference_harness}@${preference_model}"
-          if [ -n "$work_engine_preferences_detail" ]; then
-            work_engine_preferences_detail="${work_engine_preferences_detail}, ${preference_display}"
-          else
-            work_engine_preferences_detail="$preference_display"
-          fi
-          ;;
-        ERROR)
-          [ -z "$work_engine_preferences_error" ] && work_engine_preferences_error="$preference_harness"
-          ;;
-      esac
-    done < <(read_work_engine_preferences "$structured_file")
-  fi
-
-  case "$work_engine_mode" in
-    ""|off)
-      work_engine_cfg="native"
-      if [ -n "$work_engine_mode" ]; then
-        work_engine_detail="standing preference is off"
-      else
-        work_engine_detail="setting is commented or missing"
-      fi
-      if [ -n "$work_engine_preferences_error" ]; then
-        work_engine_preferences_note="invalid dormant work_engine_preferences: ${work_engine_preferences_error}"
-        work_engine_preferences_note_level="warn"
-        project_issues=$((project_issues + 1))
-      elif [ "$work_engine_preferences_count" -gt 0 ]; then
-        work_engine_preferences_note="ordered preferences ignored while standing mode is off"
-      fi
-      ;;
-    prefer|require)
-      if [ -n "$work_engine_preferences_error" ]; then
-        work_engine_cfg="unavailable"
-        work_engine_detail="$work_engine_preferences_error"
-        project_issues=$((project_issues + 1))
-      elif [ "$work_engine_preferences_count" -eq 0 ] && [ -n "$retired_work_engine_keys" ]; then
-        work_engine_cfg="unavailable"
-        work_engine_detail="$work_engine_mode cannot use retired scalar routing; migrate ${retired_work_engine_keys} to work_engine_preferences"
-      elif [ "$work_engine_preferences_count" -eq 0 ]; then
-        work_engine_cfg="unavailable"
-        work_engine_detail="$work_engine_mode requires work_engine_preferences"
-        project_issues=$((project_issues + 1))
-      else
-        work_engine_cfg="$work_engine_mode"
-        work_engine_detail="$work_engine_preferences_detail"
-      fi
-      ;;
-    *)
-      work_engine_cfg="invalid"
-      work_engine_detail="invalid mode '$work_engine_mode' ignored; native is the default"
-      project_issues=$((project_issues + 1))
-      ;;
-  esac
-
   script_dir="$(cd "$(dirname "$0")" && pwd)"
   template="$script_dir/../references/config-template.yaml"
   example="$repo_root/.compound-engineering/config.example.yaml"
@@ -516,10 +248,10 @@ if [ "$in_repo" = "yes" ]; then
   fi
 
   # Retired keys set as ACTIVE (non-commented) in either layer. A
-  # commented `# plan_use_fable:` line does not match `^[[:space:]]*<key>:`.
+  # commented `# work_engine_mode:` line does not match `^[[:space:]]*<key>:`.
   for cfg_file in "$local_config_path" "$tracked_config_path"; do
     [ -f "$cfg_file" ] || continue
-    for key in plan_use_fable brainstorm_use_fable fable_nudge; do
+    for key in cross_model_peer cross_model_model cross_model_effort work_engine_mode work_engine_preferences; do
       if grep -Eq "^[[:space:]]*${key}[[:space:]]*:" "$cfg_file" 2>/dev/null; then
         already=""
         for seen in "${retired_keys[@]}"; do
@@ -576,13 +308,6 @@ if [ "$is_omp" = "yes" ]; then
   fi
 fi
 
-if [ "$legacy_codex_map" = "yes" ]; then
-  section "Codex instructions"
-  warn "Legacy Compound Codex tool map in ${codex_agents_file}"
-  detail "Retired block from a pre-native Bun install; one line tells Codex to collapse subagent dispatch."
-  detail "Remove it -- see this skill's references/legacy-codex-tool-map.md"
-fi
-
 if [ "$in_repo" = "yes" ]; then
   section "Project config"
 
@@ -630,24 +355,6 @@ if [ "$in_repo" = "yes" ]; then
     skip "Local docs_root '${docs_root_local_ignored}' is ignored; set docs_root only in config.yaml"
   fi
 
-  if [ "$work_engine_cfg" = "native" ]; then
-    ok "CE Work implementation engine: native (${work_engine_detail})"
-    if [ -n "$work_engine_preferences_note" ]; then
-      if [ "$work_engine_preferences_note_level" = "warn" ]; then
-        warn "$work_engine_preferences_note"
-      else
-        detail "$work_engine_preferences_note"
-      fi
-    fi
-  elif [ "$work_engine_cfg" = "prefer" ] || [ "$work_engine_cfg" = "require" ]; then
-    ok "CE Work implementation engine: ${work_engine_cfg} -> ${work_engine_detail}"
-  elif [ "$work_engine_cfg" = "unavailable" ]; then
-    warn "CE Work implementation engine unavailable: ${work_engine_detail}"
-  elif [ "$work_engine_cfg" = "invalid" ]; then
-    warn "CE Work implementation engine: ${work_engine_detail}"
-  fi
-  [ -n "$work_engine_migration_note" ] && warn "$work_engine_migration_note"
-
   if [ "$example_cfg" = "ok" ]; then
     ok "Example config is current"
   elif [ "$example_cfg" = "missing" ]; then
@@ -660,9 +367,11 @@ if [ "$in_repo" = "yes" ]; then
 
   for key in "${retired_keys[@]}"; do
     case "$key" in
-      plan_use_fable)       warn "Retired config key '$key' — removed; use 'plan_model' instead" ;;
-      brainstorm_use_fable) warn "Retired config key '$key' — removed; use 'brainstorm_model' instead" ;;
-      fable_nudge)          warn "Retired config key '$key' — removed; model elevation is always available" ;;
+      cross_model_peer)        warn "Retired config key '$key' — removed; delete it" ;;
+      cross_model_model)       warn "Retired config key '$key' — removed; delete it" ;;
+      cross_model_effort)      warn "Retired config key '$key' — removed; delete it" ;;
+      work_engine_mode)        warn "Retired config key '$key' — removed; ce-work runs native" ;;
+      work_engine_preferences) warn "Retired config key '$key' — removed; ce-work runs native" ;;
     esac
     project_issues=$((project_issues + 1))
   done
@@ -676,10 +385,6 @@ if [ "$project_issues" -eq 0 ]; then
   echo " ✅  Project config healthy. Optional capabilities available: ${capability_ok}/${capability_total}"
 else
   echo " ⚠️   ${project_issues} project issue(s) found. Optional capabilities available: ${capability_ok}/${capability_total}"
-fi
-
-if [ "$legacy_codex_map" = "yes" ]; then
-  echo "     Environment: the legacy Codex tool map above still needs attention."
 fi
 
 if [ "$capability_missing" -gt 0 ]; then

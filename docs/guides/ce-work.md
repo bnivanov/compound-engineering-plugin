@@ -2,7 +2,7 @@
 
 > Execute against the plan's guardrails, figure out the HOW with code in front of you, ship complete features, and hand off to a clean PR.
 
-`ce-work` is the execution skill. Give it a plan, or a bare prompt for smaller work, and it implements against the plan's guardrails, runs tests as it goes, picks an implementation engine and a safe scheduling strategy, runs quality gates, and hands off to a commit + PR flow. Implementation can stay on the current host or route bounded units to another model or harness, but the host always owns verification, canonical commits, and shipping.
+`ce-work` is the execution skill. Give it a plan, or a bare prompt for smaller work, and it implements against the plan's guardrails, runs tests as it goes, chooses a safe scheduling strategy (inline or subagent waves), runs quality gates, and hands off to a commit + PR flow. Implementation always runs natively on the session model, and the host always owns verification, canonical commits, and shipping.
 
 The plan is a decision artifact: authoritative for scope, decisions, units, and tests. `ce-work` figures out the actual implementation itself. This is the HOW phase that `ce-plan` deliberately does not pre-write.
 
@@ -28,13 +28,13 @@ It is the fourth step in the compound-engineering ideation chain:
 | What it produces | Commits and a PR (or just commits on the no-PR path). Knowledge-work plans produce a saved deliverable instead. |
 | Caller-owned mode | For outer orchestrators (for example `lfg`): `mode:return-to-caller <plan path>` implements and locally verifies, then returns a structured envelope and skips the standalone shipping tail (final simplify, review, PR, CI). Mid-implementation "Simplify as You Go" still runs. |
 | What's next | Review the PR; run `/ce-compound` to capture learnings |
-| Distinguishing | Plan-aware idempotency, native or cross-model implementation engines, conservative parallel waves, host-owned verification and commits, operational validation in the PR |
+| Distinguishing | Plan-aware idempotency, native inline/subagent scheduling, conservative parallel waves, host-owned verification and commits, operational validation in the PR |
 
 ---
 
 ## Example invocations
 
-An empty invoke picks the newest eligible implementation-ready code plan in `docs/plans/`, and stops instead of guessing if the newest match is still requirements-only, knowledge-work, or an approach-plan. A requirements-only path is refused until `ce-plan` enriches it. A path argument is the plan to execute. A named engine changes who authors the code, not who verifies or ships.
+An empty invoke picks the newest eligible implementation-ready code plan in `docs/plans/`, and stops instead of guessing if the newest match is still requirements-only, knowledge-work, or an approach-plan. A requirements-only path is refused until `ce-plan` enriches it. A path argument is the plan to execute. Implementation always runs natively; the host verifies and ships.
 
 ```text
 # Execute a specific implementation-ready plan and own the shipping tail
@@ -52,18 +52,11 @@ An empty invoke picks the newest eligible implementation-ready code plan in `doc
 # Execute a knowledge-work plan: read sources, synthesize, skip the code lifecycle
 /ce-work docs/plans/2026-08-12-research-memo-approach.md
 
-# Prefer another harness or model for implementation; the host still verifies and ships
-/ce-work use Codex for implementation on docs/plans/2026-07-15-example.md
-/ce-work implement docs/plans/2026-07-15-example.md with Cursor
-/ce-work use Codex to add retry limits to the existing webhook sender
-
-# Require that route (interactive standalone asks before weakening it)
-/ce-work only use Composer for implementation on docs/plans/2026-07-15-example.md
 
 # Outer orchestrator: implement and locally verify, then return a structured envelope
 /ce-work mode:return-to-caller docs/plans/notification-mute.md
 
-# Resume, inspect, or clean up an existing external implementation run
+# Resume, inspect, or clean up an existing implementation run
 /ce-work resume run 20260812-1430-ab12
 ```
 
@@ -88,7 +81,7 @@ Asking an agent "implement this plan" goes wrong in predictable ways:
 
 - The plan is authoritative for WHAT; the agent figures out HOW with code in front of it
 - An idempotency check before each task: if verification is already satisfied, skip it
-- Scope-appropriate implementation (native inline/subagents by default, or a sanctioned cross-model route) and scheduling (serial or bounded independent waves)
+- Scope-appropriate implementation (inline for trivial work, subagents for structured units) and scheduling (serial or bounded independent waves)
 - Test discovery and evidence selection before behavior changes, plus integration coverage before any task is marked done
 - Portable self-sizing code review with a residual-work gate: apply, file, accept, or stop, but never silently ship
 - Every PR carries an operational validation plan: what to monitor, what triggers rollback
@@ -103,9 +96,9 @@ Asking an agent "implement this plan" goes wrong in predictable ways:
 
 Before each task, it checks whether the unit's work already exists and matches the plan's intent. If verification is already satisfied, it marks the task complete and moves on. A unit whose deliverable is out-of-repo state (a console setting, a DNS record) has no git-derived completion signal, so its status is decided from the observed state of the deliverable, never re-applied off a clean tree. This matters most when resuming after context compaction, picking up someone else's branch, or returning to a partly-shipped plan weeks later.
 
-### Engine, workspace, and scheduling are separate decisions
+### Workspace and scheduling are separate decisions
 
-Ordinary synchronous native work stays in the active checkout. Each implementation unit gets a fresh, single-use native worker context using whatever isolation the current harness provides. A detached external worker always gets a private linked worktree. The host alone applies, verifies, and commits that result in the canonical checkout.
+Ordinary synchronous native work stays in the active checkout. Each implementation unit gets a fresh, single-use native worker context using whatever isolation the current harness provides. A worker with harness-managed isolation edits its own workspace (for example, a linked worktree the harness manages). The host alone applies, verifies, and commits that result in the canonical checkout.
 
 The scheduler may author a bounded wave concurrently only after checking dependencies, actual and expected paths, shared interfaces, generated or config surfaces, migrations, and shared runtime resources. Results then fold in one at a time against the advancing canonical tree. A clean patch is not proof of semantic compatibility; overlap or uncertainty returns the affected work to host resolution, re-dispatch, or serial execution.
 
@@ -125,7 +118,7 @@ Not every invocation has a plan. `ce-work` accepts a bare prompt and triages by 
 
 Invocation origin does not change this. Harnesses do not reliably tell the skill whether the user named it or the model selected it. If the conversation carries one unambiguous active plan (say, the agent just authored it and the user says "proceed"), that plan wins over bare-prompt triage. Otherwise a concrete implementation request is the bare prompt.
 
-When an external route is selected for clear bare-prompt work, `ce-work` does not send the conversation to the worker. It distills the request into a private bounded implementation brief: goal, scope, discovered files and tests, acceptance and verification, constraints, and conservative units. If it cannot fill in the goal, bounded scope, and authoritative verification without guessing, it clarifies or routes to `ce-plan` before anything leaves the host.
+Before dispatching clear bare-prompt work to a worker, `ce-work` does not send the conversation to the worker. It distills the request into a private bounded implementation brief: goal, scope, discovered files and tests, acceptance and verification, constraints, and conservative units. If it cannot fill in the goal, bounded scope, and authoritative verification without guessing, it clarifies or routes to `ce-plan` first.
 
 ### Session-settled decisions are not yours to improve
 
@@ -137,7 +130,7 @@ A KTD carrying a `session-settled:` label records a decision the user examined a
 
 A plan with four implementation units arrives. `ce-work` reads it, picks up an `Execution note` asking for a failing request-level proof on one unit, and notes a deferred-implementation question. It builds a task list with U-ID prefixes and moves off the default branch onto a feature branch named from the plan, without asking.
 
-Two units share a contract, so they run serially. The other two are independent and can author concurrently. With native execution they use the host's available worker isolation; with a selected external route, each gets a detached sibling worktree. The host inspects every actual change set, folds results into the active checkout one at a time, verifies, and creates separate canonical commits. The idempotency check catches that one unit's verification was already satisfied by a prior session and marks it complete without reimplementation.
+Two units share a contract, so they run serially. The other two are independent and can author concurrently. They use the host's available worker isolation; units with harness-managed isolation each get their own workspace. The host inspects every actual change set, folds results into the active checkout one at a time, verifies, and creates separate canonical commits. The idempotency check catches that one unit's verification was already satisfied by a prior session and marks it complete without reimplementation.
 
 `ce-code-review` self-selects a lite roster for the small, low-risk diff. The two suggested findings are addressed afterward. Final validation passes, the operational validation plan is drafted, and `ce-work` invokes `ce-commit-push-pr` with `branding:on` (or the project's own shipping process, when its instructions name one). The plan itself is left untouched. Whether it shipped is derived from git, not recorded in the doc.
 
@@ -164,7 +157,7 @@ Skip `ce-work` when:
 
 ## Make It Automatic
 
-If you want implementation to go through `ce-work` by default, add a standing instruction to your agent's instruction file (the repo's `AGENTS.md`/`CLAUDE.md`, or your global one):
+If you want implementation to go through `ce-work` by default, add a standing instruction to your agent's instruction file (the repo's `AGENTS.md`, or your global one):
 
 > When asked to build or change code, invoke the `ce-work` skill. For a change already specified down to the files it touches with no behavior change — a typo, a rename, a dependency bump — make the change directly instead.
 
@@ -221,53 +214,13 @@ When another workflow owns the post-implementation shipping gates (final simplif
 
 This mode keeps `ce-work` on implementation and local verification. Mid-implementation "Simplify as You Go" still runs during Phase 2. After that, `ce-work` returns a structured envelope with changed files, completed units, verification evidence, and blockers, sets `standalone_shipping_skipped: true`, and does not run the standalone shipping tail. The caller remains responsible for every post-implementation gate.
 
-Automatic callers can also pass `implementation_engine:<compact-json>` (one `mode`, `target`, `model`, and `source` binding) and `implementation_run:<safe-id>` (resume that existing run) before the plan path.
+Automatic callers can also pass `implementation_run:<safe-id>` (resume that existing run) before the plan path.
 
 ## Choose the Implementation Author
 
-Native execution is the default. You can assign implementation to a target in the current prompt without changing who owns verification, commits, or the shipping tail:
+Implementation always runs natively on the session model. The host owns verification, canonical commits, and the shipping tail. Retired routing keys are no longer read; remove them from user configs.
 
-```text
-/ce-work use Codex for implementation on docs/plans/2026-07-15-example.md
-/ce-work implement docs/plans/2026-07-15-example.md with Cursor
-/ce-work use Cursor with Grok for implementation on docs/plans/2026-07-15-example.md
-/ce-work only use Composer for implementation on docs/plans/2026-07-15-example.md
-/ce-work use Codex to add retry limits to the existing webhook sender
-```
-
-The first three are preferences: `ce-work` attempts the route and, if it is unavailable, continues natively with a prominent requested-versus-actual disclosure. The fourth is a requirement: `ce-work` keeps that external identity fixed while the route is viable and never substitutes another external recipient, but an unavailable route still continues on the current harness and session model after one disclosure. Intent matters, not a particular keyword.
-
-An explicit current task wins. A still-active session preference remains applicable. An implementation-only caller binding keeps its recorded provenance. Active project or user instructions already in context can supply a default. Per-checkout config is the final preference before native execution. An incidental model mention in feature prose, quoted text, examples, or filenames does nothing.
-
-The last example is planless. `ce-work` first scopes the request against the repository and tests, then gives Codex only the bounded private brief. The host remains responsible for inspecting the actual change, authoritative verification, canonical commits, and the shipping tail.
-
-Put an ordered, host-relative preference list in CE config (`config.local.yaml` then `config.yaml`):
-
-```yaml
-work_engine_mode: prefer       # off | prefer | require
-work_engine_preferences:
-  - harness: cursor
-    model: composer
-  - harness: codex
-    model: "gpt-5.6"
-  - harness: claude
-```
-
-The [central configuration reference](./configuration.md#implementation-routing) explains how this checkout-local default interacts with current-task, session, and project instructions.
-
-Each candidate has a `harness` (`codex`, `claude`, `grok`, `cursor`, or `opencode`) and an optional `model`. Omitting `model` means that harness's configured default. Composer is a model family reached through Cursor, so it is written as `harness: cursor` plus `model: composer`. Keep CLI flags and commands out of config.
-
-`off`, a commented or missing mode, and an invalid mode preserve the native default. `off` affects only standing config; it does not cancel applicable live intent or a caller binding. Both `prefer` and `require` try ordered candidates, then fall back natively on the current harness and session model with one disclosure. `require` keeps the requested external identity fixed while viable and never substitutes an unrequested external recipient.
-
-A candidate is usable only after its unattended, write-capable, isolated-workspace route has qualified and the necessary CLI or authentication is available.
-
-### What an External Run Does
-
-Before any repository material leaves the host, `ce-work` discloses the instruction or config source, the fixed recipient, what bounded unit material is exposed, and which restrictions are adapter-enforced versus cooperative. The adapter uses the CLI's existing authentication, receives a minimized environment, and cannot switch recipients, widen scope, push, open a PR, or choose fallback.
-
-Each external unit starts from a clean recorded SHA in a detached linked worktree under `/tmp/compound-engineering-<effective-uid>/ce-work/<run-id>/` (or `$TMPDIR/compound-engineering-<effective-uid>/ce-work/<run-id>/` when `/tmp` cannot host a writable private root, as in a sandbox that only allowlists `$TMPDIR`). This is same-user concurrency and accidental-mutation containment, **not a security sandbox**. Synchronous native units still use the active checkout; `ce-work` does not create a temporary worktree for every unit. If the selected plan is the only dirty path, `ce-work` discloses and creates a plan-only checkpoint commit first. Any unrelated dirt makes the external route unavailable.
-
-Every CE Work runner start pins a two-hour hard cap independently of the shared runner's shorter default. Workers leave the completed working tree uncommitted. The host snapshots that tree into one complete synthetic transport commit, inspects the actual change set, applies it without committing, runs authoritative tests, and creates one host-owned canonical commit. Failed, timed-out, divergent, or unintegrated runs remain in the private run directory. Reinvoke with the reported run id to resume exactly once. A live attempt cannot race a native fallback. Explicit reap and ownership-checked cleanup are available for preserved attempts.
+For clear bare-prompt work, `ce-work` scopes the request against the repository and tests before implementing. The host remains responsible for inspecting the actual change, authoritative verification, canonical commits, and the shipping tail.
 
 ---
 
@@ -278,10 +231,8 @@ Every CE Work runner start pins a two-hour hard cap independently of the shared 
 | _(empty)_ | Auto-uses the newest `implementation-ready` code plan (or legacy code plan) in `docs/plans/`. Stops if the newest match is requirements-only, knowledge-work, an approach-plan, or unclassified. |
 | `<plan path>` | Execute that plan. A requirements-only unified plan is refused until `ce-plan` enriches it. |
 | `<bare prompt>` | Triage by complexity (Trivial / Small-Medium / Large) |
-| `use Codex` / `with Cursor` / `only use Composer` | Request or require an external implementation author. The host still verifies, commits, and ships. |
 | `mode:return-to-caller <plan path>` | Outer-orchestrator use: implement and locally verify, then return structured evidence without the standalone shipping tail |
-| `mode:return-to-caller implementation_engine:<compact-json> <plan path>` | Automatic-caller form carrying one implementation-only `mode`, `target`, `model`, and `source` binding |
-| `implementation_run:<safe-id>` or `resume run <id>` | Resume, inspect, or clean up that existing external run. Does not start new work. |
+| `implementation_run:<safe-id>` or `resume run <id>` | Resume, inspect, or clean up that existing run. Does not start new work. |
 | Knowledge-work plan (`execution: knowledge-work`) | Produce the planned deliverable; skip branch, test, review, and PR machinery |
 
 Output: commits and (typically) a PR via `ce-commit-push-pr` — or via a project-defined shipping process when the project's instructions name one; user preference > project process > default. The plan is read-only throughout. `ce-work` never mutates it. Whether it shipped is derived from git, not recorded in the doc.
@@ -297,10 +248,10 @@ Because the plan deliberately does not have exact signatures. It has decisions, 
 Bare-prompt mode triages by complexity. Trivial goes straight to implementation. Small or medium builds a task list. Large surfaces a recommendation to plan first.
 
 **Does `ce-work` create a detached worktree for every unit?**
-No. Synchronous native implementation stays in the active checkout, and native subagents use the host harness's workspace behavior. Only independently running external units use the controller-owned detached worktrees described above.
+No. Synchronous native implementation stays in the active checkout, and native subagents use the host harness's workspace behavior. Only workers with harness-managed isolation get their own workspace (for example, a linked worktree the harness manages).
 
-**Are those external worktrees a security sandbox?**
-No. They isolate concurrent Git state and contain accidental mutation, but the external CLI runs as the same OS user. `ce-work` limits the packet and authority; stronger OS isolation is outside this feature.
+**Are those isolated workspaces a security sandbox?**
+No. They isolate concurrent Git state and contain accidental mutation, but the worker runs as the same OS user. `ce-work` limits the packet and authority; stronger OS isolation is outside this feature.
 
 **Why does it check whether work is already done before each task?**
 Resuming after context compaction, picking up someone else's branch, or returning to a partly-shipped plan are all common. Idempotency keeps `ce-work` from silently reimplementing what is already there.

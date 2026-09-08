@@ -56,7 +56,7 @@ Run `/reload-plugins` or start a new omp session after installing so the skills 
 
 **Each unit of engineering work should make subsequent units easier -- not harder.**
 
-Invocation syntax: this README uses `/skill-name` examples for slash-skill hosts. In Codex, invoke installed skills with `$skill-name` (for example, `$ce-plan` and `$lfg`). In oh-my-pi (omp), these prompts can model-route to visible skills; use the native deterministic `/skill:<name>` form for manual-only or hidden skills (for example, `/skill:ce-polish`). `/goal` remains a Codex built-in command.
+Invocation syntax: this README uses `/skill-name` shorthand in examples; the omp-native form is `/skill:<name>` (for example, `/skill:ce-plan` and `/skill:lfg`).
 
 Traditional development accumulates technical debt. Every feature adds complexity. Every bug fix leaves behind a little more local knowledge that someone has to rediscover later. The codebase gets larger, the context gets harder to hold, and the next change becomes slower.
 

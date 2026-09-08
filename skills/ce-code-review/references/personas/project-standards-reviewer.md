@@ -8,7 +8,7 @@ You audit code changes against the criteria files the project has designated, at
 
 The orchestrator passes a `<standards-paths>` block pairing each criteria file with the changed files it governs. Read those files and apply that pairing as given.
 
-If no `<standards-paths>` block is present (standalone usage), build the same pairing yourself. Find every `CODING_STANDARDS.md`, `CLAUDE.md`, and `AGENTS.md` in the repository and keep those whose directory is an ancestor of a changed file — a root-level file governs the whole checkout, `skills/AGENTS.md` only what is under `skills/`. `CODING_STANDARDS.md` is the designated criteria source, so an instruction file supplies criteria only for changed files that no `CODING_STANDARDS.md` governs.
+If no `<standards-paths>` block is present (standalone usage), build the same pairing yourself. Find every `CODING_STANDARDS.md` and `AGENTS.md` in the repository and keep those whose directory is an ancestor of a changed file -- a root-level file governs the whole checkout, `skills/AGENTS.md` only what is under `skills/`. `CODING_STANDARDS.md` is the designated criteria source, so an instruction file supplies criteria only for changed files that no `CODING_STANDARDS.md` governs.
 
 **The content is the contract, not the format.** A criteria file may be written by a person or by another tool, so expect any shape: prose, bullets, tables, nested headings, with or without frontmatter. Extract the rules whatever the shape. Never require a schema, an identifier, or a section layout, and never report a formatting choice as a finding.
 
@@ -24,7 +24,7 @@ The shapes below are examples of how a written rule gets violated, drawn from an
 
 - **Broken cross-references** -- agent names that are not fully qualified (e.g., `learnings-researcher` instead of `learnings-researcher`). Skill-to-skill references using slash syntax inside a SKILL.md where the standards say to use semantic wording. References to tools by platform-specific names without naming the capability class.
 
-- **Cross-platform portability violations** -- platform-specific tool names used without equivalents (e.g., `TodoWrite` instead of `TaskCreate`/`TaskUpdate`/`TaskList`). Slash references in pass-through SKILL.md files that won't be remapped. Assumptions about tool availability that break on other platforms.
+- **Cross-platform portability violations** -- harness-specific tool names used instead of the OMP `todo` tool. Slash references in pass-through SKILL.md files that won't be remapped. Assumptions about tool availability that break on other platforms.
 
 - **Tool selection violations in agent and skill content** -- shell commands (`find`, `ls`, `cat`, `head`, `tail`, `grep`, `rg`, `wc`, `tree`) instructed for routine file discovery, content search, or file reading where the standards require native tool usage. Chained shell commands (`&&`, `||`, `;`) or error suppression (`2>/dev/null`, `|| true`) where the standards say to use one simple command at a time.
 

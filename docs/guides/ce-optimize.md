@@ -4,7 +4,7 @@
 
 `ce-optimize` is an on-demand **optimization** skill. The goal is confirmed improvements on an `optimize/<spec-name>` branch, not a one-shot edit. A first run stays short and serial until the harness is trusted; a harder target spends longer in the same phases. On a cost target (latency, CPU, memory, throughput, I/O, wall time), it attributes shares before it tries implementation experiments. On a scored variant space (judge, clustering, search, prompts, a multi-objective that is not a single hotspot), it searches and keeps. If you already know the change, make it. If you need a root cause, that is `ce-debug`.
 
-It writes a spec (or loads yours), measures a baseline, then runs the next cheapest action that would change what gets implemented: a locating measurement, or experiments in isolated worktrees (or via Codex when the spec says so). Wins stay on an `optimize/<spec-name>` branch. Losses revert. It writes every result to disk, so a long run survives a crash or a compacted context.
+It writes a spec (or loads yours), measures a baseline, then runs the next cheapest action that would change what gets implemented: a locating measurement, or experiments in isolated worktrees. Wins stay on an `optimize/<spec-name>` branch. Losses revert. It writes every result to disk, so a long run survives a crash or a compacted context.
 
 It handles multi-file code changes and non-ML work alike: clustering, search, prompts, build time, latency, anything you can score the same way twice.
 
@@ -182,7 +182,6 @@ Templates live next to the skill: `references/example-hard-spec.yaml` for a chea
 
 In-scope files must be clean before measurement. Uncommitted changes in the spec's mutable or immutable paths have to be committed or stashed.
 
-`execution.backend: codex` (in the spec, not as a prompt flag) sends each experiment to `codex exec`. If you are already inside a Codex sandbox, or `.git` is not writable, it falls back to subagents. Three Codex failures in a row disable that backend for the rest of the run.
 
 First-run defaults worth keeping until the harness is trusted: `execution.mode: serial`, `max_concurrent: 1`, `max_iterations: 4`, `max_hours: 1`. For judge mode: `sample_size: 10`, `batch_size: 5`, `max_total_cost_usd: 5`.
 
@@ -201,8 +200,8 @@ A cheap check that rejects a broken solution before the expensive score. "All it
 **What if an experiment needs a new dependency?**
 Hypothesis generation collects unique new deps and asks for one bulk approval. Unapproved hypotheses stay in the backlog, are skipped during the loop, and come back at wrap-up.
 
-**Can it run on Codex instead of subagents?**
-Yes, via `execution.backend: codex` in the spec. It falls back to subagents when Codex sandboxing is not usable from this context.
+**Where do experiments run?**
+Experiments run in isolated worktrees, or one at a time when worktrees are unavailable.
 
 **What is still there after the run?**
 The `optimize/<spec-name>` branch, with a commit per kept experiment. The spec and experiment log stay under `.context/compound-engineering/ce-optimize/<spec-name>/` on this machine. That directory is gitignored.

@@ -6,9 +6,9 @@ const repoRoot = path.join(__dirname, "../..")
 const read = (p: string) => readFileSync(path.join(repoRoot, p), "utf8")
 
 // `cross_model_review_mode: off` is a checkout-local egress gate for the review
-// skills' automatic cross-model pass. It must be evaluated before peer
-// resolution or any dispatch, in both consumers, and be documented wherever
-// ordinary CE config keys are documented.
+// skills' automatic cross-model pass. It is evaluated before the fixed omp
+// dispatch in both consumers (no peer resolution exists), and the template
+// ships an active auto default.
 describe("cross_model_review_mode egress gate", () => {
   const references = [
     "skills/ce-code-review/references/cross-model-review.md",
@@ -16,21 +16,22 @@ describe("cross_model_review_mode egress gate", () => {
   ]
 
   for (const ref of references) {
-    test(`${ref} gates the automatic pass on cross_model_review_mode before peer resolution`, () => {
+    test(`${ref} gates the automatic pass on cross_model_review_mode before omp dispatch`, () => {
       const content = read(ref)
       const gate = content.indexOf("cross_model_review_mode")
-      const resolution = content.indexOf("Resolve the preference in this order")
+      // skills/*/references/cross-model-review.md:33 (no preference order to
+      // resolve: the fixed omp dispatch is the only route)
+      const dispatch = content.indexOf("Explicit omp dispatch")
       expect(gate).toBeGreaterThan(-1)
-      expect(resolution).toBeGreaterThan(-1)
-      expect(gate).toBeLessThan(resolution)
-      // Only these two values are valid; the default keeps today's behavior.
-      expect(content).toMatch(/`auto` \(default\)/)
-      // The skip is a distinct, named reason -- not folded into "unavailable" --
-      // both at the gate and where the fold-in step writes Coverage.
-      expect(content).toContain("disabled by checkout config")
-      expect(content).toContain('"cross-model pass: disabled by checkout config"')
-      // A live conversation opt-in still overrides the checkout default.
-      expect(content).toMatch(/explicitly ask(s|ed) for a cross-model peer/)
+      expect(dispatch).toBeGreaterThan(gate)
+      // skills/*/references/cross-model-review.md:28-29 (auto default, off valid)
+      expect(content).toMatch(/`auto`\s+\(default\)/)
+      expect(content).toContain("`off`")
+      // skills/*/references/cross-model-review.md:29-30 (off skips quietly, no worker call)
+      expect(content).toContain("skip the automatic pass")
+      expect(content).toContain("NO worker call")
+      // skills/*/references/cross-model-review.md:31 (live opt-in still runs)
+      expect(content).toContain("explicit user request for a separate read in conversation still runs")
     })
   }
 
@@ -40,12 +41,11 @@ describe("cross_model_review_mode egress gate", () => {
     }
   })
 
-  test("ce-code-review body treats missing peer keys as the default auto route", () => {
+  test("ce-code-review body treats a missing key as the default auto route", () => {
     const body = read("skills/ce-code-review/SKILL.md")
-    expect(body).toContain("skip and target-selection keys")
-    expect(body).toContain("default auto route")
-    expect(body).toContain("Another skill's engine preference is not this gate")
-    expect(body).toContain("Model and effort overrides stay with the bound target")
+    // skills/ce-code-review/SKILL.md:28 (absent key means auto, never a skip)
+    expect(body).toContain("only skip key is `cross_model_review_mode`")
+    expect(body).toContain("Missing files or unset keys take the default auto route")
   })
 
   test("config template, example, and configuration reference document the key", () => {
@@ -72,25 +72,12 @@ describe("cross_model_review_mode egress gate", () => {
   })
 
   test("fork template ships OMP-safe generation defaults (S6/S7.2 snapshot)", () => {
-    for (const p of [
-      "skills/ce-setup/references/config-template.yaml",
-      ".compound-engineering/config.example.yaml",
-    ]) {
-      const content = read(p)
-      // (a) active auto gate for newly generated configs
-      expect(content).toMatch(/^cross_model_review_mode: auto/m)
-      // (b) work engine stays commented (native execution default)
-      expect(content).toContain("# work_engine_mode: prefer")
-      expect(content).not.toMatch(/^work_engine_mode:/m)
-      // (c) elevation keys stay unset (session model)
-      expect(content).toContain("# plan_model: fable")
-      expect(content).toContain("# brainstorm_model: fable")
-      expect(content).not.toMatch(/^plan_model:/m)
-      expect(content).not.toMatch(/^brainstorm_model:/m)
-    }
-    // (d) the committed example is the bundled template byte-for-byte
-    expect(read(".compound-engineering/config.example.yaml")).toBe(
-      read("skills/ce-setup/references/config-template.yaml"),
-    )
+    const content = read("skills/ce-setup/references/config-template.yaml")
+    // (a) active auto gate for newly generated configs
+    expect(content).toMatch(/^cross_model_review_mode: auto/m)
+    // (b) no active retired key: the work engine and the old peer preference
+    // are unread; re-adding either as an active key revives dead routing.
+    expect(content).not.toMatch(/^work_engine_mode:/m)
+    expect(content).not.toMatch(/^cross_model_peer:/m)
   })
 })

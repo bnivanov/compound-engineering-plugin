@@ -326,14 +326,11 @@ describe("verification_evidence seam parity (ce-work <-> lfg)", () => {
   test("lfg retries ce-work exactly once for evidence, then blocks rather than ships", async () => {
     const gate = await readRepoFile("skills/lfg/references/work-return.md")
 
-    // One-shot recovery on the same plan and engine binding, with the returned durable run id.
+    // One-shot recovery on the same plan path; native idempotency fills the missing evidence.
     expect(gate).toContain("invoke `ce-work` one more time in recovery mode")
-    expect(gate).toContain("same `implementation_engine:<compact-json>` carrier")
-    expect(gate).toContain("implementation_run:<safe-id>")
-    expect(gate).toContain("Do not prompt the user and do not alter the plan path or engine carrier")
-    expect(gate).toContain("When `actual_route` is `native` and `run_id` is `null`")
-    expect(gate).toContain("repeat the original ce-work invocation once without an `implementation_run:` carrier")
-    expect(gate).toContain("A non-native return without a safe run id remains blocked")
+    expect(gate).toContain("with the same plan path")
+    expect(gate).toContain("Do not prompt the user and do not alter the plan path")
+    expect(gate).toMatch(/evidence reconciliation, not a fresh dispatch/i)
     // Second still-missing return stops blocked instead of continuing to ship.
     expect(gate).toContain("stop as blocked and report the missing fields")
     expect(gate).toContain("instead of continuing to simplify/review/ship")
@@ -374,16 +371,13 @@ describe("missing-owner blocked seam parity (ce-plan/ce-work -> lfg)", () => {
     expect(planBrief).toContain("the path `ce-plan` reported writing this run")
   })
 
-  test("lfg decides a require-route fallback from the return, consistent with ce-work's producer contract", async () => {
-    // 2026-08-21 eval: ce-work (cross-model-execution.md) discloses and continues natively under `require`; the consumer
-    // used to say ce-work "must not fall back", which no return could satisfy. The stop is now keyed on the return fields.
-    const [workReturn, crossModel] = await Promise.all([
-      readRepoFile("skills/lfg/references/work-return.md"),
-      readRepoFile("skills/ce-work/references/cross-model-execution.md"),
-    ])
-    expect(crossModel).toContain("continue on the current harness and session model")
-    expect(workReturn).toContain("`implementation_engine_binding.mode` is `require` and whose `actual_route` differs from `requested_route` stops the pipeline as blocked")
-    expect(workReturn).not.toContain("must not prompt, fall back, or start native work")
+  test("lfg runs native-only with no route fallback", async () => {
+    const workReturn = await readRepoFile("skills/lfg/references/work-return.md")
+    expect(workReturn).toContain("## Native-only execution")
+    expect(workReturn).toMatch(/no route binding, no fallback/i)
+    expect(workReturn).toMatch(/every `status: complete` return describes native work/i)
+    expect(workReturn).not.toContain("implementation_engine_binding")
+    expect(workReturn).not.toContain("actual_route")
   })
 
   test("the reduced ce-work blocker matches the authoritative field inventory", async () => {
@@ -399,7 +393,7 @@ describe("missing-owner blocked seam parity (ce-plan/ce-work -> lfg)", () => {
     const lfgSection = sliceSection(
       workReturn,
       "## Missing-owner blocked return",
-      "## What each route outcome means",
+      "## Native-only execution",
     )
     const required = ["status: blocked", "plan_path", "run_id", "changed_state", "blockers", "recovery_path"]
     for (const field of required) {
@@ -411,8 +405,8 @@ describe("missing-owner blocked seam parity (ce-plan/ce-work -> lfg)", () => {
   })
 })
 
-describe("cross-model execution receipt seam parity (ce-work <-> lfg)", () => {
-  const COMPLETE_RETURN_FIELDS = [
+describe("native execution receipt seam parity (ce-work <-> lfg)", () => {
+  const NATIVE_RETURN_FIELDS = [
     "status",
     "plan_path",
     "changed_files",
@@ -420,12 +414,6 @@ describe("cross-model execution receipt seam parity (ce-work <-> lfg)", () => {
     "u_ids_completed",
     "verification_results",
     "verification_evidence",
-    "implementation_engine_binding",
-    "requested_route",
-    "actual_route",
-    "requested_model",
-    "actual_model",
-    "fallback_reason",
     "run_id",
     "source_kind",
     "source_digest",
@@ -437,6 +425,14 @@ describe("cross-model execution receipt seam parity (ce-work <-> lfg)", () => {
     "behavior_change",
     "standalone_shipping_skipped",
   ]
+  const ENGINE_RESIDUAL_FIELDS = [
+    "implementation_engine_binding",
+    "requested_route",
+    "actual_route",
+    "requested_model",
+    "actual_model",
+    "fallback_reason",
+  ]
 
   test("one full inventory pins every ce-work producer field and lfg consumer gate", async () => {
     const returned = await readRepoFile("skills/ce-work/references/return-to-caller.md")
@@ -447,11 +443,16 @@ describe("cross-model execution receipt seam parity (ce-work <-> lfg)", () => {
       "## Verification evidence",
     )
 
-    for (const field of COMPLETE_RETURN_FIELDS) {
+    for (const field of NATIVE_RETURN_FIELDS) {
       const fieldToken = new RegExp("`" + field + "(?:`|:)")
       expect(returned, `ce-work must return ${field}`).toMatch(fieldToken)
       expect(gate, `lfg must require ${field} on every complete return`).toMatch(fieldToken)
     }
+    for (const field of ENGINE_RESIDUAL_FIELDS) {
+      expect(returned, `producer must not emit engine residual ${field}`).not.toContain(field)
+      expect(gate, `consumer must not require engine residual ${field}`).not.toContain(field)
+    }
+    expect(workReturn).toMatch(/no route binding, no fallback/i)
   })
 
   test("lfg fails closed for unknown or malformed work returns", async () => {
@@ -687,12 +688,17 @@ describe("ce-plan review contract", () => {
     const content = await readRepoFile("skills/ce-plan/references/plan-handoff.md")
 
     // Both executors are offered; ce-work is always the recommended default (it is the
-    // correctly-layered entry point that reaches goal/workflow engines itself), while goal
-    // mode is the opt-in preference for driving the work through the harness's goal loop.
+    // correctly-layered entry point that runs native in the session), while goal
+    // mode is the opt-in preference for driving the work through the harness's native goal loop.
     expect(content).toContain("**Start `ce-work`** - Build and ship the plan in this session")
     expect(content).toContain("**Run it as a `/goal`**")
     expect(content).toMatch(/`ce-work` \(option 1\) always carries \*\(recommended\)\*/i)
-    expect(content).toContain("Codex `create_goal` in the available tool list")
+    expect(content).toContain("option 2 only on hosts with goal capability")
+    expect(content).toMatch(/OMP goal launch needs no capability probe/i)
+    expect(content).toMatch(/start the goal via herdr where the session can/i)
+    expect(content).toMatch(/headless `omp -p` invocation/i)
+    expect(content).not.toContain("create_goal")
+    expect(content).not.toContain("Codex")
 
     // Deeper review is a first-class menu fixture so users can engage with surfaced findings
     // without relying on free-form prompting; routed through ce-doc-review without non-interactive mode.
@@ -701,7 +707,7 @@ describe("ce-plan review contract", () => {
     expect(content).toContain("without** `mode:non-interactive`")
 
     // Deeper-review menu fixture is hidden when no actionable findings remain so the menu
-    // collapses back to a 4-option AskUserQuestion-friendly shape on Claude Code. FYI-only
+    // stays within the ask tool blocking-question option cap. FYI-only
     // state also hides the option since ce-doc-review's walkthrough is gated to actionable
     // findings (anchor 75/100, gated_auto/manual) and FYIs (anchor 50) bypass it.
     expect(content).toContain("Hide `Decide on the review's open items` (option 3) when no actionable findings remain")
@@ -833,7 +839,6 @@ describe("ce-doc-review contract", () => {
     // attributed evidence and cannot promote. The twin *fingerprint* exception it
     // used to name was deleted with 3.3's string matching.
     expect(synthesis).toContain("cannot trigger anchor promotion")
-    expect(synthesis).toContain("Cursor default/Auto")
 
     // R29 and R30 round-2 rules
     expect(synthesis).toContain("R29 Rejected-Finding Suppression")
@@ -923,7 +928,7 @@ describe("ce-doc-review contract", () => {
     expect(modes).not.toContain("select:AskUserQuestion")
     expect(modes).toContain("numbered-list fallback")
     expect(dispatch).toContain("active-subagent limit")
-    expect(dispatch).toContain("spawn errors as backpressure, not reviewer failure")
+    expect(dispatch).toMatch(/active-agent\/thread\/concurrency-limit dispatch errors as backpressure, not reviewer failure/i)
     expect(dispatch).toContain("queue the remainder")
   })
 
@@ -1259,11 +1264,11 @@ describe("concept-teaching seam parity (ce-commit-push-pr <-> lfg)", () => {
     expect(closeOut).toContain("New concept introduced:")
     expect(closeOut).toContain("run <rendered ce-explain invocation> to go deeper")
     expect(closeOut).toContain("run <rendered ce-babysit-pr invocation> to watch it through review to merge")
-    for (const target of ["ce-explain <name>", "ce-babysit-pr <pr-url>"]) {
-      expect(closeOut).toContain(`$${target}`)
-      expect(closeOut).toContain(`/${target}`)
-    }
-    expect(closeOut).toMatch(/default to `\/ce-explain <name>`[\s\S]{0,360}Codex[\s\S]{0,220}output one form only/i)
+    expect(closeOut).toContain("/skill:ce-explain <name>")
+    expect(closeOut).toContain("/skill:ce-babysit-pr <pr-url>")
+    expect(closeOut).toMatch(/render only the invocation as inline code/i)
+    expect(closeOut).toMatch(/output one form only/i)
+    expect(closeOut).not.toContain("$ce-explain")
 
     // The callee documents the mode the caller passes
     expect(skill).toContain("mode:pipeline")

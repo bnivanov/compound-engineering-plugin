@@ -161,12 +161,12 @@ describe("ce-brainstorm visual probes", () => {
     const body = readFileSync(VISUAL_PROBES_PATH, "utf8")
 
     expect(
-      /Claude Code|Claude desktop/i.test(body),
-      "visual probes must name the Claude Code / desktop launch case.",
+      /\*\*OMP:\*\*.*detached `start` is the default path/i.test(body),
+      "visual probes must name the OMP detached-start launch case.",
     ).toBe(true)
     expect(
-      /Codex CLI|Codex app/i.test(body),
-      "visual probes must name the Codex CLI / app launch case.",
+      /Plain terminal UI/i.test(body),
+      "visual probes must name the plain terminal UI launch case.",
     ).toBe(true)
     expect(
       /--foreground/i.test(body),

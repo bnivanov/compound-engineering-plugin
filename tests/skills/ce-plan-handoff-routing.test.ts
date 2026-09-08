@@ -268,29 +268,21 @@ describe("ce-plan post-generation menu routing", () => {
     ).toBe(false)
   })
 
-  test("Codex goal handoff is capability-based and menu-cap aware", () => {
+  test("goal handoff is capability-based and menu-cap aware", () => {
     for (const [label, body] of [["plan-handoff.md", HANDOFF_BODY]] as const) {
       expect(
         body.includes("top-level `/goal` command"),
-        `${label} must not gate Codex goal handoff on a literal top-level /goal command; Codex exposes goal mode through create_goal.`,
+        `${label} must not gate goal handoff on a literal top-level /goal command.`,
       ).toBe(false)
-      expect(
-        body.includes("hosts with a `/goal` command"),
-        `${label} must not describe goal availability as slash-command-only; use goal capability and Codex create_goal instead.`,
-      ).toBe(false)
-      expect(
-        /(?:Codex [`"]?request_user_input[`"]?[\s\S]{0,120}no option cap|no option cap[\s\S]{0,120}Codex [`"]?request_user_input[`"]?)/i.test(body),
-        `${label} must not claim Codex request_user_input has no option cap; current Codex question tools only allow 2-3 explicit options.`,
-      ).toBe(false)
-
-      expect(
-        body.includes("create_goal") && /goal capability/i.test(body),
-        `${label} must explicitly treat Codex create_goal as goal capability so the /goal option renders in Codex app runs.`,
-      ).toBe(true)
-      expect(
-        /request_user_input[\s\S]{0,120}2-3 explicit options/i.test(body),
-        `${label} must document the Codex request_user_input 2-3 option cap so larger handoff menus use numbered chat instead of trimming choices.`,
-      ).toBe(true)
+      expect(body).toContain("option 2 only on hosts with goal capability")
+      expect(body).toMatch(/OMP goal launch needs no capability probe/i)
+      expect(body).toMatch(/start the goal via herdr where the session can/i)
+      expect(body).toMatch(/headless `omp -p` invocation/i)
+      expect(body).toMatch(/Account for the `ask` tool's blocking-question option cap/i)
+      expect(body).toMatch(/numbered list in chat/i)
+      expect(body).not.toContain("create_goal")
+      expect(body).not.toContain("request_user_input")
+      expect(body).not.toContain("Codex")
     }
   })
 

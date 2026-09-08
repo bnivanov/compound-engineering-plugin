@@ -29,7 +29,6 @@ describe("ce-explain relocated invariants stay greppable in the corpus", () => {
     // may still name request_user_input; the closed per-host catalog must not return.
     "already in the current tool list",
     "never call a user-facing question tool",
-    "request_user_input",
     "Never silently skip the question",
     // Model tiers + degradation
     "Extraction tier",

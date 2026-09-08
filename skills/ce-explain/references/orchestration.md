@@ -33,6 +33,6 @@ The skill body carries the ownership-checked block that creates `$RUN_DIR`; run 
 
 ## Destination menu shape
 
-Detect destinations by capability — probe the agent's own toolset and session context, never a closed list, and never treat a missing binary, env var, or unloaded MCP tool as proof a destination is unavailable when a connector could supply it. Local file and Leave it are ungated and always offered. For default HTML runs, offer one preferred publisher: Claude Artifact when running in Claude Code with its Artifact tool present; otherwise ht-ml.app. Do not show both by default, but honor an explicit user request for either. Offer only what is detected; absence hides an option silently.
+Detect destinations by capability - probe the agent's own toolset and session context, never a closed list, and never treat a missing binary, env var, or unloaded MCP tool as proof a destination is unavailable when a connector could supply it. Local file and Leave it are ungated and always offered. For default HTML runs, offer ht-ml.app as the preferred publisher. Offer only what is detected; absence hides an option silently.
 
-Count visible options against the platform's cap first (Claude Code's `AskUserQuestion` allows up to 4 explicit options; Codex's `request_user_input` only 2-3): when the visible set exceeds the cap, render a numbered list in chat with "Pick a number or describe what you want." and wait instead.
+Count visible options against the ask tool's option cap first: when the visible set exceeds the cap, render a numbered list in chat with "Pick a number or describe what you want." and wait instead.

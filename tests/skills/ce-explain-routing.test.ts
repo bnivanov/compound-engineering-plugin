@@ -49,7 +49,6 @@ describe("ce-explain destination and handoff routing", () => {
 
   test("inline routing exists for every destination option", () => {
     const optionFragments: { name: string; fragment: string }[] = [
-      { name: "Claude Artifact", fragment: "Claude Artifact" },
       { name: "Publish publicly to ht-ml.app", fragment: "Publish publicly to ht-ml.app" },
       { name: "Local file", fragment: "Local file" },
       { name: "Publish to Proof", fragment: "Publish to Proof" },
@@ -108,12 +107,12 @@ describe("ce-explain destination and handoff routing", () => {
     expect(
       /user-invoked only/i.test(line) &&
         /rendering rule above/i.test(line) &&
-        renderingRule![0].includes("$ce-polish") &&
-        renderingRule![0].includes("/ce-polish") &&
         renderingRule![0].includes("/skill:ce-polish") &&
-        /active host|Codex/i.test(renderingRule![0]) &&
-        /default to `\/ce-polish`[^.]{0,180}dollar-prefixed/i.test(renderingRule![0]) &&
-        /oh-my-pi \(`omp`\)[^\n]*\/skill:ce-polish/i.test(renderingRule![0]),
+        /render only the invocation as inline code/i.test(renderingRule![0]) &&
+        /output one form only/i.test(renderingRule![0]) &&
+        !renderingRule![0].includes("$ce-polish") &&
+        !/[`"\']\/ce-polish/.test(renderingRule![0]) &&
+        /user-invoked only/i.test(phaseRegion),
       "`ce-explain` references/destinations.md polish handoff must present observations in chat and render one host-correct user invocation for `ce-polish`.",
     ).toBe(true)
     expect(
@@ -172,10 +171,10 @@ describe("ce-explain destination and handoff routing", () => {
     expect(SKILL_BODY).toMatch(/Do not pre-scan, count, or characterize the window/i)
   })
 
-  test("Claude Artifact owns its adaptation and ht-ml requires post-warning confirmation", () => {
-    expect(DESTINATIONS_BODY).toMatch(/Give the tool the canonical `\$RUN_DIR\/explainer\.html`/i)
-    expect(DESTINATIONS_BODY).toMatch(/tool owns any adaptation needed/i)
-    expect(DESTINATIONS_BODY).toMatch(/do not pre-process the HTML/i)
+  test("ht-ml.app is the preferred publisher and requires post-warning confirmation", () => {
+    expect(DESTINATIONS_BODY).toMatch(/This is the preferred HTML publisher/i)
+    expect(DESTINATIONS_BODY).toMatch(/passing the complete canonical HTML to the resolved publisher/i)
+    expect(DESTINATIONS_BODY).toMatch(/The explainer is already composed; do not select a template or redesign it/i)
     expect(DESTINATIONS_BODY).not.toContain("extract-artifact-fragment.py")
     expect(DESTINATIONS_BODY).toMatch(/public and may be indexed, crawled, copied, or archived/i)
     // The one-preferred-publisher rule can suppress ht-ml.app from a menu that

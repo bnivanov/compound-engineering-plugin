@@ -39,7 +39,7 @@ TEST_PATTERN = re.compile(
 )
 AGENT_SURFACE_PATTERN = re.compile(
     r"(^|/)(skills?|agents?|prompts?|tools?|mcp|commands?)(/|$)|SKILL\.md$|"
-    r"(^|/)(AGENTS|CLAUDE|GEMINI)\.md$|\.cursor/|\.codex-plugin/|\.claude-plugin/",
+    r"(^|/)AGENTS\.md$|\.omp-plugin/",
     re.I,
 )
 

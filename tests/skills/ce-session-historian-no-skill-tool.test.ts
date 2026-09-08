@@ -77,11 +77,14 @@ describe("session-historian prompt no-Skill-tool regression guard", () => {
   })
 })
 
-describe("session-historian omp platform contract", () => {
-  test("input, synthesis, and output contracts include omp", () => {
-    expect(AGENT_BODY).toContain("`platform` — `claude`, `codex`, `cursor`, `pi`, or `omp`")
-    expect(AGENT_BODY).toContain("`cwd` — working directory when present (Claude, Codex, Pi, and omp)")
-    expect(AGENT_BODY).toContain("Claude Code + Codex + Cursor + Pi + omp")
+describe("session-historian pi+omp platform contract", () => {
+  test("input, synthesis, and output contracts admit pi and omp", () => {
+    // Discovery accepts ONLY pi|omp, so the historian platform bullet must
+    // admit both native-family sources. Single-omp collapses Pi away; the
+    // five-platform form retains retired harnesses.
+    expect(AGENT_BODY).toMatch(/`platform`[^`\n]*`pi`[^`\n]*`omp`|`platform`[^`\n]*`omp`[^`\n]*`pi`/s)
+    expect(AGENT_BODY).not.toMatch(/`claude`|`codex`|`cursor`/i)
+    expect(AGENT_BODY).not.toContain("Claude Code + Codex + Cursor + Pi + omp")
     expect(AGENT_BODY).toContain("[N] Pi, [N] omp")
   })
 })

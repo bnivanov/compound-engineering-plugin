@@ -13,10 +13,6 @@ Return:
 - `u_ids_completed`
 - `verification_results`
 - `verification_evidence`: one entry per attempted behavior-bearing unit, plus any non-behavioral unit where tests were intentionally skipped. Each entry states the unit/task, `behavior_changed`, `existing_tests_inspected`, `tests_added_or_changed`, tests used unchanged, red failure or characterization observed when applicable, verification commands/results, and any exception reason. For units executed by subagents, this entry is assembled from each worker's returned evidence, not reconstructed from the diff — the red-before-implementation observation exists only in the worker's report.
-- `implementation_engine_binding`: the resolved one-run `mode`, `target`, `model`, and `source`, or `null` when native execution was selected without a binding
-- `requested_route` and `actual_route`: target plus harness/intermediary identity, kept separate when fallback or same-family substitution occurred
-- `requested_model` and `actual_model`: the request and receipt-attributed served identity (`unverified` when the route supplies no trustworthy receipt)
-- `fallback_reason`: `null` when none, otherwise the observed route-unavailable or substitution reason
 - `run_id`: durable external run identifier, or `null` for native execution
 - `source_kind` and `source_digest`: controller-recorded implementation authority (`plan` plus its digest in Return-to-Caller Mode; standalone bare-prompt runs use `prompt`)
 - `unit_receipts`: route, model, detached-process, integration, verification, canonical-commit, and cleanup state for each attempted unit
@@ -29,4 +25,4 @@ Return:
 
 Return `status: complete` only when behavior-bearing work has verification evidence or a deliberate exception. If a previous return-to-caller run implemented code but omitted evidence, a later same-plan return-to-caller run should use the idempotency check to inspect the existing work, complete the evidence, and return without reimplementing.
 
-Engine selection (`references/execution-engines.md`) still applies in this mode, but only for implementation. Do not emit a copyable goal/workflow prompt — a manual paste step strands the caller; run inline/subagents or return a blocker instead. Any goal/workflow engine used here must not open a PR, run the owner workflow tail, or bypass the caller-owned gates.
+Implementation in this mode is always native: run inline or via subagents under `references/execution-strategy.md`. Do not emit a copyable goal/workflow prompt — a manual paste step strands the caller; run inline/subagents or return a blocker instead, and never open a PR, run the owner workflow tail, or bypass the caller-owned gates.

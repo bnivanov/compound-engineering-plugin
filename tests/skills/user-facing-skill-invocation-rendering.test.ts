@@ -6,80 +6,80 @@ function readRepoFile(relativePath: string): string {
   return readFileSync(path.join(process.cwd(), relativePath), "utf8")
 }
 
+// Prose phase standardized model-visible invocation on the single native
+// /skill: form. Each row pins the shipped /skill: strings verbatim; the test
+// asserts the single-form contract (render rule + no bare $ or /ce- forms).
+// Checked 2026-09-08: the old :125 regexes genuinely mismatched shipped text
+// (no "defaults to /...", no Codex/dollar copy, three files lack
+// "output one form only"), so they were replaced with the checks below.
 const modelVisibleRendererCases = [
   {
     // The pre-DONE handoff lines that print these invocations moved into lfg's
     // close-out reference.
     file: "skills/lfg/references/shipping-tail.md",
-    defaults: ["/ce-explain <name>", "/ce-babysit-pr <pr-url>"],
-    codex: ["$ce-explain <name>", "$ce-babysit-pr <pr-url>"],
-    unnecessaryOmp: ["/skill:ce-explain <name>", "/skill:ce-babysit-pr <pr-url>"],
+    skill: ["/skill:ce-explain <name>", "/skill:ce-babysit-pr <pr-url>"],
+    singleForm: true,
   },
   {
     file: "skills/ce-babysit-pr/SKILL.md",
-    defaults: ["/ce-babysit-pr <url>"],
-    codex: ["$ce-babysit-pr <url>"],
-    unnecessaryOmp: ["/skill:ce-babysit-pr <url>"],
+    skill: ["/skill:ce-babysit-pr <url>"],
+    singleForm: false,
+  },
+  {
+    file: "skills/ce-babysit-pr/references/setup.md",
+    skill: ["/skill:ce-babysit-pr <url>"],
+    singleForm: false,
   },
   {
     file: "skills/ce-babysit-pr/references/watch-loop.md",
-    defaults: ["/ce-babysit-pr <url>"],
-    codex: ["$ce-babysit-pr <url>"],
-    unnecessaryOmp: ["/skill:ce-babysit-pr <url>"],
+    skill: ["/skill:ce-babysit-pr <url>"],
+    singleForm: false,
   },
   {
     // The concept trailer that prints the invocation moved into the apply reference.
     file: "skills/ce-commit-push-pr/references/apply-and-handoff.md",
-    defaults: ["/ce-explain <name>"],
-    codex: ["$ce-explain <name>"],
-    unnecessaryOmp: ["/skill:ce-explain <name>"],
+    skill: ["/skill:ce-explain <name>"],
+    singleForm: false,
   },
   {
     file: "skills/ce-sweep/SKILL.md",
-    defaults: ["/lfg <root>/plans/feedback-sweep-plan.md"],
-    codex: ["$lfg <root>/plans/feedback-sweep-plan.md"],
-    unnecessaryOmp: ["/skill:lfg <root>/plans/feedback-sweep-plan.md"],
+    skill: ["/skill:lfg <root>/plans/feedback-sweep-plan.md"],
+    singleForm: true,
   },
   {
     file: "skills/ce-handoff/SKILL.md",
-    defaults: ["/ce-handoff resume <source>"],
-    codex: ["$ce-handoff resume <source>"],
-    unnecessaryOmp: ["/skill:ce-handoff resume <source>"],
+    skill: ["/skill:ce-handoff resume <source>"],
+    singleForm: true,
   },
   {
     // Both ce-compound seams moved out of the body with the steps that print
     // them: the refresh recommendation into the refresh reference, the retry
     // line into lightweight's completion block. The rule follows its seam.
     file: "skills/ce-compound/references/refresh-and-discoverability.md",
-    defaults: ["/ce-compound-refresh <scope>"],
-    codex: ["$ce-compound-refresh <scope>"],
-    unnecessaryOmp: ["/skill:ce-compound-refresh <scope>"],
+    skill: ["/skill:ce-compound-refresh <scope>"],
+    singleForm: true,
   },
   {
     // report.md is loaded on its own and independently prints the refresh
     // invocation in both terminal templates, so it carries its own rule.
     file: "skills/ce-compound/references/report.md",
-    defaults: ["/ce-compound-refresh <scope>"],
-    codex: ["$ce-compound-refresh <scope>"],
-    unnecessaryOmp: ["/skill:ce-compound-refresh <scope>"],
+    skill: ["/skill:ce-compound-refresh <scope>"],
+    singleForm: true,
   },
   {
     file: "skills/ce-compound/references/lightweight.md",
-    defaults: ["/ce-compound"],
-    codex: ["$ce-compound"],
-    unnecessaryOmp: ["/skill:ce-compound"],
+    skill: ["/skill:ce-compound"],
+    singleForm: true,
   },
   {
     file: "skills/ce-plan/references/universal-planning.md",
-    defaults: ["/ce-plan"],
-    codex: ["$ce-plan"],
-    unnecessaryOmp: ["/skill:ce-plan"],
+    skill: ["/skill:ce-plan"],
+    singleForm: true,
   },
   {
     file: "skills/ce-prototype/SKILL.md",
-    defaults: ["/ce-prototype", "/ce-brainstorm", "/ce-plan"],
-    codex: ["$ce-prototype", "$ce-brainstorm", "$ce-plan"],
-    unnecessaryOmp: ["/skill:ce-prototype", "/skill:ce-brainstorm", "/skill:ce-plan"],
+    skill: ["/skill:ce-prototype", "/skill:ce-brainstorm", "/skill:ce-plan"],
+    singleForm: true,
   },
 ] as const
 
@@ -88,66 +88,55 @@ const explicitOnlyRendererCases = [
     // The rendering rule travels with the seam that prints the invocation: the
     // ce-polish handoff now lives in the Phase 6 required-read reference.
     file: "skills/ce-explain/references/destinations.md",
-    defaults: ["/ce-polish"],
-    codex: ["$ce-polish"],
-    omp: ["/skill:ce-polish"],
+    skill: ["/skill:ce-polish"],
     targets: ["ce-polish"],
   },
   {
     file: "skills/ce-setup/SKILL.md",
-    defaults: ["/ce-setup"],
-    codex: ["$ce-setup"],
-    omp: ["/skill:ce-setup"],
+    skill: ["/skill:ce-setup"],
     targets: ["ce-setup"],
   },
   {
     file: "skills/ce-dogfood/SKILL.md",
-    defaults: ["/ce-setup", "/ce-dogfood <original arguments>"],
-    codex: ["$ce-setup", "$ce-dogfood <original arguments>"],
-    omp: ["/skill:ce-setup", "/skill:ce-dogfood <original arguments>"],
+    skill: ["/skill:ce-setup", "/skill:ce-dogfood <original arguments>"],
     targets: ["ce-setup", "ce-dogfood"],
   },
   {
     file: "skills/ce-sweep/references/interview.md",
-    defaults: ["/ce-sweep"],
-    codex: ["$ce-sweep"],
-    omp: ["/skill:ce-sweep"],
+    skill: ["/skill:ce-sweep"],
     targets: ["ce-sweep"],
   },
 ] as const
 
 describe("user-facing skill invocation rendering", () => {
   test.each(modelVisibleRendererCases)(
-    "$file keeps model-visible handoffs host-neutral",
-    ({ file, defaults, codex, unnecessaryOmp }) => {
+    "$file keeps model-visible handoffs on the single native form",
+    ({ file, skill, singleForm }) => {
       const body = readRepoFile(file)
 
-      expect(body).toMatch(/default(?:s| to)[^\n]*\/[a-z]/i)
-      expect(body).toMatch(/\$[a-z][^\n]*(?:Codex|dollar-prefixed)|(?:Codex|dollar-prefixed)[^\n]*\$[a-z]/i)
-      expect(body).toMatch(/Render (?:only (?:each|the) invocation as inline code|it as the fenced command below)/i)
-      expect(body).toMatch(/Output one form only/i)
-      for (const invocation of defaults) expect(body).toContain(invocation)
-      for (const invocation of codex) expect(body).toContain(invocation)
-      for (const invocation of unnecessaryOmp) expect(body).not.toContain(invocation)
+      for (const invocation of skill) expect(body).toContain(invocation)
+      expect(body).toMatch(/render only.*invocation as inline code|render it as the fenced command below/i)
+      if (singleForm) expect(body).toMatch(/output one form only/i)
+      expect(body).not.toContain("$ce-")
+      expect(body).not.toContain("$lfg")
+      expect(body).not.toMatch(/[`"']\/ce-[a-z]/)
+      expect(body).not.toMatch(/[`"']\/lfg[ \s<]/)
     },
   )
 
   test.each(explicitOnlyRendererCases)(
     "$file uses deterministic OMP syntax for explicit-only skill targets",
-    ({ file, defaults, codex, omp, targets }) => {
+    ({ file, skill, targets }) => {
       const body = readRepoFile(file)
 
-      expect(body).toMatch(/default(?:s| to)[^\n]*\/[a-z]/i)
-      expect(body).toMatch(/\$[a-z][^\n]*(?:Codex|dollar-prefixed)|(?:Codex|dollar-prefixed)[^\n]*\$[a-z]/i)
-      expect(body).toMatch(/Render (?:only (?:each|the) invocation as inline code|it as the fenced command below)/i)
-      expect(body).toMatch(/Output one form only/i)
-      expect(body).toMatch(/\/skill:[a-z][^\n]*oh-my-pi|oh-my-pi[^\n]*\/skill:[a-z]/i)
       for (const target of targets) {
         expect(readRepoFile(`skills/${target}/SKILL.md`)).toMatch(/^disable-model-invocation:\s*true$/m)
       }
-      for (const invocation of defaults) expect(body).toContain(invocation)
-      for (const invocation of codex) expect(body).toContain(invocation)
-      for (const invocation of omp) expect(body).toContain(invocation)
+      for (const invocation of skill) expect(body).toContain(invocation)
+      expect(body).toMatch(/render only.*invocation as inline code|render it as the fenced command below/i)
+      expect(body).not.toContain("$ce-")
+      expect(body).not.toContain("$lfg")
+      expect(body).not.toMatch(/[`"']\/ce-[a-z]/)
     },
   )
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Discover session files across Claude Code, Codex, Cursor, Pi, and oh-my-pi (omp).
+# Discover session files across Pi and oh-my-pi (omp).
 #
-# Usage: discover-sessions.sh <repo-name> <days> [--cwd /abs/repo/root] [--platform claude|codex|cursor|pi|omp]
+# Usage: discover-sessions.sh <repo-name> <days> [--cwd /abs/repo/root] [--platform pi|omp]
 #
 # Outputs one file path per line. Safe in both bash and zsh (all globs guarded).
 # Pass output to extract-metadata.py:
@@ -11,14 +11,14 @@
 #   repo-name  Folder name of the repo (e.g., "my-repo"). Used for directory matching.
 #   days       Scan window in days (e.g., 7). Files older than this are skipped.
 #   --cwd      Absolute repo root. Used for exact Pi encoded-CWD discovery
-#              and the omp raw-bucket probe. Claude listing is unfiltered;
+#              and the omp raw-bucket probe.
 #              extract-metadata.py --cwd-filter matches recorded cwd.
 #   --platform Restrict to a single platform. Omit to search all.
 
 set -euo pipefail
 
-REPO_NAME="${1:?Usage: discover-sessions.sh <repo-name> <days> [--cwd /abs/repo/root] [--platform claude|codex|cursor|pi|omp]}"
-DAYS="${2:?Usage: discover-sessions.sh <repo-name> <days> [--cwd /abs/repo/root] [--platform claude|codex|cursor|pi|omp]}"
+REPO_NAME="${1:?Usage: discover-sessions.sh <repo-name> <days> [--cwd /abs/repo/root] [--platform pi|omp]}"
+DAYS="${2:?Usage: discover-sessions.sh <repo-name> <days> [--cwd /abs/repo/root] [--platform pi|omp]}"
 PLATFORM="all"
 REPO_CWD=""
 
@@ -39,42 +39,6 @@ encode_pi_cwd() {
     printf -- "--%s--" "$encoded"
 }
 
-# --- Claude Code ---
-# List every recent jsonl under <config-dir>/projects. Folder names are an
-# undocumented encoder of session CWD; do not invert them. Repo attribution
-# is the recorded `cwd` field, applied by extract-metadata.py --cwd-filter.
-# CLAUDE_CONFIG_DIR relocates the whole config tree (official); unset -> ~/.claude.
-discover_claude() {
-    local base="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects"
-    [ -d "$base" ] || return 0
-    find "$base" -mindepth 2 -maxdepth 2 -type f -name "*.jsonl" -mtime "-${DAYS}" 2>/dev/null
-}
-
-# --- Codex ---
-discover_codex() {
-    local codex_home="${CODEX_HOME:-$HOME/.codex}"
-    for base in "$codex_home/sessions" "$HOME/.agents/sessions"; do
-        [ -d "$base" ] || continue
-
-        # Use mtime-based discovery (consistent with Claude/Cursor) so that
-        # sessions started before the scan window but still active within it
-        # are not missed.
-        find "$base" -name "*.jsonl" -mtime "-${DAYS}" 2>/dev/null
-    done
-}
-
-# --- Cursor ---
-discover_cursor() {
-    local base="$HOME/.cursor/projects"
-    [ -d "$base" ] || return 0
-
-    for dir in "$base"/*"$REPO_NAME"*/; do
-        [ -d "$dir" ] || continue
-        local transcripts="$dir/agent-transcripts"
-        [ -d "$transcripts" ] || continue
-        find "$transcripts" -name "*.jsonl" -mtime "-${DAYS}" 2>/dev/null
-    done
-}
 
 # --- Pi ---
 discover_pi() {
@@ -244,9 +208,6 @@ discover_omp() {
 
 # --- Dispatch ---
 case "$PLATFORM" in
-    claude)  discover_claude ;;
-    codex)   discover_codex ;;
-    cursor)  discover_cursor ;;
     pi)      discover_pi ;;
     omp)     discover_omp ;;
     all)
@@ -255,7 +216,7 @@ case "$PLATFORM" in
         # the downstream xargs call does not deduplicate. Emit each path once;
         # platform attribution is unaffected because extract-metadata.py
         # detects the file shape (title slot => omp, otherwise pi).
-        { discover_claude; discover_codex; discover_cursor; discover_pi; discover_omp; } | awk '!seen[$0]++'
+        { discover_pi; discover_omp; } | awk '!seen[$0]++'
         ;;
     *)
         echo "Unknown platform: $PLATFORM" >&2

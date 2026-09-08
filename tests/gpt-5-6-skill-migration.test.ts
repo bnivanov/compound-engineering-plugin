@@ -44,7 +44,7 @@ describe("GPT-5.6 skill migration", () => {
     expect(await filesMatching(/mini\/mid-tier/i)).toEqual([])
   })
 
-  test("does not treat Codex task wording as a model override", async () => {
+  test("does not treat task wording as a model override", async () => {
     const [codeReviewSkill, codeReviewDispatch, simplifyCode] = await Promise.all([
       readSkill("ce-code-review/SKILL.md"),
       readSkill("ce-code-review/references/dispatch-reviewers.md"),
@@ -52,10 +52,14 @@ describe("GPT-5.6 skill migration", () => {
     ])
     const codeReview = `${codeReviewSkill}\n${codeReviewDispatch}`
 
+    expect(codeReviewSkill).toMatch(/Stage 3d/i)
+    expect(codeReviewSkill).toMatch(/fixed-`omp` separate read/i)
+    expect(codeReviewSkill).toMatch(/explicit user prohibition on external review overrides/i)
     for (const skill of [codeReview, simplifyCode]) {
-      expect(skill).toContain("explicit model or custom-agent selector")
-      expect(skill).toContain("task wording alone does not select a different model")
+      expect(skill).toMatch(/no .*override/i)
+      expect(skill).toMatch(/inherit the (parent|session) model/i)
       expect(skill).not.toContain("request the host's current lower-cost supporting-agent configuration")
+      expect(skill).not.toContain("Codex")
     }
   })
 

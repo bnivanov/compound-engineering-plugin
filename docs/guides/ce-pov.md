@@ -42,10 +42,10 @@ After a position lands, it proposes one next step (edit, plan, scope, or spike).
 # Revisit a past decision
 /ce-pov we passed on Redis last year. still right?
 
-# Named peers: forms its own POV, then consults every named model
-/ce-pov compare your take on docs/plans/new-checkout.md with Grok and Composer
+# Separate read: forms its own POV, then consults one explicit reviewer read
+/ce-pov compare your take on docs/plans/new-checkout.md with a separate reviewer read
 
-# oracle: up to two reachable different-model peers, then bounded reconciliation
+# oracle: one explicit reviewer read, then bounded reconciliation
 /ce-pov oracle that proposal
 
 # Warm: infers the question from this conversation, returns a POV, hands control back
@@ -102,13 +102,13 @@ The classification is stated in the output, so a shallow verdict is defensible.
 
 Adoption verdicts use the five grades and a fixed schema: incumbent, verified facts, conditions, handoff, and a reversal trigger on Tier 2/3. Document takes lead with a bottom line, then strengths, risks, and a recommendation. Approach-set positions pick one supplied option, or say "either is viable" with the material tradeoffs rather than forcing a scoreboard winner.
 
-### Cross-model panels
+### Cross-model panels (OMP-only)
 
-A peer never replaces the skill's own judgment. Name one or more providers to cross-check, ask for independent opinions in ordinary language, use `oracle` as shorthand for up to two reachable different-model peers, or accept a proactive offer on a decision with meaningful correction cost. Named peers are honored exactly and not capped. Warm invocations never offer a panel.
+A separate read never replaces the skill's own judgment. Ask for an independent reviewer read in ordinary language, use `oracle` as shorthand for one explicit reviewer read, or accept a proactive offer on a decision with meaningful correction cost. Warm invocations never offer a panel.
 
-Peers inspect the shared working tree directly. The first round carries the framed question, subject, read scope, and evidence, but withholds this skill's own conclusion so peers stay independent. When the subject is itself an already-formed position, that position ships as the subject and peers give their own verdict on the underlying question.
+The reviewer inspects the shared working tree directly. The first round carries the framed question, subject, read scope, and evidence, but withholds this skill's own conclusion so the read stays independent. When the subject is itself an already-formed position, that position ships as the subject and the reviewer gives its own verdict on the underlying question.
 
-A default panel is one blind round plus at most two reconciliations. Before each exchange, disputed project claims get verified and every voice sees the same evidence. Convergence is reasoned confidence, not a vote. At the cap, automatic dispatch stops and further rounds need your approval unless you supplied a larger limit up front. A failed peer never blocks the solo POV. Any POV that follows a panel request states which peers ran, or that none did and why.
+A default panel is one blind round plus at most two reconciliations. Before each exchange, disputed project claims get verified and every voice sees the same evidence. Convergence is reasoned confidence, not a vote. At the cap, automatic dispatch stops and further rounds need your approval unless you supplied a larger limit up front. A failed read never blocks the solo POV. Any POV that follows a panel request states whether the reviewer ran, or that none did and why. The receipt always records `independence_verified: false`.
 
 ### Follow-up
 
@@ -181,20 +181,12 @@ Skip `ce-pov` when:
 | `<a bare link>` | Orients on the link, then proposes candidate framings before grounding |
 | `<a selection question>` | Picks from a bounded field. Routes to `/ce-ideate` if the field cannot be bounded |
 | `<a document or supplied approach set>` | Returns a holistic take or a project-grounded position in that subject's shape |
-| `compare/cross-check with <peers>` | Forms its own POV, then consults every named peer |
-| `oracle` | Blind initial cross-check with up to two reachable different-model peers, then bounded reconciliation when needed |
+| `compare/cross-check with a reviewer` | Forms its own POV, then consults one explicit reviewer read |
+| `oracle` | Blind initial reviewer read, then bounded reconciliation when needed |
 
-### Peer target names
+### Reviewer route
 
-Target names distinguish models from harnesses and are not aliases for each other:
-
-| Name | Resolves to |
-|------|-------------|
-| `Cursor` | `cursor-agent` using its configured default/Auto model |
-| `Composer` | A Composer model through Cursor |
-| `Grok` | Native grok CLI when installed; Grok through Cursor only when asked, or when the grok CLI is missing and Cursor is allowed |
-
-Cursor Auto is labeled unverified unless a serving-model receipt exists. Without that proof it does not count as independent cross-model corroboration.
+OMP has one reviewer route. An explicit request in conversation runs one `reviewer` read; route selection is conversation-only. The receipt always records `independence_verified: false`, so the read is attributed evidence, never separate-model corroboration.
 
 ---
 

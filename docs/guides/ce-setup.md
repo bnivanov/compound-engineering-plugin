@@ -2,7 +2,7 @@
 
 > Check Compound Engineering health, optional tool availability, and repo-local config safety. It does not bulk-install the plugin's dependencies.
 
-`ce-setup` is a diagnosis and config utility. It reports which optional tools are on PATH, refreshes the committed config example, creates the repo `config.yaml` if you approve, offers to gitignore a local override or CE scratch space, and offers to point your agent-instructions file at the knowledge store and add a standing compounding instruction. It also reports where CE artifacts will land and can repair an invalid `docs_root` or a broken CE Work engine block.
+`ce-setup` is a diagnosis and config utility. It reports which optional tools are on PATH, refreshes the committed config example, creates the repo `config.yaml` if you approve, offers to gitignore a local override or CE scratch space, and offers to point your agent-instructions file at the knowledge store and add a standing compounding instruction. It also reports where CE artifacts will land and can repair an invalid `docs_root` or retired CE Work routing keys.
 
 It runs only when you invoke it explicitly (`disable-model-invocation: true`). Talking about setup does not start it. Outside a git repository it reports capabilities and stops without writing files.
 
@@ -29,7 +29,7 @@ There is no argument. One command covers first install, a re-check after an upgr
 /ce-setup
 ```
 
-On oh-my-pi the invocation is `/skill:ce-setup`. On Codex it is `$ce-setup` when that host uses dollar-prefixed skills.
+On OMP the invocation is `/skill:ce-setup`.
 
 ---
 
@@ -51,8 +51,8 @@ The example config refresh happens on its own (it is the committed template copy
 - Offers to create `.compound-engineering/config.yaml` when missing. Never overwrites an existing `config.yaml` or `config.local.yaml`, and never creates the local override.
 - Offers to add `.compound-engineering/*.local.yaml` to `.gitignore`, but only when `config.local.yaml` already exists and is not ignored.
 - Offers to add `.context/compound-engineering/` to `.gitignore` whether or not that directory exists yet. An uncovered path is a note, not a project issue.
-- Offers to add a line about the `<root>/solutions/` knowledge store to your root agent-instructions file (`AGENTS.md`, `CLAUDE.md`, or equivalent) when the file does not already convey it, placed in the file's own structure. Then offers the standing compounding instruction from the [ce-compound guide](./ce-compound.md#make-capture-automatic), offer-first or automatic, inserted verbatim. Only when the store is tracked in this repo, and never creates the file.
-- Repairs an invalid CE Work implementation-engine block, or leftover retired routing keys, in the config layer that supplied the bad value.
+- Offers to add a line about the `<root>/solutions/` knowledge store to your root agent-instructions file (`AGENTS.md` or equivalent) when the file does not already convey it, placed in the file's own structure. Then offers the standing compounding instruction from the [ce-compound guide](./ce-compound.md#make-capture-automatic), offer-first or automatic, inserted verbatim. Only when the store is tracked in this repo, and never creates the file.
+- Repairs retired CE Work execution-routing keys (`work_engine_mode`, `work_engine_preferences`, legacy `cross_model_*`) in the config layer that supplied the bad value.
 - Repairs an invalid `docs_root`. This one is a real project issue: CE artifacts will not be written until it is fixed. See [Artifact root](./configuration.md#artifact-root).
 
 Each question uses the host's blocking question tool when one exists. It never silently auto-configures.
@@ -95,7 +95,7 @@ Optional capabilities  3/5
 
 It refreshes the example config, asks whether to create `.compound-engineering/config.yaml`, and leaves the missing tools in the summary as install hints.
 
-When the bundled health script is not runnable (on a non-Claude-Code platform, say), the skill runs the same checks inline and still offers the repo-local fixes.
+When the bundled health script is not runnable, the skill runs the same checks inline and still offers the repo-local fixes.
 
 ---
 
@@ -107,7 +107,7 @@ Use `ce-setup` when:
 - You want to verify a repo's CE config, artifact root, and gitignore state
 - A workflow reported an optional tool missing and you want the install command
 - You are onboarding a repo to `.compound-engineering/config.yaml`
-- Health marked `docs_root` or the CE Work engine block invalid
+- Health marked `docs_root` invalid or reported retired CE Work routing keys
 
 Skip it when:
 
@@ -123,8 +123,8 @@ Skip it when:
 
 | Phase | Step |
 |-------|------|
-| Diagnose | Plugin version when the host exposes it, optional capabilities, project config, artifact root, work-engine block |
-| Fix | Obsolete local-md, example refresh, create repo config if wanted, gitignore safety, scratch-space gitignore, repair invalid `docs_root` or work-engine prefs, knowledge-store mention and compounding directive in the agent-instructions file |
+| Diagnose | Plugin version when the host exposes it, optional capabilities, project config, artifact root, retired routing keys |
+| Fix | Obsolete local-md, example refresh, create repo config if wanted, gitignore safety, scratch-space gitignore, repair invalid `docs_root` or retired routing prefs, knowledge-store mention and compounding directive in the agent-instructions file |
 | Summary | Fixes applied, skipped actions, missing optional tools |
 
 ---

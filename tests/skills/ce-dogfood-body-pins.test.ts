@@ -21,7 +21,7 @@ describe("ce-dogfood always-loaded body pins", () => {
 
   test("keeps the boundaries that decide mutations and tooling", () => {
     expect(body).toContain("agent-browser")
-    expect(body).toContain("mcp__claude-in-chrome__*")
+    expect(body).toMatch(/never another browser MCP/i)
     expect(body).toContain("npx agent-browser")
     expect(body).toMatch(/never dogfood the trunk/i)
     // A PR target is diffable even when its head branch is named main.

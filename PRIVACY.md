@@ -14,7 +14,7 @@ This repository contains:
 
 1. AI host/model providers
 
-If you run the plugin in tools like Claude Code, Cursor, Codex, Gemini CLI, Copilot, Windsurf, etc., those tools may send prompts/context/code to their configured model providers. This behavior is controlled by those tools and providers, not by this plugin repository.
+If you run the plugin under OMP, OMP may send prompts/context/code to its configured model providers. This behavior is controlled by OMP and its providers, not by this plugin repository.
 
 2. Optional integrations and tools
 

@@ -1,7 +1,7 @@
 ---
 name: ce-work
 description: Execute a plan or concrete work prompt end-to-end. Use when implementing from a plan document, a spec path, or a clear build request; use ce-debug for open-ended bugs. Use when an outer orchestrator needs implementation and local verification only, without the shipping tail.
-argument-hint: "[Plan path, work description, or recovery request with run id; blank uses latest] | [mode:return-to-caller [implementation_engine:<compact-json>] [implementation_run:<safe-id>] <plan path> for outer orchestrators]"
+argument-hint: "[Plan path, work description, or recovery request; blank uses latest] | [mode:return-to-caller <plan path> for outer orchestrators]"
 ---
 
 # Work Execution Command
@@ -21,7 +21,7 @@ argument-hint: "[Plan path, work description, or recovery request with run id; b
 
 **Recovery activation comes first.** Before normal plan, path, blank-input, or bare-prompt classification, recognize semantic requests to resume, inspect, reap, or clean up an existing run. Recovery never dispatches a new worker, selects a new route, discovers another plan, reruns completed verification, or enters either shipping tail; a missing run id is requested, never guessed.
 
-Before any other input decision, read `references/input-triage.md`. A bare prompt that is Trivial — one or two files, no behavioral change — skips the task list and still passes the engine-before-write gate; a purely mechanical diff also ships without a post-PR watch. When that is uncertain, take the fuller route. A bare prompt this session's `ce-plan` already sized is executed, not re-planned; a decision the user would weigh surfaces as a question, never as a route back to `ce-plan` or `ce-brainstorm`. It owns source resolution, control grammar, recovery, read-only discovery, plan readiness, non-code routing, blank discovery, and bare-prompt intake. An unreadable owner stops triage rather than letting control data or a non-executable artifact fall through as code work.
+Before any other input decision, read `references/input-triage.md`. A bare prompt that is Trivial (one or two files, no behavioral change) skips the task list and still passes the write gate; a purely mechanical diff also ships without a post-PR watch. When that is uncertain, take the fuller route. A bare prompt this session's `ce-plan` already sized is executed, not re-planned; a decision the user would weigh surfaces as a question, never as a route back to `ce-plan` or `ce-brainstorm`. It owns source resolution, control grammar, recovery, read-only discovery, plan readiness, non-code routing, blank discovery, and bare-prompt intake. An unreadable owner stops triage rather than letting control data or a non-executable artifact fall through as code work.
 
 When triage enters Return-to-Caller Mode, immediately read `references/return-to-caller.md`. Record that tail owner for the run; if it cannot load, stop before mutation instead of reverting to standalone behavior.
 
@@ -31,11 +31,7 @@ When triage enters Return-to-Caller Mode, immediately read `references/return-to
 
    **WIP/write gate.** Nothing the user did not offer may be committed or published. When a unit needs a file that was already dirty, standalone mode asks once whether to include or exclude it; Return-to-Caller Mode does not ask or edit it and returns blocked with the collision and recovery path. An unreadable workspace owner stops before the branch move or edit.
 
-2. **Resolve the engine, then strategy.** After bounded plan intake and task derivation, but before selecting a unit for execution, writing, dispatching, or committing, read `references/execution-engines.md` and complete its route-resolution gate. It applies with or without a typed binding; native execution is eligible only when that owner selects it or exhausts an allowed fallback. Engine choice never changes the Phase 0 tail owner.
-
-   If cross-model execution is selected, read `references/cross-model-execution.md` before content or authority crosses that route. It owns controller initialization, the post-init engine lock, bounded egress, transactions, recovery, and receipts; do not approximate it with native dispatch.
-
-   Before choosing inline, serial, or parallel execution or dispatching a worker, read `references/execution-strategy.md`. It owns scheduling, isolation, unit packets, worker lifecycle, and integration. The host orchestrator keeps authoritative verification and canonical commits.
+2. **Execute natively.** Before selecting a unit for execution, writing, dispatching, or committing, read `references/execution-strategy.md` as the single owner of scheduling, isolation, unit packets, worker lifecycle, and integration, running everything native on the current harness and session model while the host orchestrator keeps authoritative verification and canonical commits.
 
 ### Phase 2: Execute
 
@@ -53,6 +49,6 @@ After tasks and local verification complete, standalone mode must read `referenc
 
 Return-to-Caller Mode performs implementation and local verification only. It must not enter Phase 3-4 or run final simplify, code review, PR creation, CI watching, babysitting, or any other standalone shipping action; the caller owns those gates.
 
-Immediately before emitting the result, read `references/return-to-caller.md` again. It alone owns the full envelope, evidence completion gate, route and model receipts, recovery semantics, and `standalone_shipping_skipped: true`. Do not reconstruct a complete envelope from this kernel.
+Immediately before emitting the result, read `references/return-to-caller.md` again. It alone owns the full envelope, evidence completion gate, execution receipts, recovery semantics, and `standalone_shipping_skipped: true`. Do not reconstruct a complete envelope from this kernel.
 
 If that required read fails after planning or implementation created state, preserve every changed file, commit, workspace, and controller receipt. Return the minimum blocked recovery result from this kernel: `status: blocked`, `plan_path`, `run_id` when known, `changed_state`, `blockers` naming the missing owner, and `recovery_path`. Do not erase partial state, report success, or fall into the standalone tail.

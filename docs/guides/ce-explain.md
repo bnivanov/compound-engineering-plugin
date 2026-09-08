@@ -104,7 +104,7 @@ The file lands in `/tmp/compound-engineering-<effective-uid>/ce-explain/<run-id>
 
 ### The destination menu comes from this session
 
-The menu offers only what this session actually has. Local file and Leave it are always there. HTML prefers a Claude Artifact in Claude Code when that tool is present, otherwise a public ht-ml.app URL. ht-ml.app is never chosen headlessly, and the option itself warns that the page may be indexed, crawled, copied, or archived. Proof is offered on markdown runs. Thinkroom appears only when that capability is detected.
+The menu offers only what this session actually has. Local file and Leave it are always there. HTML prefers a public ht-ml.app URL. ht-ml.app is never chosen headlessly, and the option itself warns that the page may be indexed, crawled, copied, or archived. Proof is offered on markdown runs. Thinkroom appears only when that capability is detected.
 
 ### Written for you, or re-rendered for a reader
 

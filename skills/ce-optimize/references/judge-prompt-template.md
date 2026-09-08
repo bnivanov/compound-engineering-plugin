@@ -103,7 +103,7 @@ Rules:
 
 ## Notes
 
-- Designed for Haiku by default -- prompts are concise and well-structured for smaller models
+- Designed for judges that inherit the dispatching agent by default -- prompts are concise and well-structured; on OMP, dispatch a `scout` agent for extraction-shaped judge batches and a `task` agent otherwise, keeping each judge in a separate context so independence is preserved
 - The rubric is part of the immutable measurement harness -- the experiment agent cannot modify it
 - The `ambiguous` flag on items helps the orchestrator identify noisy evaluations without forcing bad scores
 - For singleton evaluation, the orchestrator provides cluster summaries (not full contents) to keep judge context lean

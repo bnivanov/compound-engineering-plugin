@@ -4,7 +4,7 @@
 
 `ce-worktree` is the **isolation** skill, a git-workflow tool rather than a core-loop step. Most coding harnesses already create a worktree at session start, so the common case is that you are already isolated. The skill checks that first, then prefers the harness's own worktree tool, and only falls back to plain `git worktree add` when neither applies. Nesting a worktree inside another one, or creating one the harness cannot see, is worse than working where you already are.
 
-There is no bundled script. The agent runs inline git from the project directory, so the same instructions work on Claude Code, Codex, Gemini, OpenCode, and Pi.
+There is no bundled script. The agent runs inline git from the project directory, so the same instructions work on OMP.
 
 ---
 
@@ -27,7 +27,7 @@ Empty or a work description means **new work**. `isolate` plus a ref means **att
 # New work. Detect isolation first. If none, create .worktrees/<named-branch> from trunk.
 /ce-worktree for the account-notifications feature
 
-# Already isolated (common in Orca or Cursor): report path and branch, stay here
+# Already isolated (common on OMP): report path and branch, stay here
 /ce-worktree
 
 # Attach a worktree to an existing branch
@@ -49,7 +49,7 @@ Git allows a branch in only one worktree at a time. If the named ref is already 
 "Make a worktree" is often the wrong default, because the agent is usually already in one:
 
 - Creating a worktree from inside a linked worktree resolves the new one against the main clone, in a directory tree you are not using
-- A behind-the-back `git worktree add` is invisible to the harness (Orca, Cursor, and similar). It cannot list, open, or clean up that tree
+- A behind-the-back `git worktree add` is invisible to the harness. It cannot list, open, or clean up that tree
 - If `.worktrees/` is not gitignored, the extra tree shows up in `git status` and can be committed
 - Auto-generated names like `worktree-jolly-beaming-raven` hide what the tree is for
 
@@ -71,7 +71,7 @@ If `git worktree add` fails on sandbox or permissions, the skill does **not** co
 
 ## Quick Example
 
-You are in an Orca-managed worktree created at session start. `ce-work` offers isolation. `/ce-worktree` sees that the absolute git dir and the common dir differ, and the submodule guard is empty. You are already isolated. It reports the path and branch and continues in place.
+You are in a harness-managed worktree created at session start. `ce-work` offers isolation. `/ce-worktree` sees that the absolute git dir and the common dir differ, and the submodule guard is empty. You are already isolated. It reports the path and branch and continues in place.
 
 In a plain terminal checkout with no native tool, the same "new work" prompt confirms `.worktrees/` is ignored, fetches the base, runs `git worktree add -b feat/login .worktrees/feat/login origin/main`, and `cd`s in.
 

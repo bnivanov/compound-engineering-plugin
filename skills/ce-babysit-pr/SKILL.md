@@ -36,7 +36,7 @@ One PR named → `target` (ask once if a confirmed multi-layer stack exists); ow
 2. Resolve the PR from the argument or current branch (`references/setup.md`); none → report, stop.
 3. Chain classification comes from the snapshot, never the user; resolve posture before semantic work.
 4. **Checkout must be the PR's head branch with matching upstream** before any delegated mutation; default `gh pr checkout <ref>`; no push access or dirty checkout → stop, say so.
-5. **Sustain mode** (`references/watch-loop.md`): default is the self-sustaining in-session watch — background `pr-snapshot watch`, wait on its `BABYSIT_WAKE` sentinel with your harness's background-and-wake tool, one tick per wake; never collapse the loop into a script. **Checkpoint** only when no such capability exists: one tick, report, say monitoring is paused, print the resume invocation — default to `/ce-babysit-pr <url>` (+ non-target posture), `$ce-babysit-pr <url>` on Codex; render only the invocation as inline code, output one form only. **Pipeline** (`mode:pipeline`): bounded synchronous ticks, structured return (`references/pipeline.md`).
+5. **Sustain mode** (`references/watch-loop.md`): default is the self-sustaining in-session watch (background `pr-snapshot watch`, wait on its `BABYSIT_WAKE` sentinel with the background-and-wake tool, one tick per wake; never collapse the loop into a script). **Checkpoint** only when no such capability exists: one tick, report, say monitoring is paused, print the resume invocation as `/skill:ce-babysit-pr <url>` (+ non-target posture); render only the invocation as inline code. **Pipeline** (`mode:pipeline`): bounded synchronous ticks, structured return (`references/pipeline.md`).
 
 ## Step 2: One tick (ordering invariant)
 

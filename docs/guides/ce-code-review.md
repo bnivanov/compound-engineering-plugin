@@ -109,22 +109,18 @@ Four things worth knowing:
 
 - **Placement scopes it.** A file at the repo root governs the whole checkout. One at `skills/CODING_STANDARDS.md` governs only what is under `skills/`. Several can apply to the same file at once.
 - **Any format works.** Prose, bullets, tables, nested headings, with or without frontmatter. The content is the contract. A paragraph of plain English is a valid rules file.
-- **It replaces the instruction file as criteria, per changed file.** `CLAUDE.md` and `AGENTS.md` remain the criteria for any changed file that no `CODING_STANDARDS.md` governs, so a repo that has never written one keeps the review it already had. No file is ever graded against both kinds, and the report names the fallback in Coverage when it supplies the criteria.
+- **It replaces the instruction file as criteria, per changed file.** `AGENTS.md` remains the criteria for any changed file that no `CODING_STANDARDS.md` governs, so a repo that has never written one keeps the review it already had. No file is ever graded against both kinds, and the report names the fallback in Coverage when it supplies the criteria.
 - **It can grow.** An instruction file is loaded into every agent's context on every turn, so it stays short and rules get cut for space. A criteria file is read once, by one reviewer, at review time. That is the reason to keep enforceable rules here rather than in `AGENTS.md`: this file has room, and adding to it costs nothing until review runs.
 
 That last point is what makes review strictness compound. Notice a mistake worth preventing, write the rule down, and every review after that catches it.
 
-## Cross-model adversarial pass
+## Cross-model adversarial pass (OMP-only)
 
-When adversarial is selected and the working tree is the reviewed head (current branch, or a PR whose local tree already matches the PR head), the adversarial lens runs through one model provider different from the host, in a separate read-only process. A started peer replaces the in-process `adversarial` persona; they never both receive the same brief. The in-process persona runs if the peer cannot start, or if the started peer returns only session-quota or auth-context failure. In that case the next announced different-family peer is tried when one is eligible, otherwise the local persona covers the lens. An exact provider-overload 529 gets one same-route retry; repeated overload, another stubborn transient rate limit, or max-turn exhaustion falls back locally without an unbounded retry loop. Remote PR or branch diffs stay on the in-process persona, because that reviewer can inspect the fetched refs.
+Cross-model independence on OMP is dispatching a `reviewer` agent; the worker provides evidence transport only. When adversarial is selected and the working tree is the reviewed head (current branch, or a PR whose local tree already matches the PR head), that lens runs as one explicit `reviewer` read of the same adversarial brief. A started reviewer replaces the in-process `adversarial` persona; they never both receive the same brief. The in-process persona covers the lens when no explicit read was requested or the run cannot complete. Agreement between the reviewer read and another in-process reviewer is a strong promotion signal in synthesis. The receipt always records `independence_verified: false`, so the read is attributed evidence, never separate-model corroboration.
 
-Agreement between the peer and another in-process reviewer is a strong promotion signal in synthesis.
+`cross_model_review_mode: off` in CE config keeps this pass from running automatically; the in-process reviewers cover the lens and Coverage says the pass was disabled by checkout config. A direct request in conversation for a separate read overrides `off` for one run. Route selection for an explicit read is conversation-only.
 
-`cross_model_review_mode: off` in CE config keeps this pass from running at all. No peer is resolved and nothing leaves the host; the in-process reviewers cover the lens and Coverage says the pass was disabled by checkout config. A direct request in conversation for a peer overrides it for one run. The peer target is auto-chosen and overridable, in priority order: conversation, `cross_model_peer:` in CE config, active project instructions, then `codex → claude → grok → composer`. `Cursor` means `cursor-agent` using its configured default/Auto model. `Composer` means a Composer model through Cursor. `Grok` binds the native grok CLI when it is installed; Grok through Cursor is a different route, used when asked or when the grok CLI is missing and Cursor is allowed. Cursor Auto does not count as independent agreement unless its serving family is verified different from the host. `cross_model_model:` and `cross_model_effort:` in CE config pin that target's model (e.g. `fable` for claude or `gpt-5.6-sol` for codex, or a namespace-qualified codex id such as `openai.gpt-5.6-sol` when that CLI routes through a non-default `model_provider`) and reasoning effort; a value the peer cannot honor skips the pass with a stated reason rather than substituting. See the [configuration reference](./configuration.md).
-
-The prerequisite is a peer agent CLI. The pass drives a read-only agent CLI (`codex`, `claude`, `grok`, `cursor-agent`, or `opencode`) so the peer can inspect the tree itself; a bare `OPENAI_API_KEY`, Anthropic key, or Gemini key does not enable it. Peers are discovered on `PATH`, plus the CLI bundled inside the Codex desktop app (`ChatGPT.app/Contents/Resources/codex` since the July 2026 app merger, or `Codex.app/…` on older installs; the app does not link it onto `PATH`). Gemini has no standalone peer target; it participates only through Cursor when `cursor-agent` attests a Gemini serving family. With no peer CLI installed the skill runs the in-process adversarial reviewer and reports "cross-model pass: not run"; the skip reason names what to install.
-
-This shares the provider/route kernel with `ce-doc-review` but keeps a narrower scope: adversarial-only, diff/work-tree delivery, not doc-review's judgment trio or whole-doc sweep.
+This shares the review kernel with `ce-doc-review` but keeps a narrower scope: adversarial-only, diff/work-tree delivery, not doc-review's judgment trio or whole-doc sweep.
 
 ## Severity and autofix class are orthogonal
 
@@ -148,7 +144,7 @@ The skill never switches branches. A PR or branch argument selects review scope 
 
 ## Quick-review short-circuit
 
-When you ask for a "quick", "fast", or "light" review, the skill defers to the harness-native code review (for example `/review` in Claude Code) instead of dispatching the multi-agent pipeline. `mode:agent` bypasses the short-circuit and always runs the full pipeline.
+When you ask for a "quick", "fast", or "light" review, the skill defers to the harness-native code review instead of dispatching the multi-agent pipeline. `mode:agent` bypasses the short-circuit and always runs the full pipeline.
 
 ## Synthesis, grouping, and plan checks
 

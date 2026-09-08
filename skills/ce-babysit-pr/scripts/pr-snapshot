@@ -289,7 +289,7 @@ def _iso(dt):
 
 def _run(cmd):
     # gh honors CLICOLOR_FORCE / GH_FORCE_TTY even for --json output, and a host that exports them
-    # (observed under orca) makes every JSON read unparsable. Pin plain output regardless of caller env.
+    # (observed under some wrapper environments) makes every JSON read unparsable. Pin plain output regardless of caller env.
     env = os.environ.copy()
     env["NO_COLOR"] = "1"
     env.pop("CLICOLOR_FORCE", None)

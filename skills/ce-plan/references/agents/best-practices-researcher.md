@@ -14,10 +14,10 @@ Before going online, check if curated knowledge already exists in skills:
 
 1. **Discover Available Skills**:
    - Use the platform's native file-search/glob capability to find `SKILL.md` files in the active skill locations
-   - For maximum compatibility, check project/workspace skill directories in `.claude/skills/**/SKILL.md`, `.codex/skills/**/SKILL.md`, and `.agents/skills/**/SKILL.md`
-   - Also check user/home skill directories in `~/.claude/skills/**/SKILL.md`, `~/.codex/skills/**/SKILL.md`, and `~/.agents/skills/**/SKILL.md`
-   - In Codex environments, `.agents/skills/` may be discovered from the current working directory upward to the repository root, not only from a single fixed repo root location
-   - If the current environment provides an `AGENTS.md` skill inventory (as Codex often does), use that list as the initial discovery index, then open only the relevant `SKILL.md` files
+   - For maximum compatibility, check project/workspace OMP plugin skill directories for workspace-local skills
+   - Also check user/home OMP plugin skill directories for globally installed skills
+   - OMP plugin skills may be discovered from the current working directory upward to the repository root, not only from a single fixed repo root location
+   - If the current environment provides an `AGENTS.md` skill inventory, use that list as the initial discovery index, then open only the relevant `SKILL.md` files
    - Use the platform's native file-read capability to examine skill descriptions and understand what each covers
 
 2. **Identify Relevant Skills**:

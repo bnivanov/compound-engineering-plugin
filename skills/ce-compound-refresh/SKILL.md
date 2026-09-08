@@ -47,13 +47,13 @@ Candidates are the `.md` files under `<root>/solutions/`, excluding `README.md` 
 
 ## Investigate
 
-**Read `references/investigate.md`** for the staleness dimensions, auto-memory rules, subagent roles, and category-shape notes.
+**Read `references/investigate.md`** for the staleness dimensions, OMP memory rules, subagent roles, and category-shape notes.
 
 Check each learning against the current codebase, then check the set for overlap, supersession, and contradiction. A contradiction misleads actively, so it outranks individual staleness.
 
 A knowledge-track learning sometimes points at a guidance file it names or links — a skill's `SKILL.md`, a runbook, an instruction file. Compare only guidance the learning names. Never search the guidance layer for one.
 
-Every investigation subagent's prompt carries that reference's three **Subagent prompt** clauses verbatim. Two are search tools and auto-memory. The third is this:
+Every investigation subagent's prompt carries that reference's three **Subagent prompt** clauses verbatim. Two are search tools and OMP memory. The third is this:
 
 > If the learning is knowledge-track and names or links a guidance file (a skill's `SKILL.md`, a runbook, a root instruction file), read that file and, when it states a different order or a contradictory rule for the same procedure, return both conflicting quotes plus which side current code follows — or that code witnesses neither. Read only guidance the learning names; do not search for one, and do not edit it.
 
