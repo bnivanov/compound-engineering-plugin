@@ -4,7 +4,7 @@
 
 When the bundled `scripts/check-health` is unavailable, perform these checks by hand and report the same findings:
 
-1. Check optional tools with `command -v`: `agent-browser`, `gh`, `jq`, `ast-grep`, `ffmpeg`.
+1. Check optional tools with `command -v`: `agent-browser`, `gh`, `jq`, `ast-grep`, `ffmpeg`. On OMP (`OMPCODE=1`): `agent-browser` is covered by eval `browser` incl. relay and `ast-grep` by `xd://ast_edit` + `lsp` (report resolved `astGrep.enabled`) — never advise installing them; `gh`, `jq`, `ffmpeg` stay real requirements. Report resolved `omp config get` values for `task.maxRecursionDepth`, `task.enableLsp`, `skills.ignoredSkills` — never cite inert base files.
 2. If inside a git repo, resolve the repo root with `git rev-parse --show-toplevel`.
 3. Check for obsolete `compound-engineering.local.md` at the repo root.
 4. Check whether `.compound-engineering/config.yaml` exists.

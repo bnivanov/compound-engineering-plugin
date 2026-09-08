@@ -39,6 +39,7 @@ Guardrails for execution evidence:
 - Do not over-implement beyond the current behavior slice when working proof-first
 - Do not add a duplicate regression test when an existing test is the right home; update or strengthen that test instead, then observe the failure before changing code
 - Skip proof-first discipline for trivial renames, pure configuration, pure styling, generated artifacts, and manual-only surfaces, but record the reason and replacement verification while continuing execution
+- Code-intel ownership (MUST, no behavior change): the orchestrator owns all syntax-aware code intelligence via OMP `[main]`-only `lsp`/`ast_edit` (see `references/execution-strategy.md`); workers implement their unit from read patterns and unit tests, never from worker-run checkout-wide renames or rewrites.
 
 **Test Discovery** — Before implementing changes to a file, find its existing test files (search for test/spec files that import, reference, or share naming patterns with the implementation file). When a plan specifies test scenarios or test files, start there, then check for additional test coverage the plan may not have enumerated. Changes to implementation files should be accompanied by corresponding test updates — new tests for new behavior, modified tests for changed behavior, removed or updated tests for deleted behavior.
 
