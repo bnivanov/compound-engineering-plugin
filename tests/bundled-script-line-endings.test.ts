@@ -46,7 +46,8 @@ describe("bundled script line endings (#1251)", () => {
       .filter(isBundledPosixScript)
 
     // Enumeration sanity: the bundled scripts were actually found.
-    expect(scripts.length).toBeGreaterThan(30)
+    // S10 OMP excision deleted the engine/runner scripts (30 remain, was >30).
+    expect(scripts.length).toBeGreaterThan(20)
 
     // check-attr -z emits NUL-separated (path, "eol", value) triples.
     const fields = (

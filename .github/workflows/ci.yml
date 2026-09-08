@@ -38,8 +38,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         # <!-- OMP --> fork CI: no claude plugin validate / release-please; the OMP catalog is asserted in bun test.
+        # Full history: skill-eval-cell catalog resolves PRE_SWEEP_REF (309611f) via cat-file, shallow breaks it.
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -53,10 +54,10 @@ jobs:
       # contributor gets from `bun run test` cannot drift apart.
       - name: Run tests
         run: bun run test
-
   # Focused Windows gate for the skill scripts that reach for POSIX process and
-  # file primitives: peer-job-runner (#1243) and ce-babysit-pr's pr-snapshot
-  # (#1280). Not a full-suite matrix — POSIX lifecycle tests (fork/killpg/ps)
+  # file primitives: ce-babysit-pr's pr-snapshot (#1280). Peer-job-runner
+  # (#1243) was excised in S10 OMP-only purge, its steps deleted with it.
+  # Not a full-suite matrix — POSIX lifecycle tests (fork/killpg/ps)
   # stay on ubuntu-latest. This job runs the cross-platform fixtures under real
   # win32, which is the only way to execute the msvcrt/ctypes branches at all:
   # they are imported solely under sys.platform == "win32", so no amount of
@@ -86,38 +87,6 @@ jobs:
 
       - name: Install dependencies
         run: bun install
-
-      - name: Peer-job-runner unit fixture
-        # Use `python`, never `python3` — on Windows the latter is often the
-        # Microsoft Store stub (see docs/solutions/conventions/resolve-python-interpreter-not-python3.md).
-        run: python tests/fixtures/peer-job-runner-unit.py
-
-      - name: Peer-job-runner Windows smoke
-        # Hosted windows-latest Python intermittently fails `import ctypes`
-        # mid-suite (DLL init on _ctypes) after earlier tests already passed.
-        # Product code cannot recover. Retries are signature-gated: only
-        # `DLL load failed while importing _ctypes` is retried; any other
-        # nonzero exit fails this step immediately. A retried attempt's log is
-        # suppressed so a green step never shows failure dumps; the full log
-        # prints on success and on the terminal failure.
-        shell: pwsh
-        run: |
-          $max = 3
-          for ($i = 1; $i -le $max; $i++) {
-            $log = Join-Path $env:TEMP "peer-job-runner-windows-smoke-$i.log"
-            python tests/fixtures/peer-job-runner-windows-smoke.py *> $log
-            $code = $LASTEXITCODE
-            $text = Get-Content -Raw -ErrorAction SilentlyContinue $log
-            if (($code -eq 0) -or ($text -notmatch 'DLL load failed while importing _ctypes') -or ($i -eq $max)) {
-              if ($null -ne $text) { Write-Host $text }
-              exit $code
-            }
-            Write-Host "Windows smoke hit known _ctypes flake (attempt $i/$max, exit $code); output suppressed, retrying"
-            Start-Sleep -Seconds 15
-          }
-
-      - name: Peer-job-runner parity
-        run: bun test tests/peer-job-runner-parity.test.ts
 
       - name: pr-snapshot platform primitives
         run: python tests/fixtures/pr-snapshot-platform.py
