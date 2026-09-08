@@ -178,6 +178,10 @@ required_fields:
                 default: []
                 description: "Additional scoring fields to log (not optimized against)"
         optional_children:
+          # OMP: this enum is provider-family vocabulary the OMP dispatcher cannot
+          # honor (no per-agent model parameter), so judges inherit the dispatching
+          # agent. Independence (separate context) is preserved; cost-tiering is
+          # not. Agent/tier names land in S10.
           model:
             type: enum
             values:

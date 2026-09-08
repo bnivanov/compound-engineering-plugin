@@ -26,6 +26,8 @@ When elevation is active, resolve an adapter in this fixed order and use the fir
 2. **Claude CLI.** Run the bundled `scripts/elevation-dispatch.sh` worker as a detached job (see Off-host dispatch). Available when `claude` is on PATH. Do not preflight authentication in the host command context: the detached worker's provider-capable call is authoritative, and an authentication failure there follows Recovery.
 3. **Inline on the session model.** The always-available fallback.
 
+**OMP route.** OMP's subagent primitive selects the model by agent name and exposes no per-agent model parameter, so adapter 1 has no OMP spelling: a set key skips adapter 1 and runs adapter 2 when `claude` is on PATH, else adapter 3. Keep both keys unset on OMP unless cross-harness elevation is explicitly wanted — unset resolves to the session model with no egress.
+
 Elevation is never a correctness dependency: every adapter failure degrades to the next, and inline always completes the run.
 
 ## Read-only posture and brief handoff
