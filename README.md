@@ -23,7 +23,7 @@ Maintained by [Kieran Klaassen](https://github.com/kieranklaassen) and [Trevin C
 Compound Engineering installs into oh-my-pi (omp) through its marketplace flow. The repo ships a native `.omp-plugin/marketplace.json` catalog whose plugin entry carries a `version`, so omp's update checker can see each new release:
 
 ```text
-omp plugin marketplace add FORK_OWNER/compound-engineering-omp
+omp plugin marketplace add bnivanov/compound-engineering-plugin
 omp plugin install compound-engineering@compound-engineering-omp
 ```
 
@@ -38,7 +38,7 @@ The default `notify` mode only writes update availability to the debug log — i
 <details>
 <summary>Other install paths (pin-style and contributor development)</summary>
 
-`omp install https://github.com/FORK_OWNER/compound-engineering-omp` installs the repository as an npm-style plugin. That path has **no update mechanism** — treat it as pinning a snapshot, not as the recommended install.
+`omp install https://github.com/bnivanov/compound-engineering-plugin` installs the repository as an npm-style plugin. That path has **no update mechanism** — treat it as pinning a snapshot, not as the recommended install.
 
 For local development from a checkout, use a live symlink instead:
 

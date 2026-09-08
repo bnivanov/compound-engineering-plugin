@@ -1,12 +1,12 @@
 {
   "name": "compound-engineering",
-  "version": "3.24.1-omp.1",
+  "version": "3.24.1-omp.2",
   "description": "Brainstorm, plan, debug, review, and compound learnings with AI agents",
   "author": {
-    "name": "FORK_OWNER"
+    "name": "bnivanov"
   },
-  "homepage": "https://github.com/FORK_OWNER/compound-engineering-omp",
-  "repository": "https://github.com/FORK_OWNER/compound-engineering-omp",
+  "homepage": "https://github.com/bnivanov/compound-engineering-plugin",
+  "repository": "https://github.com/bnivanov/compound-engineering-plugin",
   "license": "MIT",
   "keywords": [
     "brainstorming",

@@ -43,7 +43,7 @@ Only the marketplace install path has an update story. `omp install <git-url>` (
 Marketplace flow — the recommended install (marketplace name `compound-engineering-omp`, plugin name `compound-engineering`, both from `.omp-plugin/marketplace.json`):
 
 ```text
-omp plugin marketplace add FORK_OWNER/compound-engineering-omp
+omp plugin marketplace add bnivanov/compound-engineering-plugin
 omp plugin install compound-engineering@compound-engineering-omp
 ```
 
@@ -56,7 +56,7 @@ omp config set marketplace.autoUpdate auto   # or: omp plugin upgrade compound-e
 Pin-style direct install from a path or Git URL (no update mechanism; user scope by default):
 
 ```text
-omp install https://github.com/FORK_OWNER/compound-engineering-omp
+omp install https://github.com/bnivanov/compound-engineering-plugin
 ```
 
 Local development link from a checkout:

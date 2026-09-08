@@ -1,7 +1,7 @@
 {
   "name": "compound-engineering-omp",
   "owner": {
-    "name": "FORK_OWNER"
+    "name": "bnivanov"
   },
   "metadata": {
     "description": "Plugin marketplace for the Compound Engineering oh-my-pi (omp) plugin"
@@ -10,11 +10,11 @@
     {
       "name": "compound-engineering",
       "description": "Brainstorm, plan, debug, review, and compound learnings with AI agents",
-      "version": "3.24.1-omp.1",
+      "version": "3.24.1-omp.2",
       "author": {
-        "name": "FORK_OWNER"
+        "name": "bnivanov"
       },
-      "homepage": "https://github.com/FORK_OWNER/compound-engineering-omp",
+      "homepage": "https://github.com/bnivanov/compound-engineering-plugin",
       "tags": [
         "ai-powered",
         "compound-engineering",

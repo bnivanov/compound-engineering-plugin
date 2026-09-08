@@ -24,7 +24,7 @@ If you installed upstream's `compound-engineering@compound-engineering-plugin`, 
 ```text
 omp plugin uninstall compound-engineering@compound-engineering-plugin
 omp plugin marketplace remove compound-engineering-plugin
-omp plugin marketplace add FORK_OWNER/compound-engineering-omp
+omp plugin marketplace add bnivanov/compound-engineering-plugin
 omp plugin install compound-engineering@compound-engineering-omp
 ```
 
