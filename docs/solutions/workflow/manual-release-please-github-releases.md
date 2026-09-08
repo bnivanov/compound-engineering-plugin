@@ -20,6 +20,8 @@ tags:
 
 # Manual release-please with GitHub Releases for plugin and marketplace releases
 
+> **Retired 2026-09 (OMP fork S5.5):** this repo no longer runs release-please — `.github/release-please-config.json`, `src/release/*`, `scripts/release/*`, and the `release:*` scripts are deleted, and fork releases are manual tags per `AGENTS.md` "Release versioning". Kept as upstream history; do not follow its commands.
+
 The repo uses release-please manifest mode with one standing release PR: release PR maintenance is automatic on pushes to `main`, the release itself happens only when a maintainer merges that PR, and GitHub Releases (`compound-engineering-vX.Y.Z`, `marketplace-vX.Y.Z`, `cursor-marketplace-vX.Y.Z`) are the canonical release-notes surface. AGENTS.md "Release versioning" and "Commit Conventions" state the contributor-facing rules; this doc keeps the two constraints behind them.
 
 ## Why GitHub Releases is canonical: the `..` changelog-path constraint

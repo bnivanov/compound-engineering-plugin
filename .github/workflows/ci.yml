@@ -56,7 +56,6 @@ jobs:
         run: bun install
 
       # Canonical schema check: runs `claude plugin validate --strict` against
-
       # the marketplace catalog and the plugin manifest. The CLI must be
       # installed via npm, not bun: `bun x` cannot run this package (bun blocks
       # its required postinstall and cannot resolve its `claude` bin name), and

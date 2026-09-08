@@ -18,6 +18,8 @@ tags:
 
 # Release-please version drift recovery
 
+> **Retired 2026-09 (OMP fork S5.5):** the release-please automation this playbook recovers is deleted from this fork (manual tags per `AGENTS.md` "Release versioning"). Kept as upstream history; do not follow its commands.
+
 ## Problem
 
 Manual edits to a release-managed version field cause drift that:
