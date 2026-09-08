@@ -76,3 +76,12 @@ describe("omp native install", () => {
     }
   })
 })
+
+describe("omp marketplace catalog", () => {
+  const catalog = JSON.parse(readFileSync(path.join(REPO_ROOT, ".omp-plugin", "marketplace.json"), "utf8")) as { name: string; owner: { name: string }; plugins: Array<{ name: string; description?: string; version?: string; source: unknown }> };
+  const pluginManifest = JSON.parse(readFileSync(path.join(REPO_ROOT, "plugin.json"), "utf8")) as { version: string };
+  const NAME_RULE = /^[a-z0-9][a-z0-9.-]{0,62}[a-z0-9]$|^[a-z0-9]$/;
+  test("catalog is the only marketplace catalog omp can find", () => { expect(existsSync(path.join(REPO_ROOT, ".claude-plugin", "marketplace.json"))).toBe(false) });
+  test("catalog and plugin entry satisfy omp naming rules and point at the repo root", () => { expect(catalog.name).toMatch(NAME_RULE); expect(typeof catalog.owner?.name).toBe("string"); expect(catalog.plugins).toHaveLength(1); const [plugin] = catalog.plugins; expect(plugin.name).toBe(packageJson.name); expect(plugin.name).toMatch(NAME_RULE); expect(`${plugin.name}@${catalog.name}`.length).toBeLessThanOrEqual(128); expect(plugin.source).toBe("./"); expect(plugin.description?.trim().length ?? 0).toBeGreaterThan(0) });
+  test("catalog version agrees with package.json and plugin.json", () => { expect(catalog.plugins[0].version).toBe(packageJson.version); expect(pluginManifest.version).toBe(packageJson.version) });
+});

@@ -1,3 +1,5 @@
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
 import { spawnSync } from "node:child_process"
 import { readFile } from "fs/promises"
 import path from "path"
@@ -1554,6 +1556,10 @@ describe("cross-model peer skip legibility", () => {
       expect(src).toContain("XHOST_HARNESS=opencode; XHOST_FAMILY=unknown")
       expect(src).not.toContain("XHOST_FAMILY=cursor")
       expect(src).toContain("Never infer serving family from the Cursor brand")
+      expect(src).toContain("XHOST_HARNESS=omp; XHOST_FAMILY=unknown")
+      expect(src).not.toContain("XHOST_FAMILY=omp")
+      expect(src).toContain("Like Cursor, OMP keeps family `unknown`")
+      expect(src).toContain("`<host-harness>` is `codex`, `claude`, `grok`, `cursor`, `omp`, or `unknown`")
     })
   }
 
@@ -1581,7 +1587,7 @@ describe("cross-model peer skip legibility", () => {
 
   function extractHostAttestation(src: string): string {
     const m = src.match(
-      /if \[ "\$\{CLAUDECODE:-\}" = "1" \]; then XHOST_HARNESS=claude; XHOST_FAMILY=claude;\n(?:elif .+\n)*else XHOST_HARNESS=unknown; XHOST_FAMILY=unknown; fi/,
+      /if \[ "\$\{OMPCODE:-\}" = "1" \]; then XHOST_HARNESS=omp; XHOST_FAMILY=unknown;\n(?:elif .+\n)*else XHOST_HARNESS=unknown; XHOST_FAMILY=unknown; fi/,
     )
     expect(m).toBeTruthy()
     return m![0]
@@ -1600,7 +1606,7 @@ describe("cross-model peer skip legibility", () => {
     return (r.stdout ?? "").trim()
   }
 
-  test("cross-model host attestation snippets are identical and map Grok Build to grok", async () => {
+  test("cross-model host attestation snippets are identical and seat OMP first", async () => {
     const snippets = await Promise.all(
       routeTokenPairs.map(async (p) => extractHostAttestation(await readRepoFile(p.reference))),
     )
@@ -1614,9 +1620,245 @@ describe("cross-model peer skip legibility", () => {
     expect(attestHost(snippet, {})).toBe("unknown unknown")
     expect(attestHost(snippet, { GROK_AGENT: "1" })).toBe("grok grok")
     expect(attestHost(snippet, { GROK_SESSION_ID: "sess" })).toBe("grok grok")
+    expect(attestHost(snippet, { CLAUDECODE: "1" })).toBe("claude claude")
     expect(attestHost(snippet, { CLAUDECODE: "1", GROK_AGENT: "1" })).toBe("claude claude")
     expect(attestHost(snippet, { CODEX_SESSION_ID: "sess", GROK_AGENT: "1" })).toBe("codex codex")
     expect(attestHost(snippet, { CURSOR_AGENT: "1" })).toBe("cursor unknown")
+    expect(attestHost(snippet, { OMPCODE: "1" })).toBe("omp unknown")
+    expect(attestHost(snippet, { OMPCODE: "1", CLAUDECODE: "1", GROK_AGENT: "1" })).toBe("omp unknown")
+  })
+
+  // S2: the omp route must emit runnable adapter argv on every worker with the
+  // skill's least-privilege posture, and reject model/effort overrides (the
+  // route inherits the session-default model and exposes no effort flag).
+  const ompRouteWorkers = [
+    {
+      worker: "skills/ce-code-review/scripts/cross-model-adversarial-review.sh",
+      argv: ["--mode json", "--no-session", "--tools read,grep,glob,lsp", "--cwd <repo-root>", "@<prompt-file>"],
+    },
+    {
+      worker: "skills/ce-doc-review/scripts/cross-model-doc-review.sh",
+      argv: ["--mode json", "--no-session", "--no-tools", "--cwd <peer-workdir>", "@<prompt-file>"],
+    },
+    {
+      worker: "skills/ce-pov/scripts/cross-model-pov.sh",
+      argv: ["--mode json", "--no-session", "web_search", "--cwd <read-root>", "@<prompt-file>"],
+    },
+  ]
+  for (const { worker, argv } of ompRouteWorkers) {
+    test(`${worker} emits a runnable least-privilege omp adapter argv`, async () => {
+      const r = spawnSync("bash", [path.join(process.cwd(), worker), "--emit-adapter", "omp"], {
+        encoding: "utf8",
+      })
+      expect(r.status).toBe(0)
+      const out = `${r.stdout ?? ""}`
+      expect(out.startsWith("omp ")).toBe(true)
+      for (const token of argv) expect(out).toContain(token)
+      expect(out).not.toContain("--model")
+    })
+    test(`${worker} rejects model and effort overrides for the omp route`, async () => {
+      const abs = path.join(process.cwd(), worker)
+      // ce-pov validates no effort override on any route (fixed per-route effort),
+      // so omp matches its siblings by ignoring it; code/doc fail closed.
+      const effortWants = worker.includes("ce-pov") ? 0 : 2
+      const effort = spawnSync("bash", [abs, "--emit-adapter", "omp"], {
+        encoding: "utf8",
+        env: { ...process.env, CROSS_MODEL_EFFORT_OVERRIDE: "high" },
+      })
+      expect(effort.status).toBe(effortWants)
+      const model = spawnSync("bash", [abs, "--emit-adapter", "omp"], {
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          CROSS_MODEL_MODEL_OVERRIDE: "some-model",
+          CROSS_MODEL_MODEL_OVERRIDE_TARGET: "omp",
+        },
+      })
+      expect(model.status).toBe(2)
+    })
+  }
+
+  function extractOmpParser(src: string): string {
+    const m = src.match(/^parse_omp_events\(\) \{.*$\n(?:.*\n)*?^\}$/m)
+    expect(m).toBeTruthy()
+    return m![0]
+  }
+
+  // The parser runs the worker's own extracted function against a recorded-shape
+  // omp --mode json envelope (shapes verified against omp 18.1.13 output), so
+  // this guards the shipped parsing logic rather than duplicating it.
+  async function runOmpParser(worker: string, lines: string[]): Promise<{ status: number | null; out: string }> {
+    const src = await readRepoFile(worker)
+    const dir = mkdtempSync(path.join(tmpdir(), "omp-parse-"))
+    const env = path.join(dir, "envelope.ndjson")
+    const out = path.join(dir, "out.json")
+    writeFileSync(env, `${lines.join("\n")}\n`)
+    const script = [
+      extractOmpParser(src),
+      'parse_omp_events "$OMP_PARSE_ENV" "$OMP_PARSE_OUT"',
+    ].join("\n")
+    const r = spawnSync("bash", ["-c", script], {
+      encoding: "utf8",
+      env: { ...process.env, OMP_PARSE_ENV: env, OMP_PARSE_OUT: out },
+    })
+    let parsed = ""
+    try {
+      parsed = readFileSync(out, "utf8")
+    } catch {
+      parsed = ""
+    }
+    return { status: r.status, out: parsed }
+  }
+
+  const ompParserWorkers = [
+    { worker: "skills/ce-code-review/scripts/cross-model-adversarial-review.sh", doc: '{"findings":[{"note":"n"}],"residual_risks":[],"testing_gaps":[]}' },
+    { worker: "skills/ce-doc-review/scripts/cross-model-doc-review.sh", doc: '{"findings":[{"note":"n"}],"residual_risks":[],"testing_gaps":[]}' },
+    // pov validates any JSON object, not a findings schema
+    { worker: "skills/ce-pov/scripts/cross-model-pov.sh", doc: '{"voice":"peer-omp","position":"p","reasoning":"r"}' },
+  ]
+  for (const { worker, doc } of ompParserWorkers) {
+    test(`${worker} parse_omp_events recovers schema JSON from streamed text deltas`, async () => {
+      // Real omp 18.1.13 shape: assistantMessageEvent is TOP-LEVEL on
+      // message_update, and thinking_delta carries the same .delta key — only
+      // text_delta events may join into the answer.
+      const delta = (d: string) =>
+        JSON.stringify({
+          type: "message_update",
+          assistantMessageEvent: { type: "text_delta", contentIndex: 1, delta: d },
+        })
+      const thinking = JSON.stringify({
+        type: "message_update",
+        assistantMessageEvent: { type: "thinking_delta", contentIndex: 0, delta: "SECRET-REASONING" },
+      })
+      const streamed = await runOmpParser(worker, [
+        thinking,
+        delta(doc.slice(0, 20)),
+        delta(doc.slice(20)),
+      ])
+      expect(streamed.status).toBe(0)
+      expect(JSON.parse(streamed.out)).toEqual(JSON.parse(doc))
+      expect(streamed.out).not.toContain("SECRET-REASONING")
+    })
+
+    test(`${worker} parse_omp_events falls back to the turn_end message text`, async () => {
+      const turnOnly = await runOmpParser(worker, [
+        JSON.stringify({
+          type: "turn_end",
+          message: { role: "assistant", content: [{ type: "thinking", thinking: "SECRET-REASONING" }, { type: "text", text: doc }] },
+        }),
+      ])
+      expect(turnOnly.status).toBe(0)
+      expect(JSON.parse(turnOnly.out)).toEqual(JSON.parse(doc))
+      expect(turnOnly.out).not.toContain("SECRET-REASONING")
+    })
+  }
+
+  test("omp event parsers keep the shared envelope shape across workers", async () => {
+    const [adv, docr, pov] = await Promise.all([
+      readRepoFile("skills/ce-code-review/scripts/cross-model-adversarial-review.sh"),
+      readRepoFile("skills/ce-doc-review/scripts/cross-model-doc-review.sh"),
+      readRepoFile("skills/ce-pov/scripts/cross-model-pov.sh"),
+    ])
+    // code/doc extract the same parser; pov differs only in schema validation
+    // and its recovery hook, not in the envelope shape it reads.
+    expect(extractOmpParser(docr)).toBe(extractOmpParser(adv))
+    const povParser = extractOmpParser(pov)
+    expect(povParser).toContain('select(.type=="text_delta")')
+    expect(povParser).toContain("recover_pov_json")
+    expect(povParser).toContain('select(.type=="turn_end")')
+  })
+
+  test("omp serving family is unknown in every worker, so independence stays unverified", async () => {
+    // An attested omp family would let a same-model peer (the omp route serves
+    // the session-default provider) promote as independent; cursor sets the
+    // precedent of fail-closed unknown.
+    const srcs = await Promise.all([
+      readRepoFile("skills/ce-code-review/scripts/cross-model-adversarial-review.sh"),
+      readRepoFile("skills/ce-doc-review/scripts/cross-model-doc-review.sh"),
+      readRepoFile("skills/ce-pov/scripts/cross-model-pov.sh"),
+    ])
+    for (const src of srcs) {
+      const fn = src.match(/^target_serving_family\(\) \{.*$\n(?:.*\n)*?^\}$/m)?.[0]
+      expect(fn).toBeTruthy()
+      const r = spawnSync("bash", ["-c", `${fn}; target_serving_family omp; echo; target_serving_family claude`], {
+        encoding: "utf8",
+      })
+      expect(r.status).toBe(0)
+      const [ompFamily, claudeFamily] = `${r.stdout}`.trim().split("\n")
+      expect(ompFamily).toBe("unknown")
+      expect(claudeFamily).toBe("claude")
+    }
+  })
+
+  // omp --mode json exits 0 even on terminal failure; the verdict lives in the
+  // nested turn_end message (stopReason/errorMessage, verified against omp
+  // 18.1.13). The code/doc classifier must read it before parsing; pov has its
+  // own jq classifier with the same semantics.
+  async function runOmpClassifier(worker: string, envelope: string[]): Promise<string> {
+    const src = await readRepoFile(worker)
+    const fn = src.match(/^classify_provider_outcome\(\) \{.*$\n(?:.*\n)*?^\}$/m)?.[0]
+    expect(fn).toBeTruthy()
+    const dir = mkdtempSync(path.join(tmpdir(), "omp-classify-"))
+    const peerlog = path.join(dir, "peer.log")
+    writeFileSync(peerlog, `${envelope.join("\n")}\n`)
+    const script = [
+      `PEERLOG=${JSON.stringify(peerlog)}`,
+      "PEERERR=/dev/null",
+      "ACTUAL_ROUTE=omp",
+      `PY_BIN=${JSON.stringify(process.env.PY_BIN || "python3")}`,
+      fn,
+      "classify_provider_outcome",
+    ].join("\n")
+    const r = spawnSync("bash", ["-c", script], { encoding: "utf8" })
+    expect(`${r.stderr}`).toBe("")
+    return `${r.stdout}`.trim()
+  }
+
+  test("code-review classifier reads nested omp turn_end terminal state", async () => {
+    const worker = "skills/ce-code-review/scripts/cross-model-adversarial-review.sh"
+    const turnEnd = (message: Record<string, unknown>) => JSON.stringify({ type: "turn_end", message: { role: "assistant", ...message } })
+    expect(await runOmpClassifier(worker, [turnEnd({ stopReason: "stop", content: [] })])).toBe("ok")
+    expect(await runOmpClassifier(worker, [turnEnd({ stopReason: "error", content: [] })])).toBe("failed")
+    expect(await runOmpClassifier(worker, [turnEnd({ stopReason: "stop", errorMessage: "provider exploded", content: [] })])).toBe("failed")
+    expect(await runOmpClassifier(worker, [turnEnd({ stopReason: "error", errorMessage: "529 overloaded: provider capacity", content: [] })])).toBe("overloaded")
+  })
+
+  test("doc-review classifier reads nested omp turn_end terminal state", async () => {
+    const worker = "skills/ce-doc-review/scripts/cross-model-doc-review.sh"
+    const turnEnd = (message: Record<string, unknown>) => JSON.stringify({ type: "turn_end", message: { role: "assistant", ...message } })
+    expect(await runOmpClassifier(worker, [turnEnd({ stopReason: "stop", content: [] })])).toBe("ok")
+    expect(await runOmpClassifier(worker, [turnEnd({ stopReason: "error", content: [] })])).toBe("failed")
+    expect(await runOmpClassifier(worker, [turnEnd({ stopReason: "error", errorMessage: "529 capacity: overloaded", content: [] })])).toBe("overloaded")
+  })
+
+  test("pov classify_omp_terminal discards output on terminal failure", async () => {
+    const src = await readRepoFile("skills/ce-pov/scripts/cross-model-pov.sh")
+    const fn = src.match(/^classify_omp_terminal\(\) \{.*$\n(?:.*\n)*?^\}$/m)?.[0]
+    expect(fn).toBeTruthy()
+    const dir = mkdtempSync(path.join(tmpdir(), "omp-pov-"))
+    const marker = path.join(dir, "raw-out")
+    writeFileSync(marker, "stale")
+    const peerlog = path.join(dir, "peer.log")
+    const run = async (envelope: string[]): Promise<string> => {
+      writeFileSync(peerlog, `${envelope.join("\n")}\n`)
+      const script = [
+        `RAW_OUT=${JSON.stringify(marker)}`,
+        "RUN_SUCCEEDED=true",
+        'log() { printf "%s\\n" "$*" >&2; }',
+        fn,
+        `classify_omp_terminal ${JSON.stringify(peerlog)}`,
+        'if [ "$RUN_SUCCEEDED" = true ]; then echo kept; else echo discarded; fi',
+      ].join("\n")
+      const r = spawnSync("bash", ["-c", script], { encoding: "utf8" })
+      expect(r.status).toBe(0)
+      return `${r.stdout}`.trim()
+    }
+    const turnEnd = (message: Record<string, unknown>) => JSON.stringify({ type: "turn_end", message: { role: "assistant", ...message } })
+    expect(await run([turnEnd({ stopReason: "stop", content: [] })])).toBe("kept")
+    expect((await run([turnEnd({ stopReason: "error", content: [] })]))).toBe("discarded")
+    expect(await run([turnEnd({ stopReason: "error", errorMessage: "529 overloaded provider capacity", content: [] })])).toBe("discarded")
+    expect(await run([])).toBe("kept")
+    expect(existsSync(marker)).toBe(false)
   })
 
   // The provider runs under `set -m` in its OWN process group so the worker can

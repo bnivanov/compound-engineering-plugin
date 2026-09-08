@@ -1,4 +1,4 @@
-import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises"
+import { copyFile, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "fs/promises"
 import os from "os"
 import path from "path"
 import { describe, expect, test } from "bun:test"
@@ -17,11 +17,12 @@ type RunResult = {
   stderr: string
 }
 
-async function runCheckHealth(cwd: string, pathValue: string): Promise<RunResult> {
+async function runCheckHealth(cwd: string, pathValue: string, extraEnv: Record<string, string> = {}): Promise<RunResult> {
   const proc = Bun.spawn(["bash", checkHealthScript], {
     cwd,
     env: {
       ...process.env,
+      ...extraEnv,
       HOME: cwd,
       PATH: pathValue,
       // A host CODEX_HOME would otherwise decide what the tool-map scan reads.
@@ -728,6 +729,101 @@ describe("ce-setup check-health", () => {
     expect(skill).toContain("If this session has no writable checkout, but the user named a repository and the harness exposes a remote repo-work surface with a writable checkout")
     expect(skill).toContain("Otherwise skip Phase 2 and go to Phase 3")
     expect(skill).not.toContain("If the health report says `Not inside a git repository`")
+  })
+})
+
+describe("ce-setup check-health OMP branch (S3)", () => {
+  const RESOLVED_KEYS = [
+    "task.maxRecursionDepth",
+    "task.enableLsp",
+    "skills.ignoredSkills",
+    "astGrep.enabled",
+  ] as const
+
+  const CANNED_VALUES: Record<string, string> = {
+    "task.maxRecursionDepth": "2",
+    "task.enableLsp": "false",
+    "skills.ignoredSkills": "[]",
+    "astGrep.enabled": "false",
+  }
+
+  // Hermetic fake `omp`: answers `config get <key>` with canned values and logs
+  // each requested key, proving the script calls once per key (a multi-key call
+  // prints only the first value on real omp and would silently drop the rest).
+  async function rootWithFakeOmp(): Promise<{ root: string; bin: string }> {
+    const root = await mkdtemp(path.join(os.tmpdir(), "ce-setup-health-omp-"))
+    const bin = path.join(root, "bin")
+    await mkdir(bin, { recursive: true })
+    const callsLog = path.join(root, "omp-calls.log")
+    await writeFile(
+      path.join(bin, "omp"),
+      [
+        "#!/bin/sh",
+        `echo "$3" >> ${callsLog}`,
+        'if [ "$1" = "config" ] && [ "$2" = "get" ]; then',
+        '  case "$3" in',
+        ...RESOLVED_KEYS.map((key) => `    ${key}) echo "${CANNED_VALUES[key]}" ;;`),
+        "  esac",
+        "fi",
+        "",
+      ].join("\n"),
+    )
+    await Bun.$`chmod +x ${path.join(bin, "omp")}`.quiet()
+    return { root, bin }
+  }
+
+  test("covers agent-browser and ast-grep natively with no install advice", async () => {
+    const { root, bin } = await rootWithFakeOmp()
+    try {
+      const result = await runCheckHealth(root, `${bin}:/usr/bin:/bin`, { OMPCODE: "1" })
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toContain("agent-browser -- covered natively on OMP")
+      expect(result.stdout).toContain("ast-grep -- covered natively on OMP")
+      expect(result.stdout.match(/covered natively on OMP/g)).toHaveLength(2)
+      for (const line of result.stdout.split("\n")) {
+        if (/agent-browser|ast-grep/.test(line)) {
+          expect(line).not.toMatch(/brew install|npm install|https?:\/\//)
+        }
+      }
+      // gh/jq/ffmpeg never take the native arm: the marker only ever follows
+      // the two covered tool names (emoji prefixes make ^-anchoring wrong here).
+      expect(result.stdout).not.toMatch(/(gh|jq|ffmpeg) -- covered natively/)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
+  test("reports resolved omp values verbatim via one call per key", async () => {
+    const { root, bin } = await rootWithFakeOmp()
+    try {
+      const result = await runCheckHealth(root, `${bin}:/usr/bin:/bin`, { OMPCODE: "1" })
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toContain("OMP resolved values")
+      for (const key of RESOLVED_KEYS) {
+        expect(result.stdout).toContain(`${key} = ${CANNED_VALUES[key]}`)
+      }
+      const calls = (await readFile(path.join(root, "omp-calls.log"), "utf8")).trim().split("\n")
+      // The ast-grep native detail line also probes astGrep.enabled once; the
+      // resolved-values section itself must be the trailing one-call-per-key run.
+      expect(calls.slice(-4)).toEqual([...RESOLVED_KEYS])
+      expect(calls.slice(0, -4)).toEqual(["astGrep.enabled"])
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+  test("without OMPCODE the classic five-binary advice path is unchanged", async () => {
+    const { root, bin } = await rootWithFakeOmp()
+    try {
+      // Explicitly clear the ambient OMPCODE: this harness itself runs on OMP.
+      const result = await runCheckHealth(root, `${bin}:/usr/bin:/bin`, { OMPCODE: "0" })
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).not.toContain("covered natively")
+      expect(result.stdout).not.toContain("OMP resolved values")
+      expect(result.stdout).toContain("agent-browser -- unavailable")
+      expect(result.stdout).toContain("ast-grep -- unavailable")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
   })
 })
 

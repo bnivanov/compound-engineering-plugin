@@ -1,9 +1,6 @@
 #!/usr/bin/env bun
 import { defineCommand, runMain } from "citty"
 import packageJson from "../package.json"
-import convert from "./commands/convert"
-import cleanup from "./commands/cleanup"
-import install from "./commands/install"
 import listCommand from "./commands/list"
 import pluginPath from "./commands/plugin-path"
 
@@ -11,12 +8,9 @@ const main = defineCommand({
   meta: {
     name: "compound-plugin",
     version: packageJson.version,
-    description: "Convert Claude Code plugins into other agent formats",
+    description: "Repository tooling for the Compound Engineering OMP plugin",
   },
   subCommands: {
-    cleanup: () => cleanup,
-    convert: () => convert,
-    install: () => install,
     list: () => listCommand,
     "plugin-path": () => pluginPath,
   },

@@ -6,7 +6,7 @@ import path from "path"
 export default defineCommand({
   meta: {
     name: "plugin-path",
-    description: "Checkout a plugin branch to a stable local path for use with claude --plugin-dir",
+    description: "Checkout a plugin branch to a stable local path for use with omp plugin link",
   },
   args: {
     plugin: {
@@ -50,7 +50,7 @@ export default defineCommand({
     }
 
     // Plugin path goes to stdout (for scripting); usage hint goes to stderr
-    console.error(`\nReady. Use with:\n  claude --plugin-dir ${pluginPath}\n`)
+    console.error(`\nReady. Use with:\n  omp plugin link ${pluginPath}\n`)
     console.log(pluginPath)
   },
 })
@@ -65,7 +65,7 @@ async function dirExists(p: string): Promise<boolean> {
 }
 
 async function resolvePluginRoot(repoDir: string, pluginName: string): Promise<string> {
-  const rootManifest = path.join(repoDir, ".claude-plugin", "plugin.json")
+  const rootManifest = path.join(repoDir, "plugin.json")
   if (await dirExists(path.dirname(rootManifest))) {
     try {
       const raw = await fs.readFile(rootManifest, "utf8")
@@ -118,5 +118,5 @@ async function fetchAndCheckout(repoDir: string, branch: string): Promise<void> 
 function resolveGitHubSource(): string {
   const override = process.env.COMPOUND_PLUGIN_GITHUB_SOURCE
   if (override && override.trim()) return override.trim()
-  return "https://github.com/EveryInc/compound-engineering-plugin"
+  return "https://github.com/FORK_OWNER/compound-engineering-omp"
 }

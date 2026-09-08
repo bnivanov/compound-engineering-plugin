@@ -177,7 +177,7 @@ present. They carry the contracts downstream consumers depend on.
     the per-unit `Dependencies`/`Files` (and any sequencing or dependency
     diagram) already suffice, and an index would be ceremony.
 - **Verification Contract** — repo-specific commands and quality gates,
-  including which tests prove the plan, when `release:validate` applies, and
+  including which tests prove the plan, when manifest conformance checks apply, and
   what behavioral skill evaluation is required. Avoid generic "run tests"
   language when the repo has concrete commands. When the goal is
   optimization-shaped (build time, latency, coverage, bundle size), express a

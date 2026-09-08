@@ -14,7 +14,7 @@ https://agent-plugins.org/schemas/1.0.0/plugin.schema.json
 
 Layout already matches the portable package shape: root manifest + `skills/<name>/SKILL.md`. No `mcp.json` (valid — MCP is optional).
 
-CI pins authoring rules in `tests/release-metadata.test.ts` (schema const, name pattern, closed field set, field shapes). Rules are pinned locally; tests never fetch the schema at runtime.
+CI pins authoring rules in `tests/plugin-manifest-conformance.test.ts` (schema const, name pattern, closed field set, field shapes). Rules are pinned locally; tests never fetch the schema at runtime.
 
 ## Skill body size: what actually constrains it
 
@@ -51,17 +51,15 @@ Agent Plugins discovers skills via the [Agent Skills](https://agentskills.io/spe
 
 **Source policy**
 
-- Keep Claude keys at the top level in source: Claude Code installs the repo root and consumes them there. Do not relocate them under `metadata:` in-tree without a Claude Code regression check.
-- A future `agent-plugins` converter (or equivalent emission path) remains optional hardening: emit a reference-clean package if/when a client or marketplace requires `skills-ref`-clean frontmatter. Not required solely because extra keys exist.
+- Keep extra frontmatter keys at the top level in source; do not relocate them under `metadata:` in-tree without a regression check against a strict frontmatter validator.
+- No `agent-plugins` converter exists in this fork; if a client or marketplace ever requires `skills-ref`-clean frontmatter, that is a new, separately motivated change.
 
 ## Consumers of root `plugin.json`
 
 | Consumer | Role |
 | --- | --- |
+| oh-my-pi (omp) | Not read; omp installs from `.omp-plugin/marketplace.json` and `package.json#pi`. Root manifest is retained as the fork's version-carrying Agent Plugins manifest. |
 | Agent Plugins clients | Manifest schema + `skills/` discovery |
-| Antigravity (`agy`) | Root + `.agy/` symlink; needs `name` + `version` (other fields optional). Foreign Agent Plugins `$schema` accepted on `agy` v1.0.10 (fixture + post-change validate, 2026-08-07). |
-| Grok Build | Native surface also at `.grok-plugin/plugin.json`; root may participate in direct installs — treat both as present. |
-| release-please | Owns `$.version` only |
 
 ## Re-verify when
 
@@ -72,4 +70,3 @@ Agent Plugins discovers skills via the [Agent Skills](https://agentskills.io/spe
 - Agent Plugins leaves Working Draft / publishes a new schema version
 - Adding top-level fields to root `plugin.json`
 - A concrete Agent Plugins client is observed to skip or reject skills with Claude-only frontmatter (observed 2026-08-17: omp 17.3.5, #1411)
-- Shipping an `agent-plugins` converter target

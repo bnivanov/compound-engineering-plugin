@@ -71,6 +71,7 @@
 # on your session model and the run says so. Invalid/commented/missing -> no
 # elevation.
 
+# <!-- OMP --> Leave plan_model/brainstorm_model unset (session model). OMP plan role is a different subsystem (F4).
 # plan_model: fable              # model alias for the plan-authoring step (no default)
 # brainstorm_model: fable        # model alias for approach generation (no default)
 
@@ -127,7 +128,7 @@
 # high|xhigh, grok low|medium|high; cursor/composer routes take none. A value
 # the peer cannot honor skips the pass with a stated reason -- never substituted.
 
-# cross_model_review_mode: off   # auto | off (default: auto)
+cross_model_review_mode: auto   # auto | off (default: auto). <!-- OMP --> fork default is auto (S6b, after S2); set off to keep reviews fully local.
 # cross_model_peer: codex          # codex | claude | grok | cursor | composer | opencode
 # cross_model_model: fable         # model alias or full id for the resolved peer target (no default)
 # cross_model_effort: xhigh        # reasoning effort for the resolved peer target (no default)

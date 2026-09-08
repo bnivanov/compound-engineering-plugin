@@ -15,8 +15,8 @@ multiple plausible referents would materially change the POV.
 
 Keep four identities separate for the host and every peer:
 
-- **target** — the user-facing choice (`codex`, `claude`, `grok`, `cursor`, or
-  `composer`);
+- **target** — the user-facing choice (`codex`, `claude`, `grok`, `cursor`,
+  `composer`, `opencode`, or `omp`);
 - **harness/intermediary route** — the CLI or intermediary that runs it;
 - **requested model** — an explicit model or the route's declared default; and
 - **served model** — receipt-verified when available, otherwise `unverified`.
@@ -32,7 +32,9 @@ verified rather than guessing.
 Attest the host harness and its serving family as two separate tokens:
 
 ```bash
-if [ "${CLAUDECODE:-}" = "1" ]; then XHOST_HARNESS=claude; XHOST_FAMILY=claude;
+# OMP: OMP attests first; its marker never names the serving model.
+if [ "${OMPCODE:-}" = "1" ]; then XHOST_HARNESS=omp; XHOST_FAMILY=unknown;
+elif [ "${CLAUDECODE:-}" = "1" ]; then XHOST_HARNESS=claude; XHOST_FAMILY=claude;
 elif [ -n "${CODEX_SANDBOX:-}${CODEX_SANDBOX_NETWORK_DISABLED:-}${CODEX_SESSION_ID:-}${CODEX_THREAD_ID:-}${CODEX_CI:-}" ]; then XHOST_HARNESS=codex; XHOST_FAMILY=codex;
 elif [ "${GROK_AGENT:-}" = "1" ] || [ -n "${GROK_SESSION_ID:-}" ]; then XHOST_HARNESS=grok; XHOST_FAMILY=grok;
 elif [ -n "${CURSOR_AGENT:-}${CURSOR_CONVERSATION_ID:-}" ]; then XHOST_HARNESS=cursor; XHOST_FAMILY=unknown;
@@ -43,7 +45,7 @@ else XHOST_HARNESS=unknown; XHOST_FAMILY=unknown; fi
 Both tokens come from the same peer-key vocabulary as the targets above, never
 from a provider's corporate name: `<host-serving-family>` (`XHOST_FAMILY`) is
 `codex`, `claude`, `grok`, `composer`, or `unknown`. `<host-harness>`
-(`XHOST_HARNESS`) is `codex`, `claude`, `grok`, `cursor`, `opencode`, or `unknown`. The
+(`XHOST_HARNESS`) is `codex`, `claude`, `grok`, `cursor`, `opencode`, `omp`, or `unknown`. The
 snippet is evidence, not the verdict: it resolves the harnesses whose
 environment markers it already names, and where it yields `unknown` on a harness
 you can identify from your own runtime, attest what you know instead. A harness
@@ -53,7 +55,7 @@ Cursor is the one identity self-knowledge cannot complete, because the harness
 does not determine the serving model: it keeps harness `cursor` and family
 `unknown` unless an observable serving-family attestation lets you set
 `XHOST_FAMILY` to `codex`, `claude`, `grok`, or `composer`.
-Never infer serving family from the Cursor brand.
+Never infer serving family from the Cursor brand. Like Cursor, OMP keeps family `unknown`: `OMPCODE=1` attests harness `omp` but never the serving model, so the automatic pass skips.
 
 Section 4 passes `XHOST_FAMILY` as the worker's first argument and
 `XHOST_HARNESS` as `CROSS_MODEL_HOST_HARNESS`; a provider name such as
@@ -176,8 +178,11 @@ fail-closes on anything else (including route-shaped guesses like `codex-cli`):
 | `cursor` | `cursor` |
 | `composer` | `composer` |
 | `opencode` | `opencode` |
+| `omp` | `omp` |
 
 The host harness does not choose the Grok route. Target `grok` binds `grok-cli` when that CLI is installed. Bind `grok-cursor` only when the user asked for Grok through Cursor, or when the grok CLI is absent and Cursor is a sanctioned recipient.
+
+The `omp` route runs the session-default model over the `omp` CLI with CE auth and the ambient sandbox inherited; the run is session-ephemeral (`--no-session`). Model overrides are rejected on this route; effort is not applicable (the worker ignores an effort override on every route, omp included). It carries no served-model receipt and its serving family stays `unknown` — report serving model unverified on this route.
 
 Binary presence proves only that a route is a candidate. Pre-dispatch capability
 evidence may refine the fixed route only when the current host context makes that
@@ -318,9 +323,7 @@ PY="$(for c in python3 python py; do command -v "$c" >/dev/null 2>&1 && "$c" -c 
 CE_PEER_HARD_SECS= "$PY" "$SKILL_DIR/scripts/peer-job-runner.py" start --skill ce-pov --run-id "<run-id>" --label "<target>" --result-path "<run-dir>/pov-<target>.json" -- env CROSS_MODEL_HOST_HARNESS="<host-harness>" CROSS_MODEL_REPO_ROOT="<repo-root>" CROSS_MODEL_READ_ROOT="<read-root>" CROSS_MODEL_SCRATCH_PARENT="<scratch-dir>" bash "$SKILL_DIR/scripts/cross-model-pov.sh" "<host-serving-family>" "<fixed-route>" "<payload-path>" "<run-dir>"
 ```
 
-- `<host-serving-family>` is `codex`, `claude`, `grok`, `composer`, or
-  `unknown`; `<host-harness>` is `codex`, `claude`, `grok`, `cursor`, or
-  `unknown`. Both are the Section 1 attestation, not a provider name.
+- `<host-serving-family>` is `codex`, `claude`, `grok`, `composer`, or `unknown`; `<host-harness>` is `codex`, `claude`, `grok`, `cursor`, `omp`, or `unknown`. Both are the Section 1 attestation, not a provider name.
 - `<fixed-route>` is the sanctioned route token from Section 3's table;
   `<target>` is its resolved target, with `grok-cli` and `grok-cursor`
   collapsing to `grok`.

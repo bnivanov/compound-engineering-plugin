@@ -4,7 +4,9 @@ category: workflow
 date: 2026-03-17
 last_refreshed: 2026-09-02
 created: 2026-03-17
-severity: medium
+status: stale
+stale_reason: OMP fork S5.5 deleted release-please; fork releases are manual tags per AGENTS.md Release versioning.
+stale_date: 2026-09-08
 module: release-automation
 problem_type: workflow_issue
 component: release-automation
@@ -19,6 +21,8 @@ tags:
 ---
 
 # Manual release-please with GitHub Releases for plugin and marketplace releases
+
+> **Retired 2026-09 (OMP fork S5.5):** this repo no longer runs release-please — `.github/release-please-config.json`, `src/release/*`, `scripts/release/*`, and the `release:*` scripts are deleted, and fork releases are manual tags per `AGENTS.md` "Release versioning". Kept as upstream history; do not follow its commands.
 
 The repo uses release-please manifest mode with one standing release PR: release PR maintenance is automatic on pushes to `main`, the release itself happens only when a maintainer merges that PR, and GitHub Releases (`compound-engineering-vX.Y.Z`, `marketplace-vX.Y.Z`, `cursor-marketplace-vX.Y.Z`) are the canonical release-notes surface. AGENTS.md "Release versioning" and "Commit Conventions" state the contributor-facing rules; this doc keeps the two constraints behind them.
 

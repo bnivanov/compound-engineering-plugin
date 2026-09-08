@@ -4,7 +4,7 @@
 
 When the bundled `scripts/check-health` is unavailable, perform these checks by hand and report the same findings:
 
-1. Check optional tools with `command -v`: `agent-browser`, `gh`, `jq`, `ast-grep`, `ffmpeg`.
+1. Check optional tools with `command -v`: `agent-browser`, `gh`, `jq`, `ast-grep`, `ffmpeg`. On OMP (`OMPCODE=1`): `agent-browser` is covered by eval `browser` incl. relay and `ast-grep` by `xd://ast_edit` + `lsp` (report resolved `astGrep.enabled`) — never advise installing them; `gh`, `jq`, `ffmpeg` stay real requirements. Report resolved `omp config get` values for `task.maxRecursionDepth`, `task.enableLsp`, `skills.ignoredSkills` — never cite inert base files.
 2. If inside a git repo, resolve the repo root with `git rev-parse --show-toplevel`.
 3. Check for obsolete `compound-engineering.local.md` at the repo root.
 4. Check whether `.compound-engineering/config.yaml` exists.
@@ -39,7 +39,7 @@ If `.compound-engineering/config.yaml` does not exist, ask — even when health 
 ```text
 Set up a repo config file for this project?
 This creates .compound-engineering/config.yaml with optional Compound Engineering team defaults.
-Everything starts commented out -- you only enable what you need.
+One key ships active: `cross_model_review_mode: auto`, so newly generated configs keep the automatic cross-model pass (<!-- OMP --> S6b, after S2; set `off` to keep reviews fully local). Everything else starts commented out -- you only enable what you need.
 It does not create config.local.yaml.
 
 1. Yes, create it

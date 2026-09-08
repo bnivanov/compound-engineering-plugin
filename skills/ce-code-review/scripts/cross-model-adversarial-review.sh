@@ -107,6 +107,7 @@ route_effort() {   # <route> -> requested effort: the override where the route t
     composer) printf 'fast' ;;
     cursor) printf 'unverified' ;;
     opencode) printf 'unverified' ;;
+    omp) printf 'unverified' ;;
   esac
 }
 
@@ -154,6 +155,7 @@ route_model() {   # <route> -> the M_* constant that route requests
     cursor)      printf 'auto' ;;
     composer)    printf '%s' "$M_COMPOSER" ;;
     opencode)    printf 'auto' ;;
+    omp)        printf 'auto' ;;
   esac
 }
 
@@ -162,6 +164,7 @@ route_target() {
     codex|claude|cursor|composer) printf '%s' "$1" ;;
     grok-cli|grok-cursor) printf 'grok' ;;
     opencode) printf 'opencode' ;;
+    omp) printf 'omp' ;;
   esac
 }
 
@@ -172,6 +175,7 @@ route_harness() {
     grok-cli) printf 'grok' ;;
     grok-cursor|cursor|composer) printf 'cursor-agent' ;;
     opencode) printf 'opencode' ;;
+    omp) printf 'omp' ;;
   esac
 }
 
@@ -180,6 +184,10 @@ target_serving_family() {
     codex|claude|grok|composer) printf '%s' "$1" ;;
     cursor) printf 'unknown' ;;
     opencode) printf 'unknown' ;;
+    # omp routes through the host's session-default provider, which this script
+    # cannot attest; an attested family would let a same-model peer masquerade
+    # as independent (cursor precedent).
+    omp) printf 'unknown' ;;
   esac
 }
 
@@ -296,6 +304,14 @@ adapter_argv() {
         none|minimal|low|medium|high|xhigh|max|default) printf '%s\0' --variant "$_oc_effort" ;;
       esac
       ;;
+    omp)
+      # OMP: session-default model, ephemeral run, read-only tool allowlist.
+      # Prompt travels as an @file positional (launcher-side inclusion, verified
+      # against omp 18.1.13); --tools is an allowlist (probe: TOOLS-DENIED).
+      printf '%s\0' omp "@$PROMPT_FILE" "Follow the attached brief. Return only schema-shaped JSON." \
+        -p --mode json --no-session --tools read,grep,glob,lsp --cwd "$PEER_WORKDIR"
+      [ -z "${LARGE_DIFF_CONTEXT_DIR:-}" ] || printf '%s\0' --add-dir "$LARGE_DIFF_CONTEXT_DIR"
+      ;;
     *) return 1 ;;
   esac
 }
@@ -354,7 +370,7 @@ if [ "${1:-}" = "--emit-adapter" ]; then
   route="${2:-}"
   validate_model_override "$route" 2>/dev/null || { echo "model override '${CROSS_MODEL_MODEL_OVERRIDE:-}' not compatible with route '$route'" >&2; exit 2; }
   validate_effort_override "$route" 2>/dev/null || { echo "effort override '${CROSS_MODEL_EFFORT_OVERRIDE:-}' not compatible with route '$route'" >&2; exit 2; }
-  adapter_argv "$route" >/dev/null 2>&1 || { echo "unknown route '$route' (want codex|claude|grok-cli|grok-cursor|cursor|composer|opencode)" >&2; exit 2; }
+  adapter_argv "$route" >/dev/null 2>&1 || { echo "unknown route '$route' (want codex|claude|grok-cli|grok-cursor|cursor|composer|opencode|omp)" >&2; exit 2; }
   validate_turn_limit "$route" || { echo "peer max turns must be a positive integer" >&2; exit 2; }
   adapter_argv "$route" | tr '\0' ' '; echo
   exit 0
@@ -378,8 +394,8 @@ case "$HOST_PROVIDER" in
   *) skip "host serving family '${HOST_PROVIDER:-<empty>}' invalid (want codex|claude|grok|composer|unknown); skipping cross-model pass" ;;
 esac
 case "$HOST_HARNESS" in
-  codex|claude|grok|cursor|opencode|unknown) ;;
-  *) skip "host harness '$HOST_HARNESS' invalid (want codex|claude|grok|cursor|opencode|unknown); skipping cross-model pass" ;;
+  codex|claude|grok|cursor|opencode|omp|unknown) ;;
+  *) skip "host harness '$HOST_HARNESS' invalid (want codex|claude|grok|cursor|opencode|omp|unknown); skipping cross-model pass" ;;
 esac
 [ "$HOST_PROVIDER" != "unknown" ] || skip "host serving family unattested; automatic cross-model review skipped"
 
@@ -434,6 +450,7 @@ provider_available() {
     cursor)   command -v cursor-agent >/dev/null 2>&1 ;;
     composer) command -v cursor-agent >/dev/null 2>&1 ;;
     opencode) command -v opencode >/dev/null 2>&1 ;;
+    omp)      command -v omp >/dev/null 2>&1 ;;
     *) return 1 ;;
   esac
 }
@@ -443,7 +460,7 @@ OLDIFS="$IFS"; IFS=','
 for p in $CANDIDATES; do
   p="$(printf '%s' "$p" | tr -d '[:space:]')"
   [ -n "$p" ] || continue
-  case "$p" in codex|claude|grok|cursor|composer|opencode) ;; *) log "ignoring unknown target '$p' in candidates"; continue ;; esac
+  case "$p" in codex|claude|grok|cursor|composer|opencode|omp) ;; *) log "ignoring unknown target '$p' in candidates"; continue ;; esac
   [ "$HOST_PROVIDER" != "unknown" ] && [ "$(target_serving_family "$p")" = "$HOST_PROVIDER" ] && continue
   case " $SELECTED " in *" $p "*) continue ;; esac
   if [ -n "$ALLOW" ] && ! in_csv "$p" "$ALLOW"; then log "provider '$p' not in CROSS_MODEL_PEERS allowlist; skipping"; continue; fi
@@ -454,7 +471,7 @@ IFS="$OLDIFS"
 SELECTED="$(printf '%s' "$SELECTED" | sed 's/^ *//')"
 
 [ "$MAX_PEERS" -ge 1 ] || skip "CROSS_MODEL_MAX_PEERS=0; cross-model pass disabled"
-[ -n "$SELECTED" ] || skip "no different-provider peer reachable (host=$HOST_PROVIDER, candidates='$CANDIDATES'); the pass needs a peer agent CLI on PATH (codex, claude, grok, cursor-agent, or opencode), not an API key alone; skipping"
+[ -n "$SELECTED" ] || skip "no different-provider peer reachable (host=$HOST_PROVIDER, candidates='$CANDIDATES'); the pass needs a peer agent CLI on PATH (codex, claude, grok, cursor-agent, opencode, or omp), not an API key alone; skipping"
 log "reachable cross-model candidates for adversarial: $SELECTED (host $HOST_PROVIDER excluded; up to $MAX_PEERS successful peer(s))"
 
 first_n() {
@@ -938,6 +955,11 @@ def overload_text(text):
     lines = text.splitlines()
     return any(same_line.search(line) for line in lines) or any(split_head.search(line) and split_tail.search(lines[index + 1]) for index, line in enumerate(lines[:-1]))
 
+def omp_nested_overload(message):
+    # omp reports provider overload as a nested turn_end errorMessage, often
+    # without the "API Error"/"HTTP Error" prefix the CLI-shaped regexes need.
+    return route == "omp" and bool(re.search(r"(?:^|\W)529(?:\D|$)", message, re.I)) and bool(re.search(r"overload|capacity", message, re.I))
+
 def provider_error_text(value):
     error = value.get("error")
     if isinstance(error, dict):
@@ -946,6 +968,9 @@ def provider_error_text(value):
         message = error
     elif value.get("type") == "error" or value.get("is_error") is True:
         message = value.get("message", "")
+    elif route == "omp" and value.get("type") == "turn_end":
+        nested = value.get("message")
+        message = nested.get("errorMessage", "") if isinstance(nested, dict) else ""
     else:
         message = ""
     return message if isinstance(message, str) else ""
@@ -953,6 +978,17 @@ def provider_error_text(value):
 def route_terminal_success(value):
     if route == "codex":
         return {"turn.completed": True, "turn.failed": False}.get(value.get("type"))
+    if route == "omp":
+        # omp --mode json exits 0 even on terminal failure; the verdict is
+        # nested in the turn_end message (stopReason/errorMessage, 18.1.13).
+        if value.get("type") != "turn_end":
+            return None
+        message = value.get("message")
+        if not isinstance(message, dict) or message.get("role") != "assistant":
+            return None
+        if message.get("errorMessage") not in (None, False, ""):
+            return False
+        return message.get("stopReason") == "stop"
     return None
 
 def terminal_record(value):
@@ -996,7 +1032,7 @@ authoritative = next((stream[-1] for stream in terminal_streams if stream), None
 if authoritative is not None:
     if terminal_success(authoritative):
         print("ok")
-    elif str(status(authoritative)) == "529" or overload_text(provider_error_text(authoritative)):
+    elif str(status(authoritative)) == "529" or overload_text(provider_error_text(authoritative)) or omp_nested_overload(provider_error_text(authoritative)):
         print("overloaded")
     else:
         print("failed")
@@ -1060,6 +1096,25 @@ parse_opencode_events() {  # <logfile> <outfile>
   rm -f "$tmp"
   return "$st"
 }
+parse_omp_events() {  # <logfile> <outfile>
+  # omp --mode json streams NDJSON: assistantMessageEvent sits at the TOP level
+  # of message_update events (verified against omp 18.1.13), and thinking_delta
+  # carries the same .delta key — filter to text_delta so joined output is the
+  # answer, not reasoning. Fallback: the turn_end message text.
+  local text tmp
+  text="$(jq -rs '[.[] | select(.type=="message_update") | (.assistantMessageEvent | select(.type=="text_delta") | .delta // empty)] | join("")' "$1" 2>/dev/null)" || text=""
+  if [ -z "$text" ]; then
+    text="$(jq -rs '[.[] | select(.type=="turn_end") | (.message.content[]? | select(.type=="text") | .text // empty)] | join("")' "$1" 2>/dev/null)" || text=""
+  fi
+  [ -n "$text" ] || return 1
+  printf '%s' "$text" | jq -e 'select((.findings|type)=="array")' > "$2" 2>/dev/null && return 0
+  tmp="$(mktemp "${TMPDIR:-/tmp}/ce-omp-text-XXXXXX")" || return 1
+  printf '%s' "$text" > "$tmp"
+  recover_findings_json "$tmp" "$2"
+  local st=$?
+  rm -f "$tmp"
+  return "$st"
+}
 
 attempt_route() {
   local provider="$1" route="$2" note
@@ -1073,6 +1128,7 @@ attempt_route() {
     grok-cursor|composer)  note="$(route_model "$route")" ;;
     cursor)                note="auto (serving model unverified)" ;;
     opencode)              note="auto (serving model unverified)" ;;
+    omp)                   note="session-default (serving model unverified)" ;;
   esac
   log "peer run: provider=$provider route=$route model=$note lens=adversarial read-only in-tree (idle ${IDLE_SECS}s / attempt hard ${attempt_hard}s); reviewed code/diff may egress to this provider"
   case "$route" in
@@ -1113,6 +1169,12 @@ attempt_route() {
       run_timeout_cmd "" "$attempt_hard" idle
       classify_route_output
       [ "$RUN_SUCCEEDED" = true ] && parse_opencode_events "$PEERLOG" "$RAW_OUT"
+      ;;
+    omp)
+      compose_prompt_embedded
+      run_timeout_cmd "" "$attempt_hard" idle
+      classify_route_output
+      [ "$RUN_SUCCEEDED" = true ] && parse_omp_events "$PEERLOG" "$RAW_OUT"
       ;;
   esac
   if [ "$RUN_SUCCEEDED" != true ]; then

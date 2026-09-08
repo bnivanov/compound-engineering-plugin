@@ -125,6 +125,7 @@ route_model() {   # <route> -> the M_* constant that route requests
     cursor)      printf 'auto' ;;
     composer)    printf '%s' "$M_COMPOSER" ;;
     opencode)    printf 'auto' ;;
+    omp)        printf 'auto' ;;
   esac
 }
 
@@ -133,6 +134,7 @@ route_target() {
     codex|claude|cursor|composer) printf '%s' "$1" ;;
     grok-cli|grok-cursor) printf 'grok' ;;
     opencode) printf 'opencode' ;;
+    omp) printf 'omp' ;;
   esac
 }
 
@@ -143,6 +145,7 @@ route_harness() {
     grok-cli) printf 'grok' ;;
     grok-cursor|cursor|composer) printf 'cursor-agent' ;;
     opencode) printf 'opencode' ;;
+    omp) printf 'omp' ;;
   esac
 }
 
@@ -151,6 +154,10 @@ target_serving_family() {
     codex|claude|grok|composer) printf '%s' "$1" ;;
     cursor) printf 'unknown' ;;
     opencode) printf 'unknown' ;;
+    # omp routes through the host's session-default provider, which this script
+    # cannot attest; an attested family would let a same-model peer masquerade
+    # as independent (cursor precedent).
+    omp) printf 'unknown' ;;
   esac
 }
 
@@ -255,6 +262,14 @@ adapter_argv() {
       _oc_model="$(route_model opencode)"
       [ "$_oc_model" = "auto" ] || [ -z "$_oc_model" ] || printf '%s\0' --model "$_oc_model"
       ;;
+    omp)
+      # OMP: session-default model, ephemeral run. Prompt travels as an @file
+      # positional (launcher-side inclusion, verified against omp 18.1.13);
+      # --tools is an allowlist (probe: TOOLS-DENIED); web_search mirrors the
+      # claude arm's bounded public web checks.
+      printf '%s\0' omp "@$PROMPT_FILE" "Follow the attached brief. Return only schema-shaped JSON." \
+        -p --mode json --no-session --tools read,grep,glob,lsp,web_search --cwd "$READ_ROOT"
+      ;;
     *) return 1 ;;
   esac
 }
@@ -290,7 +305,7 @@ if [ "${1:-}" = "--emit-adapter" ]; then
   apply_model_override "$route" 2>/dev/null || { echo "model override '${CROSS_MODEL_MODEL_OVERRIDE:-}' not compatible with route '$route'" >&2; exit 2; }
   # adapter_argv emits NUL-delimited argv (can't be captured in a shell var), so
   # validate the route first, then render for humans with NUL -> space.
-  adapter_argv "$route" >/dev/null 2>&1 || { echo "unknown route '$route' (want codex|claude|grok-cli|grok-cursor|cursor|composer|opencode)" >&2; exit 2; }
+  adapter_argv "$route" >/dev/null 2>&1 || { echo "unknown route '$route' (want codex|claude|grok-cli|grok-cursor|cursor|composer|opencode|omp)" >&2; exit 2; }
   adapter_argv "$route" | tr '\0' ' '; echo
   exit 0
 fi
@@ -340,12 +355,12 @@ case "$HOST_PROVIDER" in
   *) skip "host serving family '$HOST_PROVIDER' invalid (want codex|claude|grok|composer|unknown)" ;;
 esac
 case "$HOST_HARNESS" in
-  codex|claude|grok|cursor|opencode|unknown) ;;
-  *) skip "host harness '$HOST_HARNESS' invalid (want codex|claude|grok|cursor|opencode|unknown)" ;;
+  codex|claude|grok|cursor|opencode|omp|unknown) ;;
+  *) skip "host harness '$HOST_HARNESS' invalid (want codex|claude|grok|cursor|opencode|omp|unknown)" ;;
 esac
 
 case "$FIXED_ROUTE" in
-  codex|claude|grok-cli|grok-cursor|cursor|composer|opencode) ;;
+  codex|claude|grok-cli|grok-cursor|cursor|composer|opencode|omp) ;;
   *) skip "unknown fixed route '${FIXED_ROUTE:-<empty>}'; host must resolve one route before egress" ;;
 esac
 TARGET="$(route_target "$FIXED_ROUTE")" || skip "unknown fixed route '${FIXED_ROUTE:-<empty>}'; host must resolve one route before egress"
@@ -396,6 +411,7 @@ route_allowlisted() {
       in_csv grok "$ALLOW" && { in_csv cursor "$ALLOW" || in_csv composer "$ALLOW"; }
       ;;
     opencode) in_csv opencode "$ALLOW" ;;
+    omp) in_csv omp "$ALLOW" ;;
     *) return 1 ;;
   esac
 }
@@ -428,6 +444,7 @@ route_available() {
     grok-cli) command -v grok >/dev/null 2>&1 ;;
     grok-cursor|cursor|composer) command -v cursor-agent >/dev/null 2>&1 ;;
     opencode) command -v opencode >/dev/null 2>&1 ;;
+    omp) command -v omp >/dev/null 2>&1 ;;
     *) return 1 ;;
   esac
 }
@@ -793,6 +810,43 @@ parse_opencode_events() {  # <logfile> <outfile>
   rm -f "$tmp"
   return "$st"
 }
+parse_omp_events() {  # <logfile> <outfile>
+  # omp --mode json streams NDJSON: assistantMessageEvent sits at the TOP level
+  # of message_update events (verified against omp 18.1.13), and thinking_delta
+  # carries the same .delta key — filter to text_delta so joined output is the
+  # answer, not reasoning. Fallback: the turn_end message text.
+  local text tmp
+  text="$(jq -rs '[.[] | select(.type=="message_update") | (.assistantMessageEvent | select(.type=="text_delta") | .delta // empty)] | join("")' "$1" 2>/dev/null)" || text=""
+  if [ -z "$text" ]; then
+    text="$(jq -rs '[.[] | select(.type=="turn_end") | (.message.content[]? | select(.type=="text") | .text // empty)] | join("")' "$1" 2>/dev/null)" || text=""
+  fi
+  [ -n "$text" ] || return 1
+  printf '%s' "$text" | jq -e '.' > "$2" 2>/dev/null && return 0
+  tmp="$(mktemp "${TMPDIR:-/tmp}/ce-omp-text-XXXXXX")" || return 1
+  printf '%s' "$text" > "$tmp"
+  recover_pov_json "$tmp" "$2"
+  local st=$?
+  rm -f "$tmp"
+  return "$st"
+}
+
+classify_omp_terminal() {   # <logfile>; omp exits 0 even on terminal failure (18.1.13)
+  local verdict
+  verdict="$(jq -rs '
+    [ .[] | select(.type=="turn_end") ] | last |
+    if . == null then "ok"
+    else .message as $m |
+      (if ($m.errorMessage // "") != "" then $m.errorMessage else "" end) as $e |
+      if $e == "" then (if ($m.stopReason // "") == "stop" then "ok" else "failed" end)
+      elif ($e | test("(^|[^0-9])529([^0-9]|$)"; "i")) and ($e | test("overload|capacity"; "i")) then "overloaded"
+      else "failed" end
+    end' "$1" 2>/dev/null)" || verdict="ok"
+  case "$verdict" in
+    ok) ;;
+    overloaded) RUN_SUCCEEDED=false; rm -f "$RAW_OUT"; log "omp turn_end reports provider overload 529" ;;
+    *) RUN_SUCCEEDED=false; rm -f "$RAW_OUT"; log "omp turn_end envelope reports failure; discarding structured output" ;;
+  esac
+}
 
 bounded_failure_evidence() {   # <logfile>; prefer structured diagnostics, then bounded head+tail
   local path="$1" human ancillary evidence
@@ -834,6 +888,7 @@ attempt_route() {   # <provider> <route>
     cursor)      note="auto (serving model unverified)" ;;
     composer)    note="$(route_model composer)" ;;
     opencode)    note="auto (serving model unverified)" ;;
+    omp)         note="session-default (serving model unverified)" ;;
   esac
   log "peer run: provider=$provider route=$route model=$note POV read-only least-privilege (idle ${IDLE_SECS}s / hard ${HARD_SECS}s; grok-cli hard-only ${UNGUARDED_HARD_SECS}s)"
   case "$route" in
@@ -856,6 +911,9 @@ attempt_route() {   # <provider> <route>
       [ "$RUN_SUCCEEDED" = true ] && parse_structured "$PEERLOG" "$RAW_OUT" ;;
     opencode)    run_timeout_cmd "" "$HARD_SECS" idle
                  [ "$RUN_SUCCEEDED" = true ] && parse_opencode_events "$PEERLOG" "$RAW_OUT" ;;
+    omp)         run_timeout_cmd "" "$HARD_SECS" idle
+                 classify_omp_terminal "$PEERLOG"
+                 [ "$RUN_SUCCEEDED" = true ] && parse_omp_events "$PEERLOG" "$RAW_OUT" ;;
   esac
   if [ "$RUN_SUCCEEDED" != true ]; then
     rm -f "$RAW_OUT"

@@ -288,6 +288,11 @@ read_work_engine_preferences() {
 
 has_brew=$(command -v brew >/dev/null 2>&1 && echo "yes" || echo "no")
 in_repo=$(git rev-parse --is-inside-work-tree >/dev/null 2>&1 && echo "yes" || echo "no")
+# <!-- OMP --> S3: OMP-native capability floor. Under OMP the agent already
+# owns browser (eval `browser` incl. relay) and structural search/rewrite
+# (xd://ast_edit + lsp), so agent-browser/ast-grep install advice never applies.
+is_omp="no"
+[ "${OMPCODE:-}" = "1" ] && is_omp="yes"
 
 # Retired Bun-era Codex tool map (#1099). The block is present only when a
 # standalone BEGIN line is followed by a standalone END line.
@@ -318,6 +323,13 @@ results=()
 for entry in "${deps[@]}"; do
   IFS='|' read -r name install_cmd url capability < <(printf '%s\n' "$entry")
   capability_total=$((capability_total + 1))
+  case "$is_omp:$name" in
+    yes:agent-browser|yes:ast-grep)
+      capability_ok=$((capability_ok + 1))
+      results+=("$name|omp-native|$install_cmd|$url|$capability")
+      continue
+      ;;
+  esac
   if command -v "$name" >/dev/null 2>&1; then
     capability_ok=$((capability_ok + 1))
     results+=("$name|ok|$install_cmd|$url|$capability")
@@ -534,6 +546,12 @@ for result in "${results[@]}"; do
   IFS='|' read -r name status install_cmd url capability < <(printf '%s\n' "$result")
   if [ "$status" = "ok" ]; then
     ok "$name -- $capability"
+  elif [ "$status" = "omp-native" ]; then
+    case "$name" in
+      agent-browser) detail "covered natively: eval \`browser\` incl. relay" ;;
+      ast-grep) detail "covered natively: xd://ast_edit + lsp (astGrep.enabled=$(omp config get astGrep.enabled 2>/dev/null || printf '<unreadable>'))" ;;
+    esac
+    ok "$name -- covered natively on OMP ($capability)"
   else
     warn "$name -- unavailable: $capability"
     if [[ "$install_cmd" == *"brew install"* ]] && [ "$has_brew" != "yes" ]; then
@@ -544,6 +562,19 @@ for result in "${results[@]}"; do
     fi
   fi
 done
+
+if [ "$is_omp" = "yes" ]; then
+  section "OMP resolved values"
+  if command -v omp >/dev/null 2>&1; then
+    for key in task.maxRecursionDepth task.enableLsp skills.ignoredSkills astGrep.enabled; do
+      value="$(omp config get "$key" 2>/dev/null)" || value="<unreadable>"
+      [ -n "$value" ] || value="<unset>"
+      detail "$key = $value"
+    done
+  else
+    warn "omp CLI not on PATH; resolved values unavailable"
+  fi
+fi
 
 if [ "$legacy_codex_map" = "yes" ]; then
   section "Codex instructions"

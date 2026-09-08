@@ -1,12 +1,12 @@
 {
   "name": "compound-engineering",
-  "version": "3.24.0",
+  "version": "3.24.1-omp.1",
   "description": "Brainstorm, plan, debug, review, and compound learnings with AI agents",
   "author": {
-    "name": "Kieran Klaassen and Trevin Chow"
+    "name": "FORK_OWNER"
   },
-  "homepage": "https://every.to/source-code/my-ai-had-already-fixed-the-code-before-i-saw-it",
-  "repository": "https://github.com/EveryInc/compound-engineering-plugin",
+  "homepage": "https://github.com/FORK_OWNER/compound-engineering-omp",
+  "repository": "https://github.com/FORK_OWNER/compound-engineering-omp",
   "license": "MIT",
   "keywords": [
     "brainstorming",
