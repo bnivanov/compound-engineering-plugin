@@ -14,7 +14,7 @@ https://agent-plugins.org/schemas/1.0.0/plugin.schema.json
 
 Layout already matches the portable package shape: root manifest + `skills/<name>/SKILL.md`. No `mcp.json` (valid — MCP is optional).
 
-CI pins authoring rules in `tests/release-metadata.test.ts` (schema const, name pattern, closed field set, field shapes). Rules are pinned locally; tests never fetch the schema at runtime.
+CI pins authoring rules in `tests/plugin-manifest-conformance.test.ts` (schema const, name pattern, closed field set, field shapes). Rules are pinned locally; tests never fetch the schema at runtime.
 
 ## Skill body size: what actually constrains it
 
