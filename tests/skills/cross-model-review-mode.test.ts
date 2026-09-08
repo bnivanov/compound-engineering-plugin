@@ -58,8 +58,40 @@ describe("cross_model_review_mode egress gate", () => {
     ]) {
       expect(read(p)).toContain("cross_model_review_mode")
     }
+    // Fork S6: the template ships an ACTIVE off default (not the commented
+    // upstream example) so newly generated configs skip automatic cross-model
+    // egress until S2 returns auto via S6b.
     expect(read("skills/ce-setup/references/config-template.yaml")).toMatch(
-      /# cross_model_review_mode: off\s+# auto \| off \(default: auto\)/,
+      /^cross_model_review_mode: off\s+# auto \| off \(default: auto\)/m,
+    )
+    expect(read("skills/ce-setup/references/config-template.yaml")).not.toMatch(
+      /^#\s*cross_model_review_mode:/m,
+    )
+    expect(read(".compound-engineering/config.example.yaml")).toMatch(
+      /^cross_model_review_mode: off\s+# auto \| off \(default: auto\)/m,
+    )
+  })
+
+  test("fork template ships OMP-safe generation defaults (S6/S7.2 snapshot)", () => {
+    for (const p of [
+      "skills/ce-setup/references/config-template.yaml",
+      ".compound-engineering/config.example.yaml",
+    ]) {
+      const content = read(p)
+      // (a) active off gate for newly generated configs
+      expect(content).toMatch(/^cross_model_review_mode: off/m)
+      // (b) work engine stays commented (native execution default)
+      expect(content).toContain("# work_engine_mode: prefer")
+      expect(content).not.toMatch(/^work_engine_mode:/m)
+      // (c) elevation keys stay unset (session model)
+      expect(content).toContain("# plan_model: fable")
+      expect(content).toContain("# brainstorm_model: fable")
+      expect(content).not.toMatch(/^plan_model:/m)
+      expect(content).not.toMatch(/^brainstorm_model:/m)
+    }
+    // (d) the committed example is the bundled template byte-for-byte
+    expect(read(".compound-engineering/config.example.yaml")).toBe(
+      read("skills/ce-setup/references/config-template.yaml"),
     )
   })
 })
