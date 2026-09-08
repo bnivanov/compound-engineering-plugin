@@ -4,7 +4,9 @@ category: workflow
 date: 2026-04-24
 last_refreshed: 2026-06-20
 created: 2026-04-24
-severity: high
+status: stale
+stale_reason: OMP fork S5.5 deleted the release-please automation this playbook recovers; fork releases are manual tags.
+stale_date: 2026-09-08
 module: release-automation
 component: release-automation
 problem_type: workflow_issue

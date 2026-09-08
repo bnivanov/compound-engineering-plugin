@@ -4,7 +4,9 @@ category: workflow
 date: 2026-03-17
 last_refreshed: 2026-09-02
 created: 2026-03-17
-severity: medium
+status: stale
+stale_reason: OMP fork S5.5 deleted release-please; fork releases are manual tags per AGENTS.md Release versioning.
+stale_date: 2026-09-08
 module: release-automation
 problem_type: workflow_issue
 component: release-automation
