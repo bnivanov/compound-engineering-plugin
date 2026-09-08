@@ -784,10 +784,10 @@ describe("ce-setup check-health OMP branch (S3)", () => {
         if (/agent-browser|ast-grep/.test(line)) {
           expect(line).not.toMatch(/brew install|npm install|https?:\/\//)
         }
-        if (/^(gh|jq|ffmpeg) --/.test(line.trim())) {
-          expect(line).not.toContain("covered natively")
-        }
       }
+      // gh/jq/ffmpeg never take the native arm: the marker only ever follows
+      // the two covered tool names (emoji prefixes make ^-anchoring wrong here).
+      expect(result.stdout).not.toMatch(/(gh|jq|ffmpeg) -- covered natively/)
     } finally {
       await rm(root, { recursive: true, force: true })
     }
