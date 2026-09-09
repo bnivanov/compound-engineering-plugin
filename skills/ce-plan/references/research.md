@@ -40,7 +40,7 @@ Run these agents in parallel:
 
 Do **not** dispatch for cosmetic, layout-only, animation-only, brand, low-value preference, or narrow work in a product with no agent surface. If the signal is borderline, do not dispatch; carry only a short future parity consideration when it affects a high-value domain action. Include any resulting findings in consolidation as planning inputs, not as a standalone advice appendix.
 
-**Code lineage** (conditional) — same research wave, dispatch selectively. Dispatch a generic subagent with `references/agents/code-lineage-analyst.md` and the planning context summary in parallel with the local research agents when the plan modifies existing code with history and at least one of: altering a defensive shape, a known-temporary decision that would reverse an earlier decision, or a legacy/fragile area. Do not dispatch for Lightweight plans or greenfield work.
+**Code lineage** (conditional) — same research wave, dispatch selectively. Dispatch a generic subagent with `references/agents/code-lineage-analyst.md` and the planning context summary in parallel with the local research agents when the plan modifies existing code with history and at least one of: altering a defensive shape, reversing an earlier key technical decision (KTD), or a legacy/fragile area. Do not dispatch for Lightweight plans or greenfield work.
 
 Collect:
 - Exact dependency or runtime versions only when they materially affect the plan or an external research decision
