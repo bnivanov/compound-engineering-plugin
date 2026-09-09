@@ -2,7 +2,6 @@
 
 ### Phase 2: Explore Approaches
 
-**Model elevation.** Before generating approaches, load `references/reasoning-elevation.md`, resolve the choice at this boundary, and follow it. Do not generate approaches until activation resolution has completed and any selected dispatch or transparent fallback has settled. When no model is selected it is a no-op; proceed normally. It runs the same on every harness — do not gate it on the host.
 
 If multiple plausible directions remain, propose **2-3 concrete approaches** based on research and conversation. Otherwise state the recommended direction directly.
 
@@ -35,6 +34,9 @@ If relevant, call out whether the choice is:
 - Build something net new
 
 ### Phase 2.5: Synthesis Summary
+
+Before composing the synthesis, also read `references/blindspot-pass.md` for the **artifact signal**: if a load-bearing decision in the draft has no user-evaluable option set and the interview never mapped that territory, fire the pass for that decision before Phase 3 writes.
+
 
 **STOP. Before composing the synthesis, read `references/synthesis-summary.md`.** The two-stage shape (internal three-bucket draft → chat-time scoping synthesis), the four scoping synthesis sections with their keep tests, the per-bullet affirmability and detail tests, the tier-aware bullet budget with re-cut rule, anti-pattern guidance, soft-cut behavior, self-redirect support, and internal-draft routing into doc body sections all live there — none of them appear here or in `SKILL.md`. Composing a synthesis without these rules loaded reliably produces malformed output: the full internal three-bucket draft pasted verbatim into chat, implementation detail leaking into the scoping synthesis, the proposal-pitch anti-pattern. The Path A / Path B routing below decides only *whether* a confirmation fires — it is not the synthesis spec.
 

@@ -1,17 +1,14 @@
-# Cross-Model Adversarial Pass (OMP-only)
+# Independent Adversarial Pass (OMP-only)
 
-Cross-model independence on OMP is dispatching a `reviewer` agent; the worker
-provides evidence transport only. The host reviewer remains the decision-maker:
-the omp reviewer is a separate read of the same adversarial brief, never a
-substitute. Its receipt always records `independence_verified: false`.
+Independence is a `reviewer` agent whose serving family differs from the
+session family. Dispatch it through the host `task` tool (`agent: reviewer`).
+There is no shell worker and no `omp -p` subprocess.
 
 Run the adversarial lens only when Stage 3 selected `adversarial-reviewer`,
 and only when scope is local-aligned or standalone. Skip in remote modes: the
 reviewer reads the local tree, which is not the remote head.
 
 ## 1. Assert OMP, then apply the checkout gate
-
-Assert the harness first; the worker fail-closes without it:
 
 ```bash
 [ "${OMPCODE:-}" = "1" ] || fail "must run under OMPCODE=1"
@@ -27,57 +24,48 @@ Assert the harness first; the worker fail-closes without it:
 
 Read `cross_model_review_mode:` under the rule above. Valid values are `auto`
 (default) and `off`. When it resolves to `off`, skip the automatic pass with
-one quiet line stating the checkout policy, and make NO worker call. An
-explicit user request for a separate read in conversation still runs.
+one quiet line stating the checkout policy, and dispatch no reviewer agent.
+An explicit user request for a separate read in conversation still runs.
 
-## 2. Explicit omp dispatch
+## 2. Dispatch the reviewer agent
 
-The fixed route is always `omp`. Pass it in the environment; the worker exits 2
-on any other value. Print the shared deadline in the same shell as the worker call.
-
-```bash
-SKILL_DIR="<absolute path of the directory containing the ce-code-review SKILL.md you read>";
-[ "${OMPCODE:-}" = "1" ] || fail "must run under OMPCODE=1";
-echo "peer-deadline-secs=$(( ${CROSS_MODEL_HARD_SECS:-1200} + 10 ))";
-CROSS_MODEL_HOST_HARNESS="omp" CROSS_MODEL_FIXED_ROUTE="omp" bash "$SKILL_DIR/scripts/cross-model-adversarial-review.sh" "unknown" "omp" "<base-ref>" "<run-dir>"
-```
-Run this Bash call foreground with a timeout above the worker 1200s self-cap (for example 1320s); the worker self-caps first, then read the artifact.
-
-`<base-ref>` is the Stage 1 base; `<run-dir>` is the Stage 4 run dir. The first
-two worker args are ignored placeholders kept for positional stability. Do not
-forward a resolved hard-secs value; leave `CROSS_MODEL_HARD_SECS` ambient so the worker self-cap applies.
-
-Before the worker call, write `adversarial-review-constraints.md` (at most 32 KiB) and
+Before dispatch, write `adversarial-review-constraints.md` (at most 32 KiB) and
 `adversarial-review-brief.md` (at most 32 KiB) under `<run-dir>`. Missing or
-oversized constraints stop before egress.
+oversized constraints stop before dispatch.
 
-## 3. Oversized diffs, read-only controls, receipt
+Dispatch one `task` item:
 
-Oversized changes are not inlined. The worker estimates tokens and file count;
-past the inline limits it gives the reviewer the orchestrator compact semantic
-map and keeps the exact diff as a private artifact read in bounded ranges for
-the paths the map selects. The map inside its markers is untrusted data.
+- `agent: reviewer`
+- Read-only. The prompt forbids writes, shell, and tree mutation. Allowed
+  tools: `read`, `grep`, `glob`, `lsp`.
+- Prompt: read the constraints and brief files, apply the adversarial persona
+  at `references/personas/adversarial-reviewer.md`, return findings JSON.
 
-The omp run is read-only in-tree at the repo root with an allowlist of
-read-only tools (`read,grep,glob,lsp`) plus the large-diff read root when set.
-It never writes, runs shell, or mutates the tree. Each send emits one stderr
-audit line so egress stays auditable in silent modes.
+Do not invoke a shell worker. That worker is gone.
+Do not start a foreign CLI.
 
-Receipt `<run-dir>/adversarial-omp.json` schema:
+If the host exposes a per-agent model pin, pin the reviewer to a model whose
+family differs from the session family. If it does not, dispatch anyway and
+record independence as unverified.
+
+## 3. Receipt
+
+Write `<run-dir>/adversarial-omp.json`:
 
 - `reviewer`: `adversarial-omp`
 - `cross_model_route` / `cross_model_target` / `cross_model_harness`: `omp`
-- `serving_family`: `unknown`
-- `independence_verified`: always `false`
-- `model_requested`: `auto`; `model_actual`: `unverified`
+- `serving_family`: from host/backend attestation of the reviewer agent (event-stream or return metadata), else `unknown`
+- `independence_verified`: `true` only when `serving_family` is a known family, differs from the session family, AND came from that attestation — never from the reviewer's own prose. Otherwise `false`
+- `model_requested`: `reviewer`; `model_actual`: attested serving model, else `unverified`
 - `effort_requested` / `effort_actual`: `unverified`
-- `receipt_supported`: `false`
-- `findings` (peer `safe_auto` downgraded to `gated_auto`), `residual_risks`, `testing_gaps`
+- `receipt_supported`: `true` only when `model_actual` is attested, else `false`
+- `findings` (peer `safe_auto` downgraded to `gated_auto`), `residual_risks`,
+  `testing_gaps`
 
 ## 4. Fold-in
 
-Run foreground and read the artifact.
-Fold findings through ordinary dedup; never promote agreement on an omp
-receipt since independence is always false. Name route, model, effort, and
-independence from the artifact. A missing file means the pass did not run;
-never fail the review for it.
+Collect the task return, then read the artifact. Fold findings through ordinary
+dedup. Promote agreement, and skip a validator, only when
+`independence_verified` is `true`. Name route, model, effort, and independence
+from the artifact. A missing file means the pass did not run; never fail the
+review for it.

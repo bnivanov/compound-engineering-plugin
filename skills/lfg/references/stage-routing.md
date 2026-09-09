@@ -8,7 +8,7 @@ LFG is otherwise hands-off and never stops to ask. The single question it may as
 
 Interpret whether the invoking conversation expresses semantic intent to assign a pipeline stage, planning or implementation, to a specific OMP agent. This is judgment, not keyword or prompt-token matching: an explicit instruction such as "have planner author the plan" or "have task do the implementation" creates an assignment, while a plain mention of Planner, Task, Scout, Reviewer, or another agent in feature content, quoted material, comparison text, or a filename does not. Two pipeline stages are routable, each dispatched natively through the task tool:
 
-- **Planning** routes to `ce-plan` with a `plan_model:<alias>` carrier beside the sanitized request, the plan-authoring model elevation. Example aliases: `planner`, `task`. On OMP a set key reports the requested alias as unresolvable and runs inline on the session model; for stronger reasoning dispatch a `planner` agent natively via the task tool.
+- **Planning** routes to `ce-plan` on the session model. If the user assigned `planner`, dispatch a `planner` agent via the task tool for the authoring work `ce-plan` would otherwise do inline; `ce-plan` still owns the artifact contract. There is no `plan_model` carrier and no reasoning-elevation adapter.
 - **Implementation** routes to `ce-work` in return-to-caller mode on the session model. Dispatch implementation work through a `task` agent and retrieval through a `scout` agent via the task tool; review gates stay with a `reviewer` agent. The host owns verification, canonical commits, and the shipping tail.
 
 ## Resolve each directive by scope
@@ -25,11 +25,11 @@ There is no implementation carrier. When implementation resolves to an agent, re
 
 ## Sanitize product input
 
-Remove every routing directive from the feature request that enters planning, keeping the request otherwise unchanged. Never pass any removed directive to `ce-plan`, `ce-doc-review`, `ce-code-review`, the settled-decisions brief, or any planning or review **product** input: routing is stage-scoped authority, not product content or a settled product decision. The `plan_model:<alias>` carrier is the one exception: it is structured routing data handed to `ce-plan` alongside, never woven into, the sanitized request. Do not construct a carrier from standing configuration here: when no explicit assignment exists for a stage, `ce-work` and `ce-plan` own resolution of still-applicable session and project intent and standing per-checkout configuration.
+Remove every routing directive from the feature request that enters planning, keeping the request otherwise unchanged. Never pass any removed directive to `ce-plan`, `ce-doc-review`, `ce-code-review`, the settled-decisions brief, or any planning or review **product** input: routing is stage-scoped authority, not product content or a settled product decision. There is no `plan_model:<alias>` carrier. Do not construct a carrier from standing configuration here: when no explicit assignment exists for a stage, `ce-work` and `ce-plan` own resolution of still-applicable session and project intent and standing per-checkout configuration.
 
-## Pass the planning carrier at step 1
+## Pass planning at step 1
 
-When a planning-stage assignment resolved, prefix the `ce-plan` invocation with its `plan_model:<alias>` carrier, structured routing data beside the request, never woven into it, so `ce-plan` model elevation runs inline on the session model with a notice naming the requested alias as unresolvable, even in pipeline mode.
+Invoke `ce-plan` with the sanitized feature request. Pass no routing carrier. When a planning-stage assignment resolved to `planner`, dispatch that agent via the task tool as `ce-plan`'s authoring worker; otherwise `ce-plan` authors on the session model.
 
 ## Pass the implementation seam at step 2
 

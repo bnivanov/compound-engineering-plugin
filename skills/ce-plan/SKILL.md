@@ -53,7 +53,7 @@ Phases run in order unless an owner routes out or short-circuits. Read a phase's
 ### Phase 5: Review, Write, Deepen, and Hand Off
 
 7. Read `references/final-review.md` before pre-write review. It owns Phase 5.1 through 5.3.2, including scoping synthesis, write-path mechanics, unified-plan metadata, confidence mode, and the deepening gate. When directed, read `references/deepening-workflow.md` for steps 5.3.3-5.3.7.
-8. **Model elevation.** Immediately before authoring, read `references/reasoning-elevation.md`, resolve the choice at this boundary, and follow it. Do not author until activation resolution has completed and any selected dispatch or transparent fallback has settled.
+8. Author on the session model. Do not dispatch a second CLI or a reasoning-elevation adapter.
 9. In pipeline mode, invalidating evidence against a session-settled decision stops the write. Return the exact token `settled-decision-invalidated`, the decision, and the reason; do not resolve it silently.
 10. Write the plan before presenting options, then complete the confidence path owned by `final-review.md`.
 

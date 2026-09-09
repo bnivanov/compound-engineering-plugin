@@ -2,12 +2,12 @@
 
 Contributions are welcome — issues, bug reports, and pull requests all help, and bug reports especially.
 
-Compound Engineering is opinionated by design. It's maintained by [@kieranklaassen](https://github.com/kieranklaassen) and [@tmchow](https://github.com/tmchow), and its direction reflects a specific point of view about how AI-assisted engineering should work. We can't promise to accept every change — some proposals won't fit that vision even when they're good ideas on their own. We'd rather say that upfront than waste your time.
+Compound Engineering is opinionated by design. This fork is maintained by [@bnivanov](https://github.com/bnivanov). Upstream is [@kieranklaassen](https://github.com/kieranklaassen) and [@tmchow](https://github.com/tmchow). Its direction reflects a specific point of view about how AI-assisted engineering should work. We can't promise to accept every change — some proposals won't fit that vision even when they're good ideas on their own. We'd rather say that upfront than waste your time.
 
 ## Before you open a PR
 
 - **File an issue first.** If you are not a maintainer, open an issue describing the problem or proposal and reference it from your PR.
-- **New skills need approval before you build them.** Adding a skill is a bigger commitment than it looks — it ships to every supported host and has to be maintained across all of them. Raise it in an issue and get explicit maintainer sign-off *before* starting the work, rather than arriving with a finished PR we may have to turn down.
+- **New skills need approval before you build them.** Adding a skill is a bigger commitment than it looks — it ships to every omp install of this plugin and has to be maintained. Raise it in an issue and get explicit maintainer sign-off *before* starting the work, rather than arriving with a finished PR we may have to turn down.
 - **Everything goes through a pull request.** Direct pushes and direct merges to `main` are not allowed; branch protection enforces it.
 
 ## Getting set up

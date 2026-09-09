@@ -143,7 +143,7 @@ Findings lead with a recommendation and a one-sentence consequence that names no
 
 ### Cross-model judgment pass (OMP-only)
 
-Cross-model independence on OMP is dispatching a `reviewer` agent; the worker provides evidence transport only. When the conditional judgment trio (adversarial, product-lens, security-lens) activates, those lenses can run as explicit `reviewer` reads of their own briefs. Agreement between a reviewer return and its in-process twin is the strongest promotion signal in synthesis. Coherence, scope-guardian, and feasibility stay single-model so the pass does not spawn a reviewer on every review.
+Cross-model independence on OMP is dispatching a `reviewer` agent through the host `task` tool. When the conditional judgment trio (adversarial, product-lens, security-lens) activates, those lenses can run as explicit `reviewer` reads of their own briefs. Agreement between a reviewer return and its in-process twin promotes only when `independence_verified` is attested `true`. Coherence, scope-guardian, and feasibility stay single-model so the pass does not spawn a reviewer on every review.
 
 A single whole-document sweep runs as one explicit `reviewer` general read of the entire document, folding in as `whole-doc-omp`. On unified plans the focused trio reads are sliced to match their in-process twins. The sweep reads the whole document.
 

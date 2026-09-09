@@ -331,7 +331,6 @@ describe("unified plan artifact contract", () => {
     expect(carrier).toContain("not keyword or prompt-token matching")
     expect(carrier).toContain("plain mention")
     expect(carrier).toContain("specific OMP agent")
-    expect(carrier).toContain("Example aliases: `planner`, `task`")
     expect(carrier).toContain("routes to `ce-work` in return-to-caller mode on the session model")
     expect(carrier).toContain("There is no implementation carrier")
     expect(carrier).toContain("Pass no routing object, no model pin, and no provenance fields")
@@ -339,10 +338,7 @@ describe("unified plan artifact contract", () => {
     expect(carrier).toContain("Never pass any removed directive")
     expect(carrier).toContain("planning or review")
 
-    // Per-stage routing: planning routes to a plan_model carrier; an unscoped
-    // directive binds to implementation only and never broadens; the upfront
-    // disambiguation question is interactive-gated and headless runs never ask.
-    expect(carrier).toContain("plan_model:<alias>")
+    expect(carrier).toContain("There is no `plan_model:<alias>` carrier")
     expect(carrier).toContain("Planning** routes to `ce-plan`")
     expect(carrier).toContain("Scoped directive")
     expect(carrier).toContain("Unscoped directive")
@@ -352,14 +348,9 @@ describe("unified plan artifact contract", () => {
     expect(carrier).toMatch(/disable-model-invocation.*headless run, never ask/is)
     expect(carrier).toContain("default path is mandatory")
 
-    // Step 1 threads the plan_model carrier to ce-plan beside the sanitized request;
-    // the body names the carrier at the seam and the reference owns its exact form.
     expect(sliceSection(lfg, "1. **Read `references/plan-brief.md` first**", "2. **Read `references/work-return.md` first**")).toContain(
-      "`plan_model:<alias>` carrier",
+      "Pass no `plan_model` carrier",
     )
-    const step1 = carrier
-    expect(step1).toContain("prefix the `ce-plan` invocation with its `plan_model:<alias>` carrier")
-    expect(step1).toMatch(/never woven into it/i)
 
     const step2 = carrier
     expect(step2).toContain("Invoke `ce-work` with `mode:return-to-caller <plan-path-from-step-1>`")

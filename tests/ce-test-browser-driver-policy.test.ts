@@ -9,41 +9,28 @@ async function readRepoFile(relativePath: string): Promise<string> {
 }
 
 describe("ce-test-browser browser-driver policy", () => {
-  test("prefers a capable host-native browser and falls back to agent-browser", async () => {
+  test("uses OMP browser and does not fall back to agent-browser", async () => {
     const content = await readRepoFile("skills/ce-test-browser/SKILL.md")
 
-    expect(content).toMatch(/prefer.+host-native.+integrated browser/is)
-    expect(content).toMatch(/embedded in or directly owned by the active harness/i)
-    expect(content).toMatch(/fall back to `agent-browser`/i)
-    expect(content).toMatch(/one driver.+entire run/is)
-    expect(content).toContain("references/agent-browser-driver.md")
+    expect(content).toMatch(/OMP's `browser` primitive/i)
+    expect(content).toMatch(/host-native integrated browser/i)
+    expect(content).toMatch(/Do not fall back to `agent-browser`/i)
+    expect(content).toMatch(/one driver for the entire run/i)
+    expect(content).not.toContain("references/agent-browser-driver.md")
 
     expect(content).not.toContain("## Use `agent-browser` Only")
     expect(content).not.toContain("always choose `agent-browser`")
     expect(content).not.toContain("this skill cannot function without it")
   })
 
-  test("distinguishes host-native APIs from prohibited standalone substitutes", async () => {
+  test("distinguishes OMP browser from prohibited standalone substitutes", async () => {
     const content = await readRepoFile("skills/ce-test-browser/SKILL.md")
 
-    expect(content).toMatch(/Playwright API.+host-native/is)
-    expect(content).toMatch(/standalone Playwright.+Puppeteer/is)
+    expect(content).toMatch(/standalone Playwright, Puppeteer/is)
     expect(content).toMatch(/separately configured browser extension/i)
     expect(content).toMatch(/ad hoc browser automation/i)
   })
 
-  test("keeps the agent-browser fallback operational and version-matched", async () => {
-    const fallback = await readRepoFile(
-      "skills/ce-test-browser/references/agent-browser-driver.md",
-    )
-
-    expect(fallback).toContain("command -v agent-browser")
-    expect(fallback).toContain("agent-browser skills get core")
-    expect(fallback).toMatch(/CLI exists but cannot launch its browser/i)
-    expect(fallback).toContain("agent-browser open <url>")
-    expect(fallback).toMatch(/use the `ce-setup` skill/i)
-    expect(fallback).not.toContain("/ce-setup")
-  })
 
   test("pipeline mode changes orchestration without forcing a driver or hiding it", async () => {
     const content = await readRepoFile(
@@ -107,16 +94,20 @@ describe("ce-test-browser browser-driver policy", () => {
     })
   })
 
-  test("user documentation describes the same hierarchy", async () => {
+  test("user documentation describes the same OMP-only policy", async () => {
     const docs = await readRepoFile("docs/guides/ce-test-browser.md")
     const catalog = await readRepoFile("docs/guides/README.md")
 
     expect(docs).toMatch(/host-native.+integrated browser/is)
     expect(docs).toMatch(/embedded in or directly owned by the active harness/i)
-    expect(docs).toMatch(/fall back to `agent-browser`/i)
+    expect(docs).toMatch(/OMP `browser`/i)
+    expect(docs).not.toMatch(/fall back to `agent-browser`/i)
+    expect(docs).not.toMatch(/host-native browser.+`agent-browser` fallback/i)
     expect(docs).toMatch(/standalone Playwright.+Puppeteer/is)
     expect(docs).toMatch(/separately configured browser extensions or MCPs/i)
     expect(docs).toMatch(/visible.+non-blocking/is)
-    expect(catalog).toMatch(/host-native browser.+`agent-browser` fallback/i)
+    expect(catalog).toMatch(/using OMP `browser`/i)
+    expect(catalog).not.toMatch(/fall back to `agent-browser`/i)
+    expect(catalog).not.toMatch(/host-native browser.+`agent-browser` fallback/i)
   })
 })

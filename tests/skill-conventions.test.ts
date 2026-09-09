@@ -199,7 +199,6 @@ const EXPECTED_USER_INVOKED_SKILLS = new Set([
   // it, and model-routing it would let a cheaper request escalate into an
   // expensive measurement program, so it stays user-invoked.
   "ce-retune",
-  "ce-setup",
   "ce-sweep",
   "ce-test-xcode",
 ])

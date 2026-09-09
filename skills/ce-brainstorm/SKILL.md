@@ -31,7 +31,7 @@ Resolve `<root>` the first time you compose or read a `<root>/` path, never earl
 - **Use** `<root>` as the sole artifact location: create it if absent, compose each path as `<root>/<subdir>` with this skill's own subdirectory, and never also read `docs`.
 <!-- ce-docs-root:end -->
 
-`brainstorm_output` and `brainstorm_model` resolve by this rule instead:
+`brainstorm_output` resolves by this rule instead:
 
 <!-- ce-config-layers:start -->
 **Resolve ordinary CE yaml keys from the two repo files.**
@@ -52,7 +52,7 @@ Phases run in this order. Each names the files it cannot run correctly without: 
 | 0.0 output mode | `references/output-mode.md` | the `OUTPUT_FORMAT` precedence; the token-parsing convention |
 | 0.1–0.4 resume, classify, route, scope | `references/phase-0.md` | resume scan; the stop-and-route classification; scope tiers; coherent-work gate; both tripwires; task spine |
 | 1 understand the idea | `references/dialogue.md` | context scan and grounding scout; opt-in Slack researcher; pressure test; blindspot and visual-probe gates; the conflict gate against existing `CONCEPTS.md` and verified code; Phase 1.3 exit condition |
-| 2–2.6 approaches, synthesis, verification | `references/approaches.md`, plus `references/synthesis-summary.md` before composing the synthesis | approach generation; model elevation; the scoping synthesis; the claim verifier |
+| 2–2.6 approaches, synthesis, verification | `references/approaches.md`, plus `references/synthesis-summary.md` before composing the synthesis | approach generation; the scoping synthesis; the claim verifier |
 | 3 write the plan | `references/plan-write.md`, then `references/brainstorm-sections.md` and the rendering reference for the format | whether a doc is warranted; the section contract; the Ready for Planning Check |
 | 4 handoff | `references/handoff.md` | the option set and its visibility conditions; the rendering-mode rule; per-selection dispatch, including what `ce-plan` is passed; closing summaries |
 
@@ -64,4 +64,4 @@ These rules hold without any read:
 
 **When a file is written, do not declare it written or enter Phase 4 while any check fails** in the Ready for Planning Check; a chat result enters Phase 4 with no check to run. An improvised Phase 4 menu is the other silent failure: it surfaces options that must be hidden and passes the wrong payload downstream.
 
-The Phase 1.1 grounding scout, the Phase 2.6 claim verifier, and the opt-in Slack researcher are tiered by task shape, never hardcoded to a model name; read `references/model-tiers.md` before dispatching one. Model elevation is a separate mechanism (`references/reasoning-elevation.md`).
+The Phase 1.1 grounding scout, the Phase 2.6 claim verifier, and the opt-in Slack researcher are tiered by task shape, never hardcoded to a model name; read `references/model-tiers.md` before dispatching one.

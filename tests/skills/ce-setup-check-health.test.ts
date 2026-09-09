@@ -174,11 +174,11 @@ describe("ce-setup check-health", () => {
     expect(skill).not.toMatch(/Codex delegation defaults/i)
   })
 
-  test("advertises model-elevation keys and not the retired fable keys", async () => {
+  test("does not advertise retired model-elevation keys", async () => {
     const template = await readFile(configTemplate, "utf8")
 
-    expect(template).toContain("plan_model")
-    expect(template).toContain("brainstorm_model")
+    expect(template).not.toContain("plan_model")
+    expect(template).not.toContain("brainstorm_model")
     expect(template).not.toContain("plan_use_fable")
     expect(template).not.toContain("brainstorm_use_fable")
     expect(template).not.toContain("fable_nudge")

@@ -19,6 +19,18 @@ A great plan enables three audiences to act:
 
 Sections earn their place by serving one of these audiences. Omit padding.
 
+## In plain terms (required)
+
+Every plan opens with four short lines, before U-IDs and readiness fields:
+
+- **What you're getting** — the outcome in one sentence a non-engineer can check.
+- **What I assumed** — the defaults that will stand unless the user objects.
+- **What could go wrong** — the one or two irreversible or expensive risks.
+- **Next** — the one action after this plan (usually `ce-work`, or a question).
+
+Do not rename downstream machinery those later sections parse. This block is additive.
+
+
 ## Unified plan artifact contract
 
 `ce-plan` writes the canonical compound-engineering plan artifact. The same

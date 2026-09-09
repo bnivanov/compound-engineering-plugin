@@ -7,7 +7,6 @@ Read and follow this file only when invoked with `mode:pipeline` (LFG or another
 Unattended execution does not mean hidden execution. Do not ask a visibility question:
 
 - When a host-native integrated browser is selected, keep its normal integrated surface visible and non-blocking so the user can watch progress without interrupting the run. Do not repeatedly steal focus.
-- When the fallback `agent-browser` driver is selected, run it headless without passing `--headed`.
 
 ## 2. Claim a free port and start the server
 

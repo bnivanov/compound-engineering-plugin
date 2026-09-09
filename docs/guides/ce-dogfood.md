@@ -2,7 +2,7 @@
 
 > Hands-off, diff-scoped browser QA of the active branch. Maps the journeys the diff touches, drives them in a real browser, fixes small breakages (with a regression test and a commit), and writes a durable report.
 
-`ce-dogfood` is autonomous QA of what this branch changed versus the trunk. It maps those changes as user journeys, exercises them with `agent-browser`, judges correctness and feel (including per-persona paper cuts), fixes what is small and unambiguous, escalates the rest, and leaves a report under `docs/dogfood-reports/`.
+`ce-dogfood` is autonomous QA of what this branch changed versus the trunk. It maps those changes as user journeys, exercises them with OMP `browser` through eval and its tab helpers, judges correctness and feel (including per-persona paper cuts), fixes what is small and unambiguous, escalates the rest, and leaves a report under `docs/dogfood-reports/`.
 
 It is diff-scoped, not a whole-app crawl. Once invoked it runs without check-ins, except for external flows (OAuth, real email, payments, SMS) and resume questions. It edits code and creates commits, so it is manual invocation only.
 
@@ -97,7 +97,7 @@ A green browser matrix with a red test suite is not ready. Before the verdict it
 
 ## `ce-dogfood` vs `ce-test-browser`
 
-Both take a PR or branch and drive a browser over diff-affected surfaces. `ce-test-browser` prefers a host-native browser and falls back to `agent-browser`. `ce-dogfood` requires `agent-browser`.
+Both take a PR or branch and drive diff-affected surfaces using OMP `browser`. `ce-test-browser` tests and reports; `ce-dogfood` also fixes small breakages.
 
 | | `ce-test-browser` | `ce-dogfood` |
 |---|---|---|
@@ -127,7 +127,7 @@ Skip it when:
 - The change is backend-only → the project's test runner
 - You only want a quick render check → `/ce-test-browser`
 - You want to sit with the page and direct the edits → `/ce-polish`
-- `agent-browser` is missing → `/ce-setup`, then retry
+- OMP `browser` is missing → stop; the host must expose it before retrying
 - The dev server cannot run locally
 
 ---
@@ -147,7 +147,7 @@ On-demand. Nothing in the core loop calls this. After a green (or explicitly blo
 | `<branch name>` | Dogfood that branch. Offers a worktree if you are not already on it |
 | `--port <number>` | Skip port detection |
 
-Required: `agent-browser` on PATH (not `npx agent-browser`), and a local dev server the skill can start or reuse. If a server is already listening on the chosen port, it reuses it; otherwise it starts `bin/dev`, `rails server`, or `npm run dev` without asking. Port order matches the other browser skills: `--port`, a port already in active project instructions, `package.json`, `.env*`, then `3000`.
+Required: OMP `browser` through eval and its tab helpers, and a local dev server the skill can start or reuse. If the browser is missing, stop and report that the host must expose it. If a server is already listening on the chosen port, it reuses it; otherwise it starts `bin/dev`, `rails server`, or `npm run dev` without asking. Port order matches the other browser skills: `--port`, a port already in active project instructions, `package.json`, `.env*`, then `3000`.
 
 Report path relocates with `docs_root` (see [configuration](./configuration.md)).
 
@@ -161,8 +161,8 @@ There is no branch diff to dogfood. A PR still has a base, so `/ce-dogfood 847` 
 **Does it always create a worktree?**
 No. Current-branch runs stay here. Isolation is offered only for a PR or a different named branch.
 
-**What if `agent-browser` is missing?**
-It stops and tells you to run `/ce-setup`, then retry the same `/ce-dogfood` arguments.
+**What if OMP `browser` is missing?**
+It stops and reports that the host must expose OMP `browser` before retrying the same `/ce-dogfood` arguments. There is no alternate driver to install.
 
 **Will it rewrite product behavior?**
 Not on its own. Large, ambiguous, or product-changing issues are escalated. Small obvious bugs get a test and a commit.
@@ -180,4 +180,4 @@ Not on its own. Large, ambiguous, or product-changing issues are escalated. Smal
 - [`ce-debug`](./ce-debug.md): used when a failure's cause is not obvious
 - [`ce-commit`](./ce-commit.md): each autonomous fix
 - [`ce-compound`](./ce-compound.md): reusable lessons from the pass
-- [`ce-setup`](./ce-setup.md): install `agent-browser` when it is missing
+- [`ce-setup`](./ce-setup.md): diagnose CE configuration and optional capabilities; browser access is supplied by the OMP host

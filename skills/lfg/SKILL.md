@@ -6,7 +6,7 @@ argument-hint: "[feature description; optionally assign planning and/or implemen
 
 CRITICAL: You MUST execute every step below IN ORDER. Do NOT jump ahead to coding or implementation. The plan phase (step 1) MUST be completed and verified BEFORE any work begins.
 
-LFG runs hands-off, from schedulers, loops, and nested orchestrators with no user to answer, so no step stops to ask. The one exception is the upfront routing question `references/stage-routing.md` defines.
+LFG runs hands-off, from schedulers, loops, and nested orchestrators with no user to answer, so no step stops to ask. The one exception is the upfront routing question `references/stage-routing.md` defines. Before step 1, if `max_run_budget` is set and remaining host budget is below it, stop. If invoked with `mode:supervised` or checkout `lfg_supervised: true`, read `references/supervised.md` before step 1.
 
 Resolve every skill named below against the host's available-skills list and invoke that exact entry; some hosts namespace it (`compound-engineering:ce-plan`), and a short-form guess that is not in the list fails.
 
@@ -14,11 +14,12 @@ Read `references/task-visibility.md` before step 1: it owns the stage-level view
 
 ## Per-stage routing carriers
 
-Before step 1, judge whether the conversation expresses semantic intent to assign a stage (planning or implementation) to a model or harness; a plain mention in feature content, quotes, comparisons, or a filename is not an assignment. When one exists, read `references/stage-routing.md` before step 1: only it carries the routable stages, scope resolution, the `plan_model:<alias>` carrier, the return-to-caller seam, and the sanitization that keeps routing out of planning and review inputs. An improvised carrier drops the user's instruction or contaminates the plan with routing.
+Before step 1, judge whether the conversation expresses semantic intent to assign a stage (planning or implementation) to an OMP agent; a plain mention in feature content, quotes, comparisons, or a filename is not an assignment. When one exists, read `references/stage-routing.md` before step 1: only it carries the routable stages, scope resolution, the return-to-caller seam, and the sanitization that keeps routing out of planning and review inputs.
 
-1. **Read `references/plan-brief.md` first**, then invoke the `ce-plan` skill with the sanitized feature request — or the arguments you were invoked with, unchanged, when no routing directive was present — prefixed with the `plan_model:<alias>` carrier when a planning-stage directive resolved, and with the settled-decisions brief that file specifies. Only it carries the artifact-root rule this step's gate reads, the brief's required fields, demotion rule, topical scope bar, and skip-entirely case, and the readiness values the gate applies.
+1. **Read `references/plan-brief.md` first**, then invoke the `ce-plan` skill with the sanitized feature request — or the arguments you were invoked with, unchanged, when no routing directive was present — and with the settled-decisions brief that file specifies. Only it carries the artifact-root rule this step's gate reads, the brief's required fields, demotion rule, topical scope bar, and skip-entirely case, and the readiness values the gate applies. Pass no `plan_model` carrier.
 
    GATE: STOP. Stop the pipeline and tell the user why when `ce-plan` reports the task is non-software (LFG requires software tasks), returns any explicit `status: blocked` report (including `settled-decision-invalidated`), or when the plan it wrote fails the readiness check in `references/plan-brief.md`. Blocked status outranks an existing artifact and is never retried. Only absence of both a blocker and a plan file `ce-plan` reported writing this run invokes `ce-plan` again with those same arguments, reusing the composed brief verbatim; never proceed to step 2 without a written plan.
+
 
    **Record the plan file path** (it is passed to ce-work in step 2 and ce-code-review in step 4). LFG never launches `/goal` directly; `ce-work` owns goal-mode handling natively and returns control to LFG afterward.
 
@@ -31,6 +32,7 @@ Before step 1, judge whether the conversation expresses semantic intent to assig
 4. Invoke the `ce-code-review` skill with `mode:agent plan:<plan-path-from-step-1>`.
 
    GATE: STOP. A `settled_conflict`-stamped finding whose evidence is invalidating — the settled decision cannot work: infeasible, wrong-thing, or destructive — stops the pipeline as blocked, with the finding reported, before the shipping precondition.
+
 
 **Shipping precondition (steps 5–9).** Run `git remote` once before the shipping steps. No remote means shipping is local-only: make every commit the steps below call for, but **skip every push, PR create/edit, and CI-watch action**, including step 9 in full. That is terminal, not an error.
 

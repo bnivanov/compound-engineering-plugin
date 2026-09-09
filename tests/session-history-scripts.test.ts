@@ -1558,12 +1558,9 @@ describe("discover-sessions", () => {
   }
 
   test("returns zero files for nonexistent repo without error", async () => {
-    const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), "pi-home-"))
-    await fs.promises.mkdir(path.join(tempHome, ".pi/agent/sessions"), {
-      recursive: true,
-    })
+    const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), "omp-home-"))
     const { stdout, stderr, exitCode } = await runDiscover(
-      ["nonexistent-repo-xyz", "7", "--platform", "pi"],
+      ["nonexistent-repo-xyz", "7", "--platform", "omp"],
       { HOME: tempHome }
     )
     expect(exitCode).toBe(0)
@@ -1593,144 +1590,15 @@ describe("discover-sessions", () => {
     expect(stderr).toContain("Unknown platform")
   })
 
-  test("--platform pi discovers sessions under encoded CWD directories", async () => {
-    const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), "pi-home-"))
-    const sessionPath = path.join(
-      tempHome,
-      ".pi/agent/sessions/--Users-test-Code-my-repo--/2026-04-07T09-00-00-000Z_test.jsonl"
+  test("--platform pi is rejected", async () => {
+    const { exitCode, stderr } = await runDiscover(
+      ["compound-engineering-plugin", "7", "--platform", "pi"]
     )
-    await writeFixture(sessionPath, "pi-session.jsonl")
-
-    const { stdout, stderr, exitCode } = await runDiscover(
-      ["my-repo", "7", "--platform", "pi"],
-      { HOME: tempHome }
-    )
-
-    expect(exitCode).toBe(0)
-    expect(stderr).toBe("")
-    const files = stdout.trim().split("\n").filter((l) => l.trim())
-    expect(files).toEqual([sessionPath])
+    expect(exitCode).toBe(1)
+    expect(stderr).toContain("Unknown platform")
   })
 
-  test("--platform pi with --cwd discovers only the exact encoded CWD directory", async () => {
-    const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), "pi-home-"))
-    const sessionPath = path.join(
-      tempHome,
-      ".pi/agent/sessions/--Users-test-Code-my-repo--/2026-04-07T09-00-00-000Z_test.jsonl"
-    )
-    const siblingPath = path.join(
-      tempHome,
-      ".pi/agent/sessions/--Users-test-Code-my-repo-old--/2026-04-07T09-00-00-000Z_test.jsonl"
-    )
-    await writeFixture(sessionPath, "pi-session.jsonl")
-    await writeFixture(siblingPath, "pi-session.jsonl")
 
-    const { stdout, stderr, exitCode } = await runDiscover(
-      [
-        "my-repo",
-        "7",
-        "--cwd",
-        "/Users/test/Code/my-repo",
-        "--platform",
-        "pi",
-      ],
-      { HOME: tempHome }
-    )
-
-    expect(exitCode).toBe(0)
-    expect(stderr).toBe("")
-    const files = stdout.trim().split("\n").filter((l) => l.trim())
-    expect(files).toEqual([sessionPath])
-  })
-
-  test("--cwd works without an explicit --platform flag", async () => {
-    const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), "pi-home-"))
-    const sessionPath = path.join(
-      tempHome,
-      ".pi/agent/sessions/--Users-test-Code-my-repo--/2026-04-07T09-00-00-000Z_test.jsonl"
-    )
-    await writeFixture(sessionPath, "pi-session.jsonl")
-
-    const { stdout, stderr, exitCode } = await runDiscover(
-      ["my-repo", "7", "--cwd", "/Users/test/Code/my-repo"],
-      { HOME: tempHome }
-    )
-
-    expect(exitCode).toBe(0)
-    expect(stderr).toBe("")
-    const files = stdout.trim().split("\n").filter((l) => l.trim())
-    expect(files).toEqual([sessionPath])
-  })
-
-  test("--platform pi with PI_CODING_AGENT_SESSION_DIR searches that directory directly", async () => {
-    const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), "pi-home-"))
-    const sessionBase = fs.mkdtempSync(path.join(os.tmpdir(), "pi-sessions-"))
-    const sessionPath = path.join(
-      sessionBase,
-      "2026-04-07T09-00-00-000Z_test.jsonl"
-    )
-    await writeFixture(sessionPath, "pi-session.jsonl")
-
-    const { stdout, stderr, exitCode } = await runDiscover(
-      [
-        "my-repo",
-        "7",
-        "--cwd",
-        "/Users/test/Code/my-repo",
-        "--platform",
-        "pi",
-      ],
-      {
-        HOME: tempHome,
-        PI_CODING_AGENT_SESSION_DIR: sessionBase,
-      }
-    )
-
-    expect(exitCode).toBe(0)
-    expect(stderr).toBe("")
-    const files = stdout.trim().split("\n").filter((l) => l.trim())
-    expect(files).toEqual([sessionPath])
-  })
-
-  test("--platform pi honors PI_CODING_AGENT_SESSION_DIR", async () => {
-    const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), "pi-home-"))
-    const sessionBase = fs.mkdtempSync(path.join(os.tmpdir(), "pi-sessions-"))
-    const sessionPath = path.join(
-      sessionBase,
-      "--Users-test-Code-my-repo--/2026-04-07T09-00-00-000Z_test.jsonl"
-    )
-    await writeFixture(sessionPath, "pi-session.jsonl")
-
-    const { stdout, stderr, exitCode } = await runDiscover(
-      ["my-repo", "7", "--platform", "pi"],
-      { HOME: tempHome, PI_CODING_AGENT_SESSION_DIR: sessionBase }
-    )
-
-    expect(exitCode).toBe(0)
-    expect(stderr).toBe("")
-    const files = stdout.trim().split("\n").filter((l) => l.trim())
-    expect(files).toEqual([sessionPath])
-  })
-
-  test("--platform pi honors PI_CODING_AGENT_DIR sessions subdirectory", async () => {
-    const tempHome = fs.mkdtempSync(path.join(os.tmpdir(), "pi-home-"))
-    const agentDir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-agent-"))
-    const sessionPath = path.join(
-      agentDir,
-      "sessions/--Users-test-Code-my-repo--/2026-04-07T09-00-00-000Z_test.jsonl"
-    )
-    await writeFixture(sessionPath, "pi-session.jsonl")
-
-    const { stdout, stderr, exitCode } = await runDiscover(
-      ["my-repo", "7", "--platform", "pi"],
-      { HOME: tempHome, PI_CODING_AGENT_DIR: agentDir }
-    )
-
-    expect(exitCode).toBe(0)
-    expect(stderr).toBe("")
-    const files = stdout.trim().split("\n").filter((l) => l.trim())
-    expect(files).toEqual([sessionPath])
-  })
 
   test("--platform omp discovers raw legacy buckets via the raw basename glob", async () => {
     // Raw-scheme buckets ("--<abs>--" here) keep the basename verbatim. A repo

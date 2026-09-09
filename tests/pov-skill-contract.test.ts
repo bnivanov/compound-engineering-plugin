@@ -177,76 +177,45 @@ describe("ce-pov cross-model panel contract", () => {
     expect(prose).not.toContain("shared project floor")
   })
 
-  // The panel reference is OMP-only: a reviewer dispatch carrying evidence,
-  // never a vote, with independence permanently unverified.
   test("panel is OMP-only evidence transport, never a vote", async () => {
     const panel = await skillFile("references/cross-model-panel.md")
 
-    // skills/ce-pov/references/cross-model-panel.md:1 (OMP-only title)
-    expect(panel).toContain("# Cross-Model POV Panel (OMP-only)")
-    // skills/ce-pov/references/cross-model-panel.md:3-6 (transport, decision-maker, receipt)
-    expect(panel).toContain("provides evidence transport only")
-    expect(panel).toContain("never a vote")
-    expect(panel).toContain("ce-pov remains the decision-maker")
-    expect(panel).toContain("always records `independence_verified: false`")
+    expect(panel).toContain("# Independent POV Panel (OMP-only)")
+    expect(panel).toMatch(/never\s+a vote/)
+    expect(panel).toMatch(/ce-pov remains the\s+decision-maker/)
+    expect(panel).toContain("There is no shell worker")
   })
 
   test("discovery is explicit-only with no auto-start on silence", async () => {
     const panel = await skillFile("references/cross-model-panel.md")
 
-    // skills/ce-pov/references/cross-model-panel.md:8-11 (explicit-only discovery)
     expect(panel).toContain("Discovery is explicit-only.")
     expect(panel).toContain("There is no automatic panel")
     expect(panel).toContain("explicitly asks for a separate read")
-    expect(panel).toContain("Never auto-start a worker on silence.")
+    expect(panel).toMatch(/Never auto-start a reviewer on\s+silence/)
   })
 
   test("asserts OMP before any egress", async () => {
     const panel = await skillFile("references/cross-model-panel.md")
 
-    // skills/ce-pov/references/cross-model-panel.md:13-19 (harness assert)
-    expect(panel).toContain("Assert the harness before any egress")
     expect(panel).toContain('[ "${OMPCODE:-}" = "1" ] || fail "must run under OMPCODE=1"')
-    expect(panel).toContain("the worker fail-closes without it")
   })
 
-  test("dispatches the fixed omp route with its receipt schema", async () => {
+  test("dispatches a reviewer agent with a conditional independence receipt", async () => {
     const panel = await skillFile("references/cross-model-panel.md")
 
-    // skills/ce-pov/references/cross-model-panel.md:28-43 (explicit omp dispatch)
-    expect(panel).toContain("The fixed route is always `omp`")
-    expect(panel).toContain('CROSS_MODEL_HOST_HARNESS="omp" CROSS_MODEL_FIXED_ROUTE="omp"')
-    expect(panel).toMatch(/the second must be `omp`/)
-    // skills/ce-pov/references/cross-model-panel.md:57-66 (receipt schema)
-    expect(panel).toContain("Receipt `<run-dir>/pov-omp.json` schema:")
+    expect(panel).toContain("`agent: reviewer`")
     expect(panel).toContain("`voice`: `peer-omp`")
     expect(panel).toContain("`cross_model_route` / `cross_model_target` / `cross_model_harness`: `omp`")
-    expect(panel).toContain("`serving_family`: `unknown`")
-    expect(panel).toContain("`independence_verified`: always `false`")
-    expect(panel).toContain("`model_requested`: `auto`; `model_actual`: `unverified`")
+    expect(panel).toContain("never from the reviewer's own prose")
+    expect(panel).toContain("`model_requested`: `reviewer`")
   })
 
-  test("folds in foreground without separate-model corroboration", async () => {
+  test("folds in without separate-model corroboration unless independence is verified", async () => {
     const panel = await skillFile("references/cross-model-panel.md")
 
-    // skills/ce-pov/references/cross-model-panel.md:68-73 (fold-in)
-    expect(panel).toContain("Run foreground and read the artifact.")
-    expect(panel).toMatch(/never present the omp voice as\s+separate-model corroboration/)
-    expect(panel).toMatch(/A missing file\s+means that voice did not run/)
+    expect(panel).toContain("Present the reviewer as separate-model corroboration only")
+    expect(panel).toMatch(/A missing file means that voice did\s+not run/)
   })
 
-  test("the worker gates shaped output on voice, position, reasoning, and enums", async () => {
-    const worker = await skillFile("scripts/cross-model-pov.sh")
-    // skills/ce-pov/scripts/cross-model-pov.sh:113-115 (pov_shaped gate)
-    const gate = worker.slice(worker.indexOf("pov_shaped() {"), worker.indexOf("recover_pov_json()"))
-    expect(gate).toContain("pov_shaped()")
-
-    expect(gate).toContain('(.voice|type)=="string" and (.voice|length)>0')
-    expect(gate).toContain('(.position|type)=="string" and (.position|length)>0')
-    expect(gate).toContain('(.reasoning|type)=="string" and (.reasoning|length)>0')
-    expect(gate).toContain('(.evidence|type)=="array" and all(.evidence[]; type=="string" and length>0)')
-    expect(gate).toContain('.external_check=="ran" or .external_check=="unavailable"')
-    expect(gate).toContain('.mode=="independent" or .mode=="skeptic"')
-    expect(gate).toContain('.movement=="initial" or .movement=="moved" or .movement=="held"')
-  })
 })

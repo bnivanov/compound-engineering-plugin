@@ -4,7 +4,7 @@
 
 `ce-setup` is a diagnosis and config utility. It reports which optional tools are on PATH, refreshes the committed config example, creates the repo `config.yaml` if you approve, offers to gitignore a local override or CE scratch space, and offers to point your agent-instructions file at the knowledge store and add a standing compounding instruction. It also reports where CE artifacts will land and can repair an invalid `docs_root` or retired CE Work routing keys.
 
-It runs only when you invoke it explicitly (`disable-model-invocation: true`). Talking about setup does not start it. Outside a git repository it reports capabilities and stops without writing files.
+Talking about setup can start it. Outside a git repository it reports capabilities and stops without writing files.
 
 See [Compound Engineering configuration](./configuration.md) for every option and how local defaults interact with session and project instructions.
 
@@ -29,8 +29,6 @@ There is no argument. One command covers first install, a re-check after an upgr
 /ce-setup
 ```
 
-On OMP the invocation is `/skill:ce-setup`.
-
 ---
 
 ## Why setup does not install everything
@@ -38,7 +36,7 @@ On OMP the invocation is `/skill:ce-setup`.
 Compound Engineering has two separate setup surfaces:
 
 - **Repo-local state** that should stay consistent and safe: the committed config example, the repo `config.yaml`, and gitignore coverage for `config.local.yaml` and `.context/compound-engineering/` scratch.
-- **Optional external tools** used by specific workflows: `agent-browser`, `gh`, `jq`, `ast-grep`, `ffmpeg`.
+- **Optional external tools** used by specific workflows: `gh`, `jq`, `ast-grep`, `ffmpeg`. OMP covers `agent-browser` natively through eval `browser`; it is not an install target.
 
 A missing optional tool is not a broken plugin. Most workflows never touch `ffmpeg` or `ast-grep`, so installing everything up front is wasted footprint. `ce-setup` reports what is missing, says which workflow each tool serves, and prints the install command. You install only what you use.
 
@@ -67,7 +65,7 @@ The health report includes the resolved artifact root (`docs/` by default, or a 
 
 | Tool | Capability |
 |------|------------|
-| `agent-browser` | Browser testing and dogfood QA |
+| `agent-browser` (covered natively; not an install target) | browser testing and dogfood QA through OMP eval `browser` |
 | `gh` | GitHub PR, issue, and review workflows |
 | `jq` | JSON inspection in shell-based workflows |
 | `ast-grep` | Syntax-aware structural code search |
@@ -87,7 +85,7 @@ The health check reports something like:
 
 ```text
 Optional capabilities  3/5
-  🟢  agent-browser -- browser testing and dogfood QA
+  agent-browser -- omp-native: browser testing and dogfood QA via eval browser; not an install target
   🟢  gh -- GitHub PR, issue, and review workflows
   🟡  ast-grep -- unavailable: syntax-aware structural code search
        brew install -q ast-grep
@@ -142,6 +140,6 @@ It is a per-checkout override, so committing it defeats the point. The committed
 ## See Also
 
 - [Compound Engineering configuration](./configuration.md): every supported option, its consumer, and precedence
-- [`/ce-test-browser`](./ce-test-browser.md): uses `agent-browser` when no capable host-native browser is available
-- [`/ce-dogfood`](./ce-dogfood.md): uses `agent-browser` for diff-scoped QA
+- [`/ce-test-browser`](./ce-test-browser.md): uses OMP `browser` for diff-scoped browser testing
+- [`/ce-dogfood`](./ce-dogfood.md): uses OMP `browser` for diff-scoped QA and small fixes
 - [`/ce-product-pulse`](./ce-product-pulse.md): reads pulse settings from CE config (local then repo)

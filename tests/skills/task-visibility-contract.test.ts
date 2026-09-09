@@ -52,12 +52,13 @@ describe("task visibility contract", () => {
     expect(intake).toMatch(/full unit list is visible.*do not repeat ordinal counts/s)
   })
 
-  // The peer-task rule lives at the routing boundary that starts the peer, which is the
-  // reference ce-code-review's spine mandates before any dispatch.
+  // The reviewer-agent task lives at the routing boundary that starts the
+  // independent pass, which is the reference ce-code-review's spine mandates
+  // before any local persona dispatch.
   test("code review surfaces only a cross-model pass that actually started", () => {
     const route = readRepoFile("skills/ce-code-review/references/select-and-route.md")
-    expect(route).toMatch(/job ID is returned.*distinct task.*cross-model adversarial review/s)
-    expect(route).toMatch(/Never create this task before a peer starts/)
+    expect(route).toMatch(/task tracking is active.*separate reviewer pass only after dispatch starts/s)
+    expect(route).toMatch(/record its terminal outcome when its return is collected/)
   })
 
   test("lfg yields task-surface ownership to child skills and refreshes on return", () => {

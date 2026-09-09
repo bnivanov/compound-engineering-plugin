@@ -1,73 +1,67 @@
-# Cross-Model POV Panel (OMP-only)
+# Independent POV Panel (OMP-only)
 
-Cross-model independence on OMP is dispatching a `reviewer` agent; the worker
-provides evidence transport only. ce-pov remains the decision-maker: the omp
-voice is a separate read of the framed question, never a vote. Its receipt
-always records `independence_verified: false`.
+Independence is a `reviewer` agent whose serving family differs from the
+session family. Dispatch it through the host `task` tool (`agent: reviewer`).
+There is no shell worker and no `omp -p` subprocess. ce-pov remains the
+decision-maker: the reviewer is a separate read of the framed question, never
+a vote.
 
-Discovery is explicit-only. There is no automatic panel: run an omp voice only
-when the user explicitly asks for a separate read, names the panel behavior, or
-requests an independent cross-check in conversation. A request for the POV take
-alone does not dispatch. Never auto-start a worker on silence.
+Discovery is explicit-only. There is no automatic panel: dispatch a reviewer
+only when the user explicitly asks for a separate read, names the panel
+behavior, or requests an independent cross-check in conversation. A request
+for the POV take alone does not dispatch. Never auto-start a reviewer on
+silence. Foreign CLIs, even via herdr, need the user's explicit ask for
+herdr + that CLI.
 
 ## 1. Assert OMP and freeze scope
-
-Assert the harness before any egress; the worker fail-closes without it:
 
 ```bash
 [ "${OMPCODE:-}" = "1" ] || fail "must run under OMPCODE=1"
 ```
 
 Normalize one read scope (workspace root plus optional include/exclude
-patterns) and pass the identical scope to the prompt and the run. Point at
-repository files instead of copying their contents; inline conversation-only
-material only when it is unavailable in the tree. Capture the committed
-revision plus a digest of dirty content in scope and revalidate before fold-in;
-on change, disclose and restart rather than folding stale voices.
+patterns) and pass the identical scope to the prompt. Point at repository
+files instead of copying their contents; inline conversation-only material
+only when it is unavailable in the tree. Capture the committed revision plus
+a digest of dirty content in scope and revalidate before fold-in; on change,
+disclose and restart rather than folding stale voices.
 
-## 2. Explicit omp dispatch
+## 2. Dispatch the reviewer agent
 
-The fixed route is always `omp`. Pass it in the environment; the worker exits 2
-on any other value. Print the shared deadline in the same shell as the worker call.
+Dispatch one `task` item:
 
-```bash
-SKILL_DIR="<absolute path of the directory containing the ce-pov SKILL.md you read>";
-[ "${OMPCODE:-}" = "1" ] || fail "must run under OMPCODE=1";
-echo "peer-deadline-secs=$(( ${CROSS_MODEL_HARD_SECS:-600} + 10 ))";
-CROSS_MODEL_HOST_HARNESS="omp" CROSS_MODEL_FIXED_ROUTE="omp" CROSS_MODEL_READ_ROOT="<read-root>" bash "$SKILL_DIR/scripts/cross-model-pov.sh" "unknown" "omp" "<payload-path>" "<run-dir>"
-```
-Run this Bash call foreground with a timeout above the worker 600s self-cap (for example 720s); the worker self-caps first, then read the artifact.
+- `agent: reviewer`
+- Read-only. The prompt forbids writes, shell, and tree mutation. Allowed
+  tools: `read`, `grep`, `glob`, plus bounded public web lookup where the
+  brief allows.
+- Prompt: read the framed payload at `<payload-path>`, ground from the shared
+  tree within the declared scope, return POV JSON.
 
-The first worker arg is an ignored placeholder kept for positional stability;
-the second must be `omp`. Payloads over `CROSS_MODEL_MAX_PAYLOAD_CHARS` skip
-cleanly rather than truncate. Do not forward a resolved hard-secs value; leave `CROSS_MODEL_HARD_SECS` ambient so the worker self-cap applies.
+Do not invoke a shell worker. That worker is gone.
 
-## 3. Oversized input, read-only controls, receipt
+If the host exposes a per-agent model pin, pin the reviewer to a model whose
+family differs from the session family. If it does not, dispatch anyway and
+record independence as unverified.
 
-Oversized subjects are not truncated per route: a payload that exceeds the
-budget skips, and every voice receives the same complete payload. The reviewer
-grounds itself from the shared tree within the declared scope and may use
-bounded public web checks where the brief allows.
+Payloads over `CROSS_MODEL_MAX_PAYLOAD_CHARS` skip cleanly rather than
+truncate.
 
-The omp run is read-only least-privilege at the declared read root with an
-allowlist of read tools plus bounded web lookup, session-ephemeral with private
-scratch outside the repository. It never mutates the project. Each send emits
-one stderr audit line so egress stays auditable.
+## 3. Receipt
 
-Receipt `<run-dir>/pov-omp.json` schema:
+Write `<run-dir>/pov-omp.json`:
 
 - `voice`: `peer-omp`
 - `cross_model_route` / `cross_model_target` / `cross_model_harness`: `omp`
-- `serving_family`: `unknown`
-- `independence_verified`: always `false`
-- `model_requested`: `auto`; `model_actual`: `unverified`
+- `serving_family`: from host/backend attestation of the reviewer agent (event-stream or return metadata), else `unknown`
+- `independence_verified`: `true` only when `serving_family` is a known family, differs from the session family, AND came from that attestation — never from the reviewer's own prose. Otherwise `false`
+- `model_requested`: `reviewer`; `model_actual`: attested serving model, else `unverified`
 - `effort_requested` / `effort_actual`: `unverified`
-- `receipt_supported`: `false`
+- `receipt_supported`: `true` only when `model_actual` is attested, else `false`
 - `position`, `reasoning`, `evidence`, `external_check`, `mode`, `movement`, `final`
 
 ## 4. Fold-in
 
-Run foreground and read the artifact.
-Reconcile disagreement in ordinary language; never present the omp voice as
-separate-model corroboration since independence is always false. A missing file
-means that voice did not run; continue with the surviving panel.
+Collect the task return, then read the artifact. Reconcile disagreement in
+ordinary language. Present the reviewer as separate-model corroboration only
+when `independence_verified` is `true`. A missing file means that voice did
+not run; continue with the surviving panel.

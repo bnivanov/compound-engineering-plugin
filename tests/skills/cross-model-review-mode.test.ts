@@ -16,21 +16,16 @@ describe("cross_model_review_mode egress gate", () => {
   ]
 
   for (const ref of references) {
-    test(`${ref} gates the automatic pass on cross_model_review_mode before omp dispatch`, () => {
+    test(`${ref} gates the automatic pass on cross_model_review_mode before reviewer dispatch`, () => {
       const content = read(ref)
       const gate = content.indexOf("cross_model_review_mode")
-      // skills/*/references/cross-model-review.md:33 (no preference order to
-      // resolve: the fixed omp dispatch is the only route)
-      const dispatch = content.indexOf("Explicit omp dispatch")
+      const dispatch = content.indexOf("Dispatch the reviewer agent")
       expect(gate).toBeGreaterThan(-1)
       expect(dispatch).toBeGreaterThan(gate)
-      // skills/*/references/cross-model-review.md:28-29 (auto default, off valid)
       expect(content).toMatch(/`auto`\s+\(default\)/)
       expect(content).toContain("`off`")
-      // skills/*/references/cross-model-review.md:29-30 (off skips quietly, no worker call)
       expect(content).toContain("skip the automatic pass")
-      expect(content).toContain("NO worker call")
-      // skills/*/references/cross-model-review.md:31 (live opt-in still runs)
+      expect(content).toContain("dispatch no reviewer agent")
       expect(content).toContain("explicit user request for a separate read in conversation still runs")
     })
   }
@@ -43,9 +38,8 @@ describe("cross_model_review_mode egress gate", () => {
 
   test("ce-code-review body treats a missing key as the default auto route", () => {
     const body = read("skills/ce-code-review/SKILL.md")
-    // skills/ce-code-review/SKILL.md:28 (absent key means auto, never a skip)
     expect(body).toContain("only skip key is `cross_model_review_mode`")
-    expect(body).toContain("Missing files or unset keys take the default auto route")
+    expect(body).toContain("There is no shell worker")
   })
 
   test("config template, example, and configuration reference document the key", () => {

@@ -13,6 +13,9 @@ Find the root cause of a failure, then — when the user chooses to — fix it w
 `<bug_description>` is whatever this skill was invoked with — a failure description, a `mode:` token, or an issue reference (`#123`, `org/repo#123`, an issue URL) — from the user or from a calling skill (`ce-babysit-pr` / `lfg` in `mode:pipeline` pass the failing jobs and log tails). Blank if nothing was provided.
 
 
+Before investigating, `recall` the failing behavior or subsystem. Treat a miss as empty. If `xd://recall` / `memory://` is unavailable, skip silently.
+
+
 ## Mode
 
 Default is **interactive**: investigate, run the Phase 2 fix-choice gate, then the Phase 4 handoff.

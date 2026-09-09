@@ -1,6 +1,6 @@
 # Selecting reviewers and binding the adversarial route
 
-Read this at Stage 3, together with `references/persona-catalog.md`. It owns the roster layers, the standards path search, the small-diff lite gate, and the routing boundary that decides between the cross-model peer and the in-process adversarial reviewer.
+Read this at Stage 3, together with `references/persona-catalog.md`. It owns the roster layers, the standards path search, the small-diff lite gate, and the routing boundary between the independent reviewer agent and the in-process adversarial reviewer.
 
 ## Reviewers
 
@@ -24,7 +24,7 @@ Reviewer personas are selected in layers. The persona catalog in `references/per
 - `api-contract-reviewer` — routes, serializers, type signatures, versioning
 - `data-migration-reviewer` — migration files / schema dumps / backfills (see spawn gate in Stage 3)
 - `reliability-reviewer` — error handling, retries, timeouts, background jobs
-- `adversarial-reviewer` lens — >=50 changed code lines, or auth / payments / persistence writes / event publication / retry or concurrency semantics / external APIs, or a **silent-pass verification mechanism** regardless of size. Satisfy this lens with the independent cross-model adversarial pass when a sanctioned peer job starts successfully. Dispatch the in-process `adversarial-reviewer` when the peer cannot start, when fold-in runs the did-not-run fallback, or when fold-in restores local after a failed same-route rate-limit retry; do not run both same-brief reviews.
+- `adversarial-reviewer` lens — >=50 changed code lines, or auth / payments / persistence writes / event publication / retry or concurrency semantics / external APIs, or a **silent-pass verification mechanism** regardless of size. Satisfy this lens with the independent `reviewer` agent when its host `task` dispatch starts. Use the in-process `adversarial-reviewer` only when that agent cannot start or fold-in requires the did-not-run fallback; never run both same-brief reviews.
 - `previous-comments-reviewer` — PR with existing review comments (PR-only, comment-gated)
 
 **Stack-specific conditional (per diff):** `julik-frontend-races-reviewer` (Stimulus/Turbo, DOM events, async UI) and `swift-ios-reviewer` (Swift/SwiftUI/UIKit, entitlements, Core Data, `.pbxproj`).
@@ -97,7 +97,7 @@ Candidates are `CODING_STANDARDS.md` and `AGENTS.md` at any depth. Keep those wh
 
 ### Stage 3d: Bind the adversarial route and final roster
 
-Complete this stage **before reading persona prompt assets, `references/dispatch-reviewers.md`, or entering Stage 4** — that reference's persona-file instructions are valid only once the exclusive peer-or-fallback route is bound. It owns the exclusive choice between a cross-model adversarial peer and the in-process `adversarial-reviewer`; later stages consume that choice and must not decide it again, except the fold-in did-not-run fallback or the fold-in in-process restore after a failed same-route rate-limit retry.
+Complete this stage **before reading persona prompt assets, `references/dispatch-reviewers.md`, or entering Stage 4**. It binds the exclusive choice between the host `task` reviewer agent and the in-process `adversarial-reviewer`; later stages consume that choice, except for the fold-in did-not-run fallback.
 
 Generate the review run ID now so both routes share one artifact directory:
 
@@ -114,14 +114,14 @@ RUN_DIR="$SCRATCH_ROOT/ce-code-review/$RUN_ID";
 echo "$RUN_DIR";
 ```
 
-When adversarial was selected and scope is `local-aligned` or standalone, read `references/cross-model-review.md` from this skill's directory in full, attest the host, resolve and sanction one fixed route, and make its required egress announcement. Before start, write both orchestrator-owned inputs the reference defines: the dedicated host-vetted constraints file, and the separate untrusted semantic brief containing intent plus material risk divisions inferred from the current file inventory and diff. Do not embed the diff, mechanically copy every path, or combine the two files. Then start the detached peer job using the reference's exact invocation and persist its job ID, target, requested model/reasoning, and start epoch in working state.
+When adversarial was selected and scope is `local-aligned` or standalone, read `references/cross-model-review.md` in full, assert OMP, and apply its checkout gate. Before dispatch, write its two orchestrator-owned inputs under `RUN_DIR`: the dedicated host-vetted constraints file and the separate untrusted semantic brief containing intent plus material risk divisions inferred from the current file inventory and diff. Each is at most 32 KiB. Do not embed the diff, mechanically copy every path, or combine the files. Missing or oversized constraints stop before dispatch. Then dispatch one host `task` item with `agent: reviewer` using that reference's read-only prompt and allowed tools. No shell worker, `omp -p` subprocess, or foreign CLI is permitted.
 
-- If the runner returns a job ID, the peer owns the adversarial lens for this run. Remove `adversarial-reviewer` from the local roster immediately. Do not read its local persona asset or dispatch it later — except when the owning fold-in rules in `references/cross-model-review.md` require the did-not-run fallback or the in-process restore after a failed same-route rate-limit retry.
-- If no job starts because of a dispatch-infrastructure failure (a non-zero exit before any job id, an unresolved `$SKILL_DIR`/script path), first attempt the bounded same-route hand recovery from `references/cross-model-review.md` before accepting the fallback: re-run the identical resolved route, holding target/model and read scope fixed, while each failure is a new plausibly recoverable one and the shared peer deadline holds. If recovery returns a job id, treat it as the branch above (the peer owns the lens; remove `adversarial-reviewer`). Only when recovery is exhausted — a failure repeats or the deadline is spent — or the peer was never eligible to start (gate not met, disabled by checkout config, host un-attestable, no different provider, or CLI missing), keep `adversarial-reviewer` in the local roster as the fallback and record the peer skip reason for Coverage.
-- In `pr-remote` / `branch-remote`, do not start the peer; keep the selected in-process adversarial reviewer because it can inspect the reviewed refs.
+- When the `task` dispatch starts, the reviewer agent owns the adversarial lens. Remove `adversarial-reviewer` from the local roster. Do not dispatch a duplicate local persona unless fold-in requires the did-not-run fallback.
+- If the agent cannot start, or the pass is ineligible or prohibited by the user or checkout gate, keep the selected in-process `adversarial-reviewer`. Name dispatch failure in Coverage. Missing model attestation does not prevent dispatch: record independence as unverified, not as proof of independence.
+- In `pr-remote` / `branch-remote`, skip the separate agent and keep the selected in-process adversarial reviewer because it can inspect the reviewed refs.
 
-When a job ID is returned and task tracking is active, add a distinct task that names the independent cross-model adversarial review. Keep it in progress while the detached job runs, then record its terminal outcome when the artifact is collected. Never create this task before a peer starts or leave it behind when the local adversarial fallback runs.
+When task tracking is active, add the separate reviewer pass only after dispatch starts, and record its terminal outcome when its return is collected through the host's blocking collection. Name requested `reviewer` and the attested serving model or `unverified`; never describe an unverified pass as independent.
 
-Do not proceed until the final local roster is materialized. This is a routing boundary, not a preference: a started peer and the in-process adversarial reviewer must never both receive the same review brief.
+Do not proceed until the final local roster is materialized. A started reviewer agent and the in-process adversarial reviewer must never both receive the same review brief.
 
 Announce that final team before spawning, as a user-facing summary: name the always-on reviewers plainly, and for each conditional reviewer give the one-line reason it was added (the real concern, not the keyword that matched). Do **not** put local reviewer model-tier labels (`[session model]`/`[mid-tier]`) or scope-mode codenames in this announce — those are internal. Still decide each local reviewer's tier here and keep it in working state for Stage 4. The cross-model line is separate and follows the receipt-aware model/reasoning and route wording in its reference. This is progress reporting, not a blocking confirmation.

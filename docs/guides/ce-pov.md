@@ -108,7 +108,7 @@ A separate read never replaces the skill's own judgment. Ask for an independent 
 
 The reviewer inspects the shared working tree directly. The first round carries the framed question, subject, read scope, and evidence, but withholds this skill's own conclusion so the read stays independent. When the subject is itself an already-formed position, that position ships as the subject and the reviewer gives its own verdict on the underlying question.
 
-A default panel is one blind round plus at most two reconciliations. Before each exchange, disputed project claims get verified and every voice sees the same evidence. Convergence is reasoned confidence, not a vote. At the cap, automatic dispatch stops and further rounds need your approval unless you supplied a larger limit up front. A failed read never blocks the solo POV. Any POV that follows a panel request states whether the reviewer ran, or that none did and why. The receipt always records `independence_verified: false`.
+A default panel is one blind round plus at most two reconciliations. Before each exchange, disputed project claims get verified and every voice sees the same evidence. Convergence is reasoned confidence, not a vote. At the cap, automatic dispatch stops and further rounds need your approval unless you supplied a larger limit up front. A failed read never blocks the solo POV. Any POV that follows a panel request states whether the reviewer ran, or that none did and why. The receipt records `independence_verified` from host/backend attestation of the reviewer agent, never from the reviewer's own prose.
 
 ### Follow-up
 
@@ -186,7 +186,7 @@ Skip `ce-pov` when:
 
 ### Reviewer route
 
-OMP has one reviewer route. An explicit request in conversation runs one `reviewer` read; route selection is conversation-only. The receipt always records `independence_verified: false`, so the read is attributed evidence, never separate-model corroboration.
+OMP has one reviewer route. An explicit request in conversation runs one `reviewer` read; route selection is conversation-only. `independence_verified` is `true` only when the serving family is a known family, differs from the session family, and came from that attestation. Otherwise the read is attributed evidence, never separate-model corroboration.
 
 ---
 

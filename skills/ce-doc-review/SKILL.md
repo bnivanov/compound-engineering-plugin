@@ -53,9 +53,9 @@ A capacity rejection is backpressure, not reviewer failure. That reviewer stays 
 
 ### Cross-Model Judgment Pass
 
-Run this pass if any of the **conditional judgment trio** was activated: `adversarial-document-reviewer`, `product-lens-reviewer`, `security-lens-reviewer`. Follow `references/cross-model-review.md`, which owns the pass end to end: the OMP assert, the fixed omp route used for the whole document, and how the reviewer reads are launched, reaped, and folded in.
+Run this pass if any of the **conditional judgment trio** was activated: `adversarial-document-reviewer`, `product-lens-reviewer`, `security-lens-reviewer`. Follow `references/cross-model-review.md`, which owns the pass end to end: the OMP assert, the `task` `reviewer` dispatch, and how returns are folded in. There is no shell worker.
 
-The pass is additive and non-blocking: a failure or timeout stops nothing and is named in Coverage. The checkout egress policy (`cross_model_review_mode`) is evaluated first and can skip the pass with a named reason. An explicit-omp request runs the fixed route only and is never silently expanded: there is no model or recipient to change.
+The pass is additive and non-blocking: a failure or timeout stops nothing and is named in Coverage. The checkout egress policy (`cross_model_review_mode`) is evaluated first and can skip the pass with a named reason.
 
 ## Phases 3-5: Synthesis, Presentation, and Next Action
 

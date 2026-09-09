@@ -20,11 +20,10 @@ describe("ce-dogfood always-loaded body pins", () => {
   })
 
   test("keeps the boundaries that decide mutations and tooling", () => {
-    expect(body).toContain("agent-browser")
+    expect(body).toContain("OMP's `browser` primitive")
     expect(body).toMatch(/never another browser MCP/i)
-    expect(body).toContain("npx agent-browser")
+    expect(body).toMatch(/Never `agent-browser`/i)
     expect(body).toMatch(/never dogfood the trunk/i)
-    // A PR target is diffable even when its head branch is named main.
     expect(body).toMatch(/PR identity/i)
     expect(body).toMatch(/ce-worktree/)
     expect(body).toContain("ce-dogfood-XXXXXX")
@@ -59,8 +58,8 @@ describe("ce-dogfood relocated procedure stays in references/phases.md", () => {
     "gh pr view <number> --json headRefName,isCrossRepository",
     "flowchart TD",
     "STRATEGY.md",
-    "agent-browser snapshot -i",
-    "agent-browser errors",
+    "OMP `browser`",
+    "eval `browser`",
     "paper cut",
     "Decisions for a human",
     "one logical fix per commit",

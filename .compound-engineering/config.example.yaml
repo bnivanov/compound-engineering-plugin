@@ -58,19 +58,10 @@
 # brainstorm_output: html        # md | html (default: md)
 # ideate_output: md              # md | html (default: html -- ideation docs are human-facing, so HTML is the default; set md to opt out)
 
-# --- Model elevation ---
-# Send only the reasoning-heavy step of /ce-plan (interpret research, then author
-# the plan) and /ce-brainstorm (generate approaches) to a model you name. The rest
-# of each skill -- dialogue, research, orchestration -- stays on your session
-# model. You can also name a model in a prompt for a one-off, which overrides
-# these keys.
-#
-# <!-- OMP --> Leave plan_model/brainstorm_model unset: the step runs on your
-# session model with no egress. A set key skips the native attempt, reports the
-# requested alias as unresolvable on OMP, and runs the step inline on the session
-# model (see reasoning-elevation.md). Invalid/commented/missing -> no elevation.
-# plan_model: <model-alias>       # model alias for the plan-authoring step (no default)
-# brainstorm_model: <model-alias> # model alias for approach generation (no default)
+# --- LFG ---
+# lfg_supervised: true          # two gates: after plan, after review (default: false)
+# max_run_budget: 0             # stop LFG before step 1 when remaining host budget is below this (0 = off)
+
 
 # --- PR concept teaching (ce-commit-push-pr) ---
 # When a PR introduces a concept new to the codebase, the generated PR
