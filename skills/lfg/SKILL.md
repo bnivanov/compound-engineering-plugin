@@ -6,7 +6,7 @@ argument-hint: "[feature description; optionally assign planning and/or implemen
 
 CRITICAL: You MUST execute every step below IN ORDER. Do NOT jump ahead to coding or implementation. The plan phase (step 1) MUST be completed and verified BEFORE any work begins.
 
-LFG runs hands-off, from schedulers, loops, and nested orchestrators with no user to answer, so no step stops to ask. The one exception is the upfront routing question `references/stage-routing.md` defines.
+LFG runs hands-off, from schedulers, loops, and nested orchestrators with no user to answer, so no step stops to ask. The one exception is the upfront routing question `references/stage-routing.md` defines. If invoked with `mode:supervised` or checkout `lfg_supervised: true`, read `references/supervised.md` before step 1.
 
 Resolve every skill named below against the host's available-skills list and invoke that exact entry; some hosts namespace it (`compound-engineering:ce-plan`), and a short-form guess that is not in the list fails.
 
@@ -20,6 +20,7 @@ Before step 1, judge whether the conversation expresses semantic intent to assig
 
    GATE: STOP. Stop the pipeline and tell the user why when `ce-plan` reports the task is non-software (LFG requires software tasks), returns any explicit `status: blocked` report (including `settled-decision-invalidated`), or when the plan it wrote fails the readiness check in `references/plan-brief.md`. Blocked status outranks an existing artifact and is never retried. Only absence of both a blocker and a plan file `ce-plan` reported writing this run invokes `ce-plan` again with those same arguments, reusing the composed brief verbatim; never proceed to step 2 without a written plan.
 
+
    **Record the plan file path** (it is passed to ce-work in step 2 and ce-code-review in step 4). LFG never launches `/goal` directly; `ce-work` owns goal-mode handling natively and returns control to LFG afterward.
 
 2. **Read `references/work-return.md` first**, then invoke the `ce-work` skill with `mode:return-to-caller <plan-path-from-step-1>`, or with the carrier form from `references/stage-routing.md` when a routing carrier resolved. Only it carries what each return status means, the receipt fields a `status: complete` return must contain, the verification-evidence contract, how `settled_decision_conflicts` route, and the one recovery invocation. Accepting a return without it ships work that nothing protected.
@@ -31,6 +32,7 @@ Before step 1, judge whether the conversation expresses semantic intent to assig
 4. Invoke the `ce-code-review` skill with `mode:agent plan:<plan-path-from-step-1>`.
 
    GATE: STOP. A `settled_conflict`-stamped finding whose evidence is invalidating — the settled decision cannot work: infeasible, wrong-thing, or destructive — stops the pipeline as blocked, with the finding reported, before the shipping precondition.
+
 
 **Shipping precondition (steps 5–9).** Run `git remote` once before the shipping steps. No remote means shipping is local-only: make every commit the steps below call for, but **skip every push, PR create/edit, and CI-watch action**, including step 9 in full. That is terminal, not an error.
 

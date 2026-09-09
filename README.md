@@ -94,7 +94,7 @@ Each cycle compounds: `/ce-compound` writes learnings that the next `/ce-brainst
 
 ## Try it
 
-After installing, run `/ce-setup` in any project. It reports optional tool capabilities, creates repo `.compound-engineering/config.yaml` when missing, refreshes the committed example, and gitignores an existing local override.
+After installing, run `/ce-setup` in any project. It reports optional tool capabilities, creates repo `.compound-engineering/config.yaml` when missing, refreshes the committed example, and gitignores an existing local override. Not sure which skill to run? `/ce-start` asks what you want to do and routes.
 
 **The standard loop** -- turn a rough idea into shipped, reviewed code. Simplify and review run inside `/ce-work`; invoke them separately only for in-the-loop work.
 
@@ -112,9 +112,9 @@ After installing, run `/ce-setup` in any project. It reports optional tool capab
 /lfg
 ```
 
-`/lfg` runs the loop hands-off: it plans, works through the plan, simplifies, runs code review and applies the fixes, runs browser tests, then commits. When a git remote exists it pushes, opens a PR, and watches CI with a bounded repair loop (it does not merge, and it can finish with leftovers if the repair budget is hit). With no remote it stops at local commits. Start it after `/ce-brainstorm` so it plans against real requirements rather than a one-line prompt.
+`/lfg` runs the loop hands-off: it plans, works through the plan, simplifies, runs code review and applies the fixes, runs browser tests, then commits. When a git remote exists it pushes, opens a PR, and watches CI with a bounded repair loop (it does not merge, and it can finish with leftovers if the repair budget is hit). With no remote it stops at local commits. Start it after `/ce-brainstorm` so it plans against real requirements rather than a one-line prompt. `/lfg mode:supervised` stops after the plan and after review.
 
-Starting from a bug instead of a feature? Use [`/ce-debug`](docs/guides/ce-debug.md). Not sure what to build yet? Start with [`/ce-ideate`](docs/guides/ce-ideate.md).
+Starting from a bug instead of a feature? Use [`/ce-debug`](docs/guides/ce-debug.md). Not sure what to build yet? Start with [`/ce-ideate`](docs/guides/ce-ideate.md). Want a check-in before implementation and before the PR? `/lfg mode:supervised`.
 
 ## Skills at a glance
 
@@ -129,7 +129,7 @@ Starting from a bug instead of a feature? Use [`/ce-debug`](docs/guides/ce-debug
 | [Autonomous](docs/guides/README.md#autonomous-pipeline) | `lfg` | The whole pipeline, hands-off |
 | [Testing & design](docs/guides/README.md#frontend-design) | `ce-test-browser` `ce-test-xcode` `ce-polish` `ce-dogfood` | Verifying and polishing what you built |
 | [Collaboration](docs/guides/README.md#collaboration) | `ce-proof` `ce-handoff` `ce-promote` | Sharing work and handing it off |
-| [Utilities](docs/guides/README.md#workflow-utilities) | `ce-setup` `ce-retune` `ce-riffrec-feedback-analysis` | Setup and maintenance |
+| [Utilities](docs/guides/README.md#workflow-utilities) | `ce-setup` `ce-start` `ce-undo` `ce-retune` `ce-riffrec-feedback-analysis` | Setup, routing, undo, and maintenance |
 
 **Learn more**
 

@@ -11,6 +11,8 @@ Two signals arm the pass:
 - **Opening signal** — the user explicitly flags missing working knowledge of the domain or the territory the topic touches: "I know nothing about X", "never touched the auth modules", "I don't know what's possible here", "I don't know what I should be asking".
 - **Mid-dialogue signal** — two consecutive answers show the user *cannot evaluate* the question's substance: "I don't know", "whatever you think", "you decide" in response to questions that need domain judgment.
 
+- **Artifact signal** — at synthesis, a load-bearing decision in the draft has no user-evaluable option set (hazard, architecture, or irreversible default) and the interview never mapped that territory. Fire the pass for that decision before writing the plan. Do not wait for the user to declare ignorance.
+
 **Can't-evaluate vs. hasn't-decided — the guard against over-firing.** A user who understands the options but hasn't picked one needs the normal interview, not a teaching pass. Offer only when the signal shows the user cannot weigh the options at all. Offering a blindspot pass to a domain expert who is merely undecided is the failure mode; when the signal is ambiguous, keep interviewing.
 
 ## The gate

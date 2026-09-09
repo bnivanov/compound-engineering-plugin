@@ -72,6 +72,8 @@ Run these in order. Each reference is a required read at the step that names it.
 1. **Research** — read `references/research.md`.
 2. **Session history** — read `references/session-history.md`, and start it *after* launching the parallel block so the two overlap rather than serialize. Session history is the final Phase 1 input, not a workflow stop. When it returns, including with "no relevant prior sessions", go straight to assembly without pausing or summarizing.
 3. **Assembly and write** — wait for every Phase 1 input, then read `references/assembly.md`.
+   After the learning is written, `retain` one self-contained line: what was learned, when, why it would recur. If `xd://retain` is unavailable, skip silently — the file under `<root>/solutions/` remains the durable store.
+
 4. **Refresh check and discoverability** — read `references/refresh-and-discoverability.md`.
 5. **Optional enhancement** — read `references/enhancement.md`. Interactive only.
 6. **Report** — read `references/report.md` for the shape your mode owes, then end the turn.

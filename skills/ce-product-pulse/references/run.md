@@ -20,7 +20,7 @@ Run these **serially**, after the parallel batch:
 
 If `pulse_quality_scoring` is `true` (AI products only), sample up to 10 sessions or conversations from the window and score each 1-5 on the dimension recorded in `pulse_quality_dimension`.
 
-**Scoring discipline:** Default to 4 or 5 when the session looks normal. Reserve 1-3 for sessions with a clear failure mode (product gave wrong answer, user got stuck, error surfaced). If every session is scoring 3, the bar is too strict; if every session is scoring 5, the bar is too loose.
+**Scoring discipline:** Score the dimension from evidence in the session, not from the distribution of other scores. 1 is a clear failure of the dimension; 5 is a clear success. Uniform results across the sample are allowed when the evidence is uniform. Do not reshape scores so the histogram looks healthy.
 
 **No PII in the score summary.** Capture a count distribution (e.g., "8x 5, 1x 4, 1x 2") and a short anonymized note on any session scored below 4. Do not include message content or user identifiers in the saved report.
 

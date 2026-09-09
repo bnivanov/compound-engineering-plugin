@@ -58,6 +58,10 @@
 # brainstorm_output: html        # md | html (default: md)
 # ideate_output: md              # md | html (default: html -- ideation docs are human-facing, so HTML is the default; set md to opt out)
 
+# --- LFG ---
+# lfg_supervised: true          # two gates: after plan, after review (default: false)
+# max_run_budget: 0             # stop LFG before step 1 when remaining host budget is below this (0 = off)
+
 
 # --- PR concept teaching (ce-commit-push-pr) ---
 # When a PR introduces a concept new to the codebase, the generated PR

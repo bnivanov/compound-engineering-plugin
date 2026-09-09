@@ -130,6 +130,8 @@ Invoked when a specific need arises, not part of any chain.
 | [`/ce-test-browser`](./ce-test-browser.md) | End-to-end browser tests of the current diff using a host-native browser with `agent-browser` fallback. Does not check out a PR or branch. |
 | [`/ce-test-xcode`](./ce-test-xcode.md) | Build and test an iOS app on the simulator (screenshots, logs, human verification). Not XCUITest. |
 | [`/ce-setup`](./ce-setup.md) | Diagnose optional tool capabilities and create or repair repo `config.yaml` |
+| [`/ce-start`](./ce-start.md) | Front door: one question, then a route to the right skill |
+| [`/ce-undo`](./ce-undo.md) | Graded revert of the last agent change set (commits, tree, or branch) |
 | [`/ce-handoff`](./ce-handoff.md) | Write a session handoff, or find and orient from a selected source. Does not auto-continue. |
 
 ---
