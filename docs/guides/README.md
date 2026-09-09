@@ -132,6 +132,7 @@ Invoked when a specific need arises, not part of any chain.
 | [`/ce-verify`](./ce-verify.md) | Generate or refresh a repo-local drive-and-verify skill plus a durable feature map for CLI, TUI, service, desktop, or web. |
 | [`/ce-setup`](./ce-setup.md) | Diagnose optional tool capabilities and create or repair repo `config.yaml` |
 | [`/ce-start`](./ce-start.md) | Front door: one question, then a route to the right skill |
+| [`/ce-mode`](./ce-mode.md) | Opt-in playbook router: match each request to a gated CE skill. Invoke per task. |
 | [`/ce-undo`](./ce-undo.md) | Graded revert of the last agent change set (commits, tree, or branch) |
 | [`/ce-handoff`](./ce-handoff.md) | Write a session handoff, or find and orient from a selected source. Does not auto-continue. |
 

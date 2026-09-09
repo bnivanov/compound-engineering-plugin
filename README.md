@@ -8,11 +8,11 @@
 
 [![Build Status](https://github.com/bnivanov/compound-engineering-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/bnivanov/compound-engineering-plugin/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-36-black.svg)](docs/guides/README.md)
+[![Skills](https://img.shields.io/badge/skills-37-black.svg)](docs/guides/README.md)
 
 </div>
 
-Compound Engineering is a plugin of 36 skills for AI coding agents. It structures the work around a loop — brainstorm, plan, build, review, then **capture what you learned** — so the knowledge from each change is written down where the next change can read it.
+Compound Engineering is a plugin of 37 skills for AI coding agents. It structures the work around a loop — brainstorm, plan, build, review, then **capture what you learned** — so the knowledge from each change is written down where the next change can read it.
 
 This fork targets one host: [oh-my-pi (omp)](https://github.com/can1357/oh-my-pi). The multi-host matrix lives upstream at [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin).
 
@@ -118,7 +118,7 @@ Starting from a bug instead of a feature? Use [`/ce-debug`](docs/guides/ce-debug
 
 ## Skills at a glance
 
-36 skills, grouped by what they are for. The full catalog, with a page per skill and how each one chains into the others, is in **[docs/guides](docs/guides/README.md)**.
+37 skills, grouped by what they are for. The full catalog, with a page per skill and how each one chains into the others, is in **[docs/guides](docs/guides/README.md)**.
 
 | Group | Skills | What it covers |
 |-------|--------|----------------|
@@ -129,7 +129,7 @@ Starting from a bug instead of a feature? Use [`/ce-debug`](docs/guides/ce-debug
 | [Autonomous](docs/guides/README.md#autonomous-pipeline) | `lfg` | The whole pipeline, hands-off |
 | [Testing & design](docs/guides/README.md#frontend-design) | `ce-test-browser` `ce-test-xcode` `ce-verify` `ce-polish` `ce-dogfood` | Verifying and polishing what you built |
 | [Collaboration](docs/guides/README.md#collaboration) | `ce-proof` `ce-handoff` `ce-promote` | Sharing work and handing it off |
-| [Utilities](docs/guides/README.md#workflow-utilities) | `ce-setup` `ce-start` `ce-undo` `ce-retune` `ce-riffrec-feedback-analysis` | Setup, routing, undo, and maintenance |
+| [Utilities](docs/guides/README.md#workflow-utilities) | `ce-setup` `ce-start` `ce-mode` `ce-undo` `ce-retune` `ce-riffrec-feedback-analysis` | Setup, routing, undo, and maintenance |
 
 **Learn more**
 

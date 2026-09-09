@@ -21,6 +21,7 @@ Ask: **What are you trying to do?** Offer destinations in plain language. Map th
 | Undo the last agent change | `ce-undo` |
 | Capture what we learned | `ce-compound` |
 | Check the plugin is set up | `ce-setup` |
+| Gate the next request through a playbook | `ce-mode` — hidden; give them `/skill:ce-mode` |
 | Something else on this list | name the skill and why |
 
 Hidden skills (`disable-model-invocation` or `hide`) are invoked as `/skill:<name>`. Visible skills use `/skill-name`.

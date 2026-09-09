@@ -36,6 +36,8 @@ Read the playbook when the request matches it, not at arm time. A read made earl
 |---|---|
 | New capability | `references/build.md` |
 | Broken, failing, or slow | `references/fix.md` |
+| Verdict, scope, or document request | `references/decide.md` |
+| Existing work the user said to ship | `references/ship.md` |
 | Anything else | route via `ce-start` and stay armed |
 
 ## Shared tail
