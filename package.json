@@ -1,6 +1,6 @@
 {
   "name": "compound-engineering",
-  "version": "3.24.1-omp.6",
+  "version": "3.24.1-omp.7",
   "description": "OMP-first Compound Engineering skills plugin (fork of EveryInc/compound-engineering-plugin)",
   "type": "module",
   "private": true,
