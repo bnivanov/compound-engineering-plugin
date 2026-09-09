@@ -81,6 +81,11 @@ const modelVisibleRendererCases = [
     skill: ["/skill:ce-prototype", "/skill:ce-brainstorm", "/skill:ce-plan"],
     singleForm: true,
   },
+  {
+    file: "skills/ce-setup/SKILL.md",
+    skill: ["/skill:ce-setup"],
+    singleForm: true,
+  },
 ] as const
 
 const explicitOnlyRendererCases = [
@@ -92,14 +97,9 @@ const explicitOnlyRendererCases = [
     targets: ["ce-polish"],
   },
   {
-    file: "skills/ce-setup/SKILL.md",
-    skill: ["/skill:ce-setup"],
-    targets: ["ce-setup"],
-  },
-  {
     file: "skills/ce-dogfood/SKILL.md",
     skill: ["/skill:ce-setup", "/skill:ce-dogfood <original arguments>"],
-    targets: ["ce-setup", "ce-dogfood"],
+    targets: ["ce-dogfood"],
   },
   {
     file: "skills/ce-sweep/references/interview.md",

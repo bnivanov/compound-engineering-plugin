@@ -6,7 +6,7 @@
 
 **AI skills that make each unit of engineering work easier than the last.**
 
-[![Build Status](https://github.com/EveryInc/compound-engineering-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/EveryInc/compound-engineering-plugin/actions/workflows/ci.yml)
+[![Build Status](https://github.com/bnivanov/compound-engineering-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/bnivanov/compound-engineering-plugin/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
 [![Skills](https://img.shields.io/badge/skills-33-black.svg)](docs/guides/README.md)
 
@@ -16,7 +16,7 @@ Compound Engineering is a plugin of 33 skills for AI coding agents. It structure
 
 This fork targets one host: [oh-my-pi (omp)](https://github.com/can1357/oh-my-pi). The multi-host matrix lives upstream at [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin).
 
-Maintained by [Kieran Klaassen](https://github.com/kieranklaassen) and [Trevin Chow](https://github.com/tmchow), with contributions from the open-source community.
+Maintained by [bnivanov](https://github.com/bnivanov). Upstream Compound Engineering is by [Kieran Klaassen](https://github.com/kieranklaassen) and [Trevin Chow](https://github.com/tmchow).
 
 ## Install
 
@@ -71,15 +71,15 @@ The point is not ceremony. The point is leverage. A good brainstorm makes the pl
 
 ## The loop
 
-The core loop is six steps: **brainstorm** the requirements, **plan** the implementation, **work** through the plan, **simplify** what you wrote, **review** the result, then **compound** the learning -- and repeat with better context.
+The core loop is four steps: **brainstorm** the requirements, **plan** the implementation, **work** through the plan (simplify and review run inside that shipping tail), then **compound** the learning -- and repeat with better context.
 
 | Skill | Purpose |
 |-------|---------|
 | [`/ce-brainstorm`](docs/guides/ce-brainstorm.md) | Interactive Q&A to think through a feature or problem and write a requirements-only unified plan before planning |
 | [`/ce-plan`](docs/guides/ce-plan.md) | Enrich feature ideas or requirements-only plans into implementation-ready plans |
-| [`/ce-work`](docs/guides/ce-work.md) | Execute implementation-ready plans natively or through a qualified cross-model author while retaining host verification, commits, and shipping |
-| [`/ce-simplify-code`](docs/guides/ce-simplify-code.md) | Refine the freshly written code for clarity and reuse before review |
-| [`/ce-code-review`](docs/guides/ce-code-review.md) | Report-only multi-agent review against the plan before merging; local apply is explicit |
+| [`/ce-work`](docs/guides/ce-work.md) | Execute implementation-ready plans natively, then verify, commit, and ship |
+| [`/ce-simplify-code`](docs/guides/ce-simplify-code.md) | Refine the freshly written code for clarity and reuse before review — also invoked from `ce-work`'s shipping tail |
+| [`/ce-code-review`](docs/guides/ce-code-review.md) | Report-only multi-agent review against the plan before merging; local apply is explicit — also invoked from `ce-work`'s shipping tail |
 | [`/ce-compound`](docs/guides/ce-compound.md) | Capture the learning into `docs/solutions/` so the next loop starts smarter |
 
 Each cycle compounds: `/ce-compound` writes learnings that the next `/ce-brainstorm` and `/ce-plan` read as grounding -- brainstorms sharpen plans, plans inform future plans, reviews catch more issues, patterns get documented. That return arrow is the whole point.
@@ -96,14 +96,12 @@ Each cycle compounds: `/ce-compound` writes learnings that the next `/ce-brainst
 
 After installing, run `/ce-setup` in any project. It reports optional tool capabilities, creates repo `.compound-engineering/config.yaml` when missing, refreshes the committed example, and gitignores an existing local override.
 
-**The standard loop** -- turn a rough idea into shipped, reviewed code:
+**The standard loop** -- turn a rough idea into shipped, reviewed code. Simplify and review run inside `/ce-work`; invoke them separately only for in-the-loop work.
 
 ```text
 /ce-brainstorm make background job retries safer
 /ce-plan
 /ce-work
-/ce-simplify-code
-/ce-code-review
 /ce-compound
 ```
 
@@ -190,7 +188,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for setup, and [`docs/development.md`](
 
 Contributions are welcome. Issues, bug reports, and pull requests all help make this better, and we genuinely appreciate them — bug reports especially. Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), which covers setup and what to do before opening a PR.
 
-A note on what to expect: Compound Engineering is opinionated by design. It's maintained by [@kieranklaassen](https://github.com/kieranklaassen) and [@tmchow](https://github.com/tmchow), and its direction reflects a specific point of view about how AI-assisted engineering should work. So while we welcome help, we can't promise to accept every change — some proposals won't fit that vision even when they're good ideas on their own.
+A note on what to expect: Compound Engineering is opinionated by design. This fork is maintained by [@bnivanov](https://github.com/bnivanov). Upstream is [@kieranklaassen](https://github.com/kieranklaassen) and [@tmchow](https://github.com/tmchow). Its direction reflects a specific point of view about how AI-assisted engineering should work. So while we welcome help, we can't promise to accept every change — some proposals won't fit that vision even when they're good ideas on their own.
 
 Open an issue or send a PR, and we'll fold in what moves the plugin in the right direction. We just want to be upfront that not everything will land.
 

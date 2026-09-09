@@ -4,7 +4,7 @@
 
 `ce-setup` is a diagnosis and config utility. It reports which optional tools are on PATH, refreshes the committed config example, creates the repo `config.yaml` if you approve, offers to gitignore a local override or CE scratch space, and offers to point your agent-instructions file at the knowledge store and add a standing compounding instruction. It also reports where CE artifacts will land and can repair an invalid `docs_root` or retired CE Work routing keys.
 
-It runs only when you invoke it explicitly (`disable-model-invocation: true`). Talking about setup does not start it. Outside a git repository it reports capabilities and stops without writing files.
+Talking about setup can start it. Outside a git repository it reports capabilities and stops without writing files.
 
 See [Compound Engineering configuration](./configuration.md) for every option and how local defaults interact with session and project instructions.
 
@@ -28,8 +28,6 @@ There is no argument. One command covers first install, a re-check after an upgr
 ```text
 /ce-setup
 ```
-
-On OMP the invocation is `/skill:ce-setup`.
 
 ---
 

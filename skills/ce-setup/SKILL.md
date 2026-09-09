@@ -1,7 +1,6 @@
 ---
 name: ce-setup
-description: "Check Compound Engineering health and repo-local config."
-disable-model-invocation: true
+description: "Check Compound Engineering health and repo-local config. Use when installing, after an upgrade, when a skill reports a missing tool, or when asked to set the plugin up."
 ---
 
 # Compound Engineering Setup
