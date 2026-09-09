@@ -10,6 +10,6 @@ If the request no longer matches this playbook, return to the match table.
 **User-runnable invocation rendering.** When this skill prints or copies a user-runnable invocation, use `/ce-commit-push-pr`. Render only the invocation as inline code and output exactly one form.
 
 3. **Ship.** Invoke `ce-commit-push-pr`. Artifact: an open PR, or local commits when there is no remote.
-4. **Watch.** Invoke `ce-babysit-pr`. Artifact: CI and review watch on that PR.
+4. **Watch.** Read `ce-commit-push-pr`'s reported result. Invoke `ce-babysit-pr` only when that result leaves watch still owed. The result reports whether it already handed off and whether the user opted out. When the callee already settled watch, this step is complete. Artifact: CI and review watch on that PR.
 
 Then follow the shared tail in this skill's kernel.
