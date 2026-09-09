@@ -16,7 +16,7 @@ Each cell records:
 | `extract/skills/<skill>/` | Preserved initial skill bytes |
 | `workspace/`, `task.md` | Initial workspace and exact task |
 | `input-manifest.json` | Skill/workspace/task/harness fingerprints, requested ref, resolved commit, execution controls, runtime |
-| `hosts/<host>/` | Independent skill and workspace copies, prompts, argv, CLI metadata, stdout/stderr, exits, Git observations |
+| `hosts/omp/` | Independent skill and workspace copies, prompts, argv, CLI metadata, stdout/stderr, exits, Git observations |
 | `evidence-manifest.json` | Content fingerprints sealing the collected artifacts |
 
 A host may create Python caches or other files in its own skill copy. Those
@@ -31,8 +31,8 @@ result hashes are rejected before either reassessment mode reports an original
 grade; do not manufacture hashes for older unsealed results. Atomic summary writes before collection and after
 each arm retain completed progress when later collection fails. Arm status is
 `collecting`, `graded`, or `collection-error`. Host nonzero exits and timeouts
-remain failed grades with diagnostic evidence. Wanted, skipped, and actual hosts
-are recorded; a passing subset does not establish coverage of unavailable hosts.
+remain failed grades with diagnostic evidence. The single cell runs on the `omp`
+CLI only; a run without it exits 2 rather than passing vacuously.
 
 ## Regrade
 

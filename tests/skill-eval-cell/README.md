@@ -1,8 +1,8 @@
 # Skill-eval cell driver
 
-Extract `skills/<name>` from a git ref and run the same prompt on the CLIs already on PATH: `claude`, `codex`, `grok`. Bills those products (whatever you already use to run the harness). No extra Anthropic/OpenAI API key. No Vercel AI SDK.
+Extract `skills/<name>` from a git ref and run the same prompt headlessly through the `omp` CLI. Uses whatever provider auth your existing omp setup already has. No extra API key, no extra harness.
 
-Default hosts are the **other two** from the calling harness (Claude Code → Codex+Grok, Codex → Claude+Grok, Grok → Claude+Codex). `--hosts` overrides that. A missing CLI prints `warning: skipping <host>: …` and the run continues with whatever is left. If no peers are installed it falls back to the current harness and prints `warning: own-eval only …`. Exit 2 only when nothing can run. `summary.json` records `current_harness`, `hosts_wanted`, `hosts_run`, `own_eval_only`, and `warnings`. Not in default `bun test` except mechanical pins (`hosts.test.ts`, `extract.test.ts`, `path-shim.test.ts`). Cursor is not a default host (`cursor-agent -p` hangs without prior trust).
+One cell per invocation: `hosts_run` is always `["omp"]` and `summary.json` records the single cell under `cells.omp`. Exit 2 only when the `omp` CLI is not on PATH. Not in default `bun test` except mechanical pins (`hosts.test.ts`, `extract.test.ts`, `path-shim.test.ts`).
 
 ## Run
 
@@ -17,9 +17,9 @@ bun run test:skill-eval-cell -- \
 
 `--git-remote` (catalog: `git_remote: true`) adds a fake `origin` whose `main` is the seed commit, so a shipping tail takes the push/PR path — where `--shim-git-push` then fails — instead of the local-commit path it takes when no remote exists.
 
-`--read-only` enforces the fake boundary, it does not merely suggest it: Codex drops `--dangerously-bypass-approvals-and-sandbox` and runs `--sandbox read-only` (the two contradict each other), and Claude pairs `--allowedTools Read,Glob,Grep` with a `--disallowedTools` list that also names `Task,Skill,WebFetch,WebSearch,NotebookEdit` — under `--dangerously-skip-permissions` those stay callable, so allow-listing alone leaves the boundary open.
+`--read-only` enforces the fake boundary, it does not merely suggest it: the cell runs `--tools read,grep,glob`, which the default `always-ask` approval mode auto-approves. The write arm runs `--tools read,grep,glob,edit,write,bash` plus `--approval-mode yolo` — the cell spawns with stdin from `/dev/null`, so any approval prompt would burn the full `--timeout-secs`.
 
-Prints a `summary.json` path. Each host gets its own workspace copy plus stdout/stderr, git status/log, and a file list. PATH shims live beside that workspace, never inside it, so the skill under test never sees harness files as its own dirty tree. Grade those; Grok narrates before the answer (grep `FILES_READ:`). Codex transcript is stderr, final message is stdout. `claude -p` is one-tick only.
+Prints a `summary.json` path. The cell gets its own workspace copy plus stdout/stderr, git status/log, and a file list. PATH shims live beside that workspace, never inside it, so the skill under test never sees harness files as its own dirty tree. Grade those; stdout is plain text and the `FILES_READ:`/`ACTIONS:` trailers are greppable lines.
 
 Each invocation requires a new or empty `--out` directory and records input and
 evidence fingerprints. Packs freeze their scenario criteria and grader hashes.
@@ -28,7 +28,7 @@ recorded assessment. Both write separate reports and preserve original grades.
 See [reproducible evaluation evidence](reproducibility.md) for regrading commands,
 partial collection outcomes, legacy-pack compatibility, and snapshot limits.
 
-Gotchas baked in (see `docs/solutions/skill-design/size-driven-skill-restructure.md`): Codex stdin `/dev/null`, `CLAUDECODE` unset, `NO_COLOR=1`.
+Gotchas baked in: discovery isolation (`--no-skills --no-rules --no-extensions`) keeps installed plugin copies, user-profile skills, and repo-local `.omp/` surfaces from serving the cell instead of the extracted git-ref skill; `--approval-mode yolo` on the write arm; `NO_COLOR=1`.
 
 ## Sweep A/B pack
 

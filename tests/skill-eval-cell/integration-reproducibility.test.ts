@@ -35,9 +35,9 @@ export const rows = [
 export const scenariosMatching = ({id}) => rows.filter(r => !id || r.id === id);
 export const scenarioById = id => rows.find(r => r.id === id);
 `)
-  const fake = path.join(bin, "codex")
+  const fake = path.join(bin, "omp")
   fs.writeFileSync(fake, `#!/bin/sh
-if [ "$1" = "--version" ]; then echo 'codex fixture-cli'; exit 0; fi
+if [ "$1" = "--version" ]; then echo 'omp fixture-cli'; exit 0; fi
 if [ "$CE_FAKE_MODE" = "timeout" ]; then sleep 5; fi
 if [ "$CE_FAKE_MODE" = "nonzero" ]; then echo 'failure' >&2; exit 7; fi
 printf 'proof\\nFILES_READ: SKILL.md\\nACTIONS: none\\nDELEGATES_DISPATCHED: none\\n'
@@ -48,9 +48,9 @@ printf 'proof\\nFILES_READ: SKILL.md\\nACTIONS: none\\nDELEGATES_DISPATCHED: non
     cwd: repo, env: { ...env, ...moreEnv }, encoding: "utf8", timeout: 20000,
   })
   const collect = (out: string, more: string[] = [], moreEnv: NodeJS.ProcessEnv = {}) => call("run.ts", [
-    "--skill", "fixture", "--hosts", "codex", "--task", "task", "--read-only", "--out", out, ...more,
+    "--skill", "fixture", "--task", "task", "--read-only", "--out", out, ...more,
   ], moreEnv)
-  const pack = (out: string, more: string[] = []) => call("pack.ts", ["--hosts", "codex", "--arm", "post", "--out", out, ...more])
+  const pack = (out: string, more: string[] = []) => call("pack.ts", ["--arm", "post", "--out", out, ...more])
   return { root, repo, dir, bin, fake, catalog, call, collect, pack }
 }
 
@@ -64,8 +64,8 @@ if (process.platform !== "win32") {
     expect(input.source_commit_is_skill_identity).toBe(false)
     expect(input.skill.sha256.length).toBe(64)
     expect(input.observed_model).toBe(null)
-    const runtime = JSON.parse(fs.readFileSync(path.join(out, "hosts/codex/runtime.json"), "utf8"))
-    expect(runtime.version).toBe("codex fixture-cli")
+    const runtime = JSON.parse(fs.readFileSync(path.join(out, "hosts/omp/runtime.json"), "utf8"))
+    expect(runtime.version).toBe("omp fixture-cli")
     expect(runtime.observed_model).toBe(null)
     expect(fs.existsSync(path.join(out, "evidence-manifest.json"))).toBeTruthy()
   }))
@@ -73,7 +73,7 @@ if (process.platform !== "win32") {
   integrationTest("collector refuses output reuse and keeps previous stdout", () => fixture(({ root, collect }) => {
     const out = path.join(root, "cell")
     expect(collect(out).status).toBe(0)
-    const evidence = path.join(out, "hosts/codex/stdout.txt")
+    const evidence = path.join(out, "hosts/omp/stdout.txt")
     const before = fs.readFileSync(evidence)
     const rerun = collect(out)
     expect(rerun.status).not.toBe(0)
@@ -217,7 +217,7 @@ if (process.platform !== "win32") {
     ))
     const out = path.join(root, "pack")
     expect(pack(out, ["--id", "fixture/pass"]).status).toBe(0)
-    const shimDir = path.join(out, "fixture__pass/post/hosts/codex/.bin")
+    const shimDir = path.join(out, "fixture__pass/post/hosts/omp/.bin")
     expect(fs.existsSync(path.join(shimDir, "git"))).toBe(true)
     expect(fs.existsSync(path.join(shimDir, "shim-invocations.log"))).toBe(false)
     const result = call("regrade.ts", [path.join(out, "pack.json")])
@@ -225,7 +225,7 @@ if (process.platform !== "win32") {
     expect(JSON.parse(fs.readFileSync(result.stdout.trim(), "utf8")).scenarios["fixture/pass"].arms.post.status).toBe("regraded")
   }))
 
-  integrationTest("Python imports use independent host copies while preserving and sealing every skill artifact", () => fixture(({ root, repo, bin, catalog, call }) => {
+  integrationTest("the execution copy is separate from the sealed input snapshot, and evidence tampering is detected", () => fixture(({ root, repo, bin, catalog, call }) => {
     const python = ["python3", "python", "py"].map((name) => Bun.which(name)).find((executable) =>
       executable && spawnSync(executable, ["-c", "import sys; assert sys.version_info.major == 3"], { timeout: 5000 }).status === 0,
     )
@@ -240,28 +240,25 @@ sys.pycache_prefix = None
 import helper
 from pathlib import Path
 marker = Path(__file__).with_name("ran.txt")
-assert not marker.exists(), "another host already used this skill copy"
 marker.write_text("executed")
 print(helper.VALUE)
 print("ACTIONS: none")
 `)
-    const hostScript = path.join(root, "fake-host.py")
+    const hostScript = path.join(root, "fake-omp.py")
     fs.writeFileSync(hostScript, `import subprocess, sys
 from pathlib import Path
 if sys.argv[1:] == ["--version"]:
-    print("fake Python host")
+    print("fake Python omp")
 else:
     host = Path.cwd().parent
     first_line = (host / "prompt.md").read_text().splitlines()[0]
     skill = Path(first_line.removeprefix("Read the skill at ").removesuffix(" first.")).parent
-    assert skill.resolve() == (host / "skill").resolve(), "prompt must point to the host execution copy"
+    assert skill.resolve() == (host / "skill").resolve(), "prompt must point to the execution copy"
     subprocess.run([sys.executable, str(skill / "scripts/main.py")], check=True)
 `)
-    for (const host of ["codex", "claude"]) {
-      fs.writeFileSync(path.join(bin, host), '#!/bin/sh\nexec "$CE_FAKE_PYTHON" "$CE_FAKE_HOST_SCRIPT" "$@"\n', { mode: 0o755 })
-    }
+    fs.writeFileSync(path.join(bin, "omp"), '#!/bin/sh\nexec "$CE_FAKE_PYTHON" "$CE_FAKE_HOST_SCRIPT" "$@"\n', { mode: 0o755 })
     const out = path.join(root, "pack")
-    const result = call("pack.ts", ["--hosts", "codex,claude", "--arm", "post", "--id", "fixture/pass", "--out", out], {
+    const result = call("pack.ts", ["--arm", "post", "--id", "fixture/pass", "--out", out], {
       CE_FAKE_PYTHON: python ?? undefined, CE_FAKE_HOST_SCRIPT: hostScript,
       PYTHONDONTWRITEBYTECODE: "1", PYTHONPYCACHEPREFIX: path.join(root, "external-cache"),
     })
@@ -272,19 +269,15 @@ else:
     expect(fingerprint(originalSkill)).toEqual(input.skill)
     expect(fs.existsSync(path.join(originalSkill, "scripts/__pycache__"))).toBe(false)
     expect(fs.existsSync(path.join(originalSkill, "scripts/ran.txt"))).toBe(false)
-    const caches: string[] = []
-    for (const host of ["codex", "claude"]) {
-      const executionScripts = path.join(cell, "hosts", host, "skill/scripts")
-      expect(fs.readFileSync(path.join(executionScripts, "ran.txt"), "utf8")).toBe("executed")
-      const cache = path.join(executionScripts, "__pycache__")
-      const bytecode = fs.readdirSync(cache).find((name) => name.endsWith(".pyc"))
-      expect(bytecode).toBeDefined()
-      caches.push(path.join(cache, bytecode!))
-    }
+    const executionScripts = path.join(cell, "hosts/omp/skill/scripts")
+    expect(fs.readFileSync(path.join(executionScripts, "ran.txt"), "utf8")).toBe("executed")
+    const cache = path.join(executionScripts, "__pycache__")
+    const bytecode = fs.readdirSync(cache).find((name) => name.endsWith(".pyc"))
+    expect(bytecode).toBeDefined()
     const source = path.join(out, "pack.json"), before = fs.readFileSync(source)
     const regraded = call("regrade.ts", [source])
     expect(regraded.status, regraded.stderr).toBe(0)
-    fs.appendFileSync(caches[0]!, "tampered")
+    fs.appendFileSync(path.join(cache, bytecode!), "tampered")
     const tampered = call("regrade.ts", [source])
     expect(tampered.status).toBe(2)
     expect(tampered.stderr).toMatch(/evidence/)
@@ -329,7 +322,7 @@ else:
   integrationTest("CLI regrading detects changed evidence and produces no success report", () => fixture(({ root, pack, call }) => {
     const out = path.join(root, "pack")
     expect(pack(out, ["--id", "fixture/pass"]).status).toBe(0)
-    fs.writeFileSync(path.join(out, "fixture__pass/post/hosts/codex/stdout.txt"), "tampered")
+    fs.writeFileSync(path.join(out, "fixture__pass/post/hosts/omp/stdout.txt"), "tampered")
     const result = call("regrade.ts", [path.join(out, "pack.json")])
     expect(result.status).toBe(2)
     expect(result.stderr).toMatch(/evidence/)
@@ -340,11 +333,11 @@ else:
     const out = path.join(root, "timeout")
     const result = collect(out, ["--timeout-secs", "0.1"], { CE_FAKE_MODE: "timeout" })
     expect(result.status, result.stderr).toBe(0)
-    const exit = JSON.parse(fs.readFileSync(path.join(out, "hosts/codex/exit.json"), "utf8"))
+    const exit = JSON.parse(fs.readFileSync(path.join(out, "hosts/omp/exit.json"), "utf8"))
     expect(exit.timedOut).toBe(true)
     expect(exit.exitCode).toBe(null)
     const summary = JSON.parse(fs.readFileSync(path.join(out, "summary.json"), "utf8"))
-    expect(summary.cells.codex.process_outcome).toBe("timeout")
+    expect(summary.cells.omp.process_outcome).toBe("timeout")
   }))
 
   integrationTest("CLI absence never produces a pass", () => fixture(({ root, bin, fake, collect }) => {
@@ -358,9 +351,9 @@ else:
   integrationTest("nonzero host exits retain diagnostic evidence", () => fixture(({ root, collect }) => {
     const out = path.join(root, "nonzero")
     expect(collect(out, [], { CE_FAKE_MODE: "nonzero" }).status).toBe(0)
-    const exit = JSON.parse(fs.readFileSync(path.join(out, "hosts/codex/exit.json"), "utf8"))
+    const exit = JSON.parse(fs.readFileSync(path.join(out, "hosts/omp/exit.json"), "utf8"))
     expect(exit.exitCode).toBe(7)
-    expect(fs.readFileSync(path.join(out, "hosts/codex/stderr.txt"), "utf8")).toMatch(/failure/)
+    expect(fs.readFileSync(path.join(out, "hosts/omp/stderr.txt"), "utf8")).toMatch(/failure/)
   }))
 
   integrationTest("mutable refs resolve to a recorded commit and exclude uncommitted skill edits", () => fixture(({ root, repo, collect }) => {

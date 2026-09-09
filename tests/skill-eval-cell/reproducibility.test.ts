@@ -14,19 +14,24 @@ function fixture(work: (ctx: ReturnType<typeof make>) => void) {
 
 function make(root: string) {
   const out = path.join(root, "case", "post")
-  const hostDir = path.join(out, "hosts", "codex")
+  const hostDir = path.join(out, "hosts", "omp")
   const skillDir = path.join(out, "extract", "skills", "fixture")
   for (const dir of [skillDir, path.join(out, "workspace"), path.join(hostDir, "workspace")]) fs.mkdirSync(dir, { recursive: true })
   fs.writeFileSync(path.join(skillDir, "SKILL.md"), "fixture skill")
   fs.writeFileSync(path.join(out, "task.md"), "task")
-  writeJSON(path.join(out, "summary.json"), { skill: "fixture", hosts_run: ["codex"] })
+  writeJSON(path.join(out, "summary.json"), { skill: "fixture", hosts_run: ["omp"] })
   writeJSON(path.join(out, "input-manifest.json"), {
     schema_version: 1, task_sha256: sha256("task"),
     skill: fingerprint(skillDir), initial_workspace: fingerprint(path.join(out, "workspace")),
   })
   fs.writeFileSync(path.join(hostDir, "stdout.txt"), "proof\nFILES_READ: SKILL.md\nACTIONS: none\nDELEGATES_DISPATCHED: none\n")
   for (const name of ["stderr.txt", "prompt.md", "git-status.txt", "git-head-files.txt"]) fs.writeFileSync(path.join(hostDir, name), "")
-  writeJSON(path.join(hostDir, "argv.json"), ["fake-codex"])
+  writeJSON(path.join(hostDir, "argv.json"), [
+    "omp", "@/obsolete/case/post/hosts/omp/prompt.md", "Follow the attached brief.",
+    "-p", "--no-session", "--no-skills", "--no-rules", "--no-extensions",
+    "--add-dir", "/obsolete/case/post/hosts/omp/skill",
+    "--tools", "read,grep,glob", "--cwd", "/obsolete/case/post/hosts/omp/workspace",
+  ])
   writeJSON(path.join(hostDir, "exit.json"), { exitCode: 0, timedOut: false })
   const evidence_sha256 = sealEvidence(out)
   const scenario: Scenario = {

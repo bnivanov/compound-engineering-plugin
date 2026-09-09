@@ -1,8 +1,11 @@
 import fs from "node:fs"
 import path from "node:path"
 import type { Grade, Scenario } from "./catalog"
-import { TRAILER_NAMES, type Host } from "./hosts"
+import { TRAILER_NAMES } from "./hosts"
 import { SHIM_LOG } from "./path-shim"
+
+/** The single headless host the fork's eval cell runs: the omp CLI. */
+type Host = "omp"
 
 export type EvalArm = "pre" | "post" | "preview"
 

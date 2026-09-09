@@ -47,7 +47,7 @@ function hasBaseline(scenario: Scenario): boolean {
   return scenario.cohort === "resized" || Boolean(scenario.baseline_ref)
 }
 
-function runCell(scenario: Scenario, arm: EvalArm, out: string, hosts?: string) {
+function runCell(scenario: Scenario, arm: EvalArm, out: string) {
   const ref = resolveArmRef(scenario, arm)
   if (!ref) throw new Error(`${scenario.id}: no ref for arm ${arm}`)
   const taskFile = path.join(path.dirname(out), `${arm}-task.md`)
@@ -83,7 +83,6 @@ function runCell(scenario: Scenario, arm: EvalArm, out: string, hosts?: string) 
   }
   if (scenario.shim_gh_pr) argv.push("--shim-gh-pr")
   if (scenario.fixture) argv.push("--fixture", path.join(REPO_ROOT, scenario.fixture))
-  if (hosts) argv.push("--hosts", hosts)
   const r = spawnSync(argv[0], argv.slice(1), {
     cwd: REPO_ROOT,
     encoding: "utf8",
@@ -127,7 +126,6 @@ function main() {
     console.error("usage: --arm pre|post|preview|ab")
     process.exit(2)
   }
-  const hosts = arg("--hosts")
   const selected = selectedScenarios()
   if (selected.length === 0) {
     console.error("no scenarios matched")
@@ -167,7 +165,7 @@ function main() {
       writeJSON(packPath, pack)
       try {
         verifyWorkspaceGradePaths((snapshot.grade.workspace_contains ?? []).map((check) => check.path))
-        info.summary = runCell(snapshot, arm, out, hosts)
+        info.summary = runCell(snapshot, arm, out)
         verifyEvidence(out)
         info.evidence_sha256 = valueHash(JSON.parse(fs.readFileSync(path.join(out, "evidence-manifest.json"), "utf8")))
         if (graderFingerprint().sha256 !== (pack.grader as { sha256: string }).sha256) {

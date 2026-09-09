@@ -36,15 +36,15 @@ export const scenariosMatching = () => rows;
 export const scenarioById = id => rows.find(row => row.id === id);
 `)
   setCatalog([scenario])
-  fs.writeFileSync(path.join(bin, "codex"), `#!/bin/sh
-if [ "$1" = "--version" ]; then echo fixture-codex; exit 0; fi
+  fs.writeFileSync(path.join(bin, "omp"), `#!/bin/sh
+if [ "$1" = "--version" ]; then echo fixture-omp; exit 0; fi
 printf 'proof\\nFILES_READ: SKILL.md\\nACTIONS: none\\nDELEGATES_DISPATCHED: none\\n'
 `, { mode: 0o755 })
   const call = (script: string, args: string[]) => spawnSync(process.execPath, [path.join(dir, script), ...args], {
     cwd: repo, encoding: "utf8", timeout: 20_000,
     env: { ...process.env, PATH: `${bin}${path.delimiter}${path.dirname(process.execPath)}${path.delimiter}${process.env.PATH ?? ""}` },
   })
-  const collect = () => call("pack.ts", ["--hosts", "codex", "--arm", "post", "--out", out])
+  const collect = () => call("pack.ts", ["--arm", "post", "--out", out])
   const source = path.join(out, "pack.json")
   const readPack = () => JSON.parse(fs.readFileSync(source, "utf8"))
   const savePack = (pack: unknown) => fs.writeFileSync(source, JSON.stringify(pack))

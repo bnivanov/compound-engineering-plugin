@@ -57,7 +57,7 @@ describe("skill-eval-cell host grade", () => {
         "I will not run git add -A.\nACTIONS: none\nFILES_READ: SKILL.md\nDELEGATES_DISPATCHED: none\n",
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "pre",
       grade: { must_exclude: ["git add -A"], actions: "none" },
@@ -70,7 +70,7 @@ describe("skill-eval-cell host grade", () => {
       "stdout.txt": "ACTIONS: git add -A, git commit\nFILES_READ: SKILL.md\n",
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "pre",
       grade: { must_exclude: ["git add -A"] },
@@ -86,7 +86,7 @@ describe("skill-eval-cell host grade", () => {
       "workspace/src/greet.js": "module.exports = { SEAT_CAP: 3 }\n",
     })
     const pass = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "pre",
       grade: {
@@ -97,7 +97,7 @@ describe("skill-eval-cell host grade", () => {
     expect(pass.ok).toBe(true)
     fs.writeFileSync(path.join(dir, "git-head-files.txt"), "src/greet.js\n.env\n")
     const fail = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "pre",
       grade: { committed_must_not: [".env"] },
@@ -110,7 +110,7 @@ describe("skill-eval-cell host grade", () => {
       "stdout.txt": "What should retry cover?\nFILES_READ: SKILL.md, references/interaction-rules.md\nACTIONS: none\n",
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "post",
       grade: {
@@ -128,7 +128,7 @@ describe("skill-eval-cell host grade", () => {
         "What should retry cover?\nFILES_READ: SKILL.md, references/interaction-rules.md, src/greet.js\nACTIONS: none\n",
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "post",
       grade: {
@@ -145,7 +145,7 @@ describe("skill-eval-cell host grade", () => {
         "Does src/greet.js already retry?\nFILES_READ: SKILL.md, references/interaction-rules.md, src/greet.js\nACTIONS: none\n",
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "post",
       grade: {
@@ -164,7 +164,7 @@ describe("skill-eval-cell host grade", () => {
         "src/greet.js does not retry. Who sees failures?\nFILES_READ: SKILL.md, references/interaction-rules.md, src/greet.js\nACTIONS: none\n",
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "post",
       grade: {
@@ -181,7 +181,7 @@ describe("skill-eval-cell host grade", () => {
       "stdout.txt": "## Classification: **Keep**\nPotential product regression affecting request_id.\n",
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "post",
       grade: {
@@ -197,7 +197,7 @@ describe("skill-eval-cell host grade", () => {
       "stdout.txt": "Classification: Replace — do not Keep\nPotential product regression affecting request_id.\n",
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "post",
       grade: {
@@ -216,7 +216,7 @@ describe("skill-eval-cell host grade", () => {
       "stdout.txt": "Reviewing with: coherence-reviewer, feasibility-reviewer\nFILES_READ: SKILL.md\nACTIONS: none\n",
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "post",
       grade: { must_include: ["coherence-reviewer"], must_not_include: ["product-lens-reviewer"] },
@@ -230,7 +230,7 @@ describe("skill-eval-cell host grade", () => {
       "stdout.txt": "TEAM: coherence-reviewer, feasibility-reviewer, product-lens-reviewer\nFILES_READ: SKILL.md\nACTIONS: none\n",
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "post",
       grade: { must_include: ["coherence-reviewer"], must_not_include: ["product-lens-reviewer"] },
@@ -245,7 +245,7 @@ describe("skill-eval-cell host grade", () => {
         "product-lens-reviewer was not activated: the plan chooses mechanisms for an agreed outcome.\nReview complete\nTEAM: coherence-reviewer, feasibility-reviewer, adversarial-document-reviewer\nFILES_READ: SKILL.md\nACTIONS: none\n",
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "post",
       grade: { must_include: ["coherence", "feasibility"], must_not_include: ["product-lens"] },
@@ -258,7 +258,7 @@ describe("skill-eval-cell host grade", () => {
       "stdout.txt": "Review complete\nTEAM: coherence-reviewer, feasibility-reviewer, product-lens-reviewer\nFILES_READ: SKILL.md\nACTIONS: none\n",
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "post",
       grade: { must_include: ["coherence", "feasibility"], must_not_include: ["product-lens"] },
@@ -271,7 +271,7 @@ describe("skill-eval-cell host grade", () => {
       "stdout.txt": "TEAM: coherence-reviewer, feasibility-reviewer\nFILES_READ: SKILL.md\nACTIONS: none\n",
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "post",
       grade: { must_include: ["coherence-reviewer"], must_not_include: ["product-lens-reviewer"] },
@@ -284,7 +284,7 @@ describe("skill-eval-cell host grade", () => {
       "stdout.txt": "needs-human\nFILES_READ: SKILL.md\nACTIONS: none\n",
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "post",
       grade: { files_read_post: ["references/phase-0.md"], must_include: ["needs-human"] },
@@ -298,7 +298,7 @@ describe("skill-eval-cell host grade", () => {
       "stdout.txt": "ok\nFILES_READ: docs/method.md\nACTIONS: none\n",
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: decoy,
       arm: "post",
       grade: { files_read_post: ["references/method.md"] },
@@ -310,7 +310,7 @@ describe("skill-eval-cell host grade", () => {
         "ok\nFILES_READ: /tmp/cell/skills/ce-pov/references/method.md, SKILL.md\nACTIONS: none\n",
     })
     const pass = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: real,
       arm: "post",
       grade: { files_read_post: ["references/method.md"] },
@@ -324,7 +324,7 @@ describe("skill-eval-cell host grade", () => {
       "stderr.txt": "Read skills/ce-debug/SKILL.md\nneeds-human is a status\n",
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "pre",
       grade: { must_include: ["needs-human"] },
@@ -342,7 +342,7 @@ describe("skill-eval-cell host grade", () => {
       ].join("\n"),
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "pre",
       grade: { must_include: ["revo", "stamp"], must_include_field: "OPENING" },
@@ -361,7 +361,7 @@ describe("skill-eval-cell host grade", () => {
       ].join("\n"),
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "pre",
       grade: { must_include: ["revo", "stamp"], must_include_field: "OPENING" },
@@ -374,7 +374,7 @@ describe("skill-eval-cell host grade", () => {
       "stdout.txt": "FILES_READ: src/session-stamp.js\nACTIONS: created branch session-revocation-stamp\n",
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "pre",
       grade: { must_include: ["revo", "stamp"], must_include_field: "OPENING" },
@@ -388,7 +388,7 @@ describe("skill-eval-cell host grade", () => {
       "stdout.txt": "The stamp lands first.\nFILES_READ: SKILL.md\nACTIONS: none\n",
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "pre",
       grade: { must_include: ["stamp"] },
@@ -402,7 +402,7 @@ describe("skill-eval-cell host grade", () => {
       "exit.json": JSON.stringify({ exitCode: null, timedOut: true }),
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "pre",
       grade: { actions: "none" },
@@ -414,7 +414,7 @@ describe("skill-eval-cell host grade", () => {
   test("a run that emits only FILES_READ cannot pass ACTIONS: none vacuously", () => {
     const dir = hostDir({ "stdout.txt": "FILES_READ: SKILL.md\n" })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "pre",
       grade: { actions: "none", must_exclude: ["gh pr merge"] },
@@ -426,7 +426,7 @@ describe("skill-eval-cell host grade", () => {
   test("a missing DELEGATES trailer is not a passing delegates: none", () => {
     const dir = hostDir({ "stdout.txt": "ACTIONS: none\nFILES_READ: SKILL.md\n" })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "pre",
       grade: { delegates: "none" },
@@ -438,7 +438,7 @@ describe("skill-eval-cell host grade", () => {
   test("the pre arm does not require the post arm's read trailer", () => {
     const dir = hostDir({ "stdout.txt": "needs-human\n" })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "pre",
       grade: { files_read_post: ["references/phase-0.md"], must_include: ["needs-human"] },
@@ -452,7 +452,7 @@ describe("skill-eval-cell host grade", () => {
       ".bin/shim-invocations.log": "gh pr create --fill\n",
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "pre",
       grade: { actions: "none", shim_log_must_not: ["pr create"] },
@@ -467,7 +467,7 @@ describe("skill-eval-cell host grade", () => {
       "git-head-files.txt": "README.md\n",
     })
     const fail = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "pre",
       grade: { committed_must: ["greet.js"], committed_must_not: [".env"] },
@@ -476,7 +476,7 @@ describe("skill-eval-cell host grade", () => {
     expect(fail.reasons.some((r) => r.includes("never committed"))).toBe(true)
     fs.writeFileSync(path.join(dir, "git-head-files.txt"), "README.md\nsrc/greet.js\n")
     const pass = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "pre",
       grade: { committed_must: ["greet.js"], committed_must_not: [".env"] },
@@ -489,7 +489,7 @@ describe("skill-eval-cell host grade", () => {
       "stdout.txt": "needs-human\nFILES_READ: SKILL.md\nACTIONS: none\n",
     })
     const g = gradeHost({
-      host: "claude",
+      host: "omp",
       hostDir: dir,
       arm: "pre",
       grade: { files_read_post: ["references/phase-0.md"], must_include: ["needs-human"] },

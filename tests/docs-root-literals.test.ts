@@ -29,12 +29,11 @@ const LITERAL = new RegExp(`docs/(${IN_SCOPE_SUBDIRS.join("|")})(?:/|\\b)`)
 const SCANNED_EXTS = new Set([".md", ".py", ".sh", ".yaml", ".yml"])
 
 // Comment markers by extension. A literal is allowlisted only when it sits
-// inside a comment on its line: the two legitimate cases are bibliographic
-// citations to this plugin's own learning docs (elevation-dispatch.sh) and
-// default-path documentation in the config template — both in `#` comments.
-// Markdown uses `#` for headings (not comments), so `.md` gets no `#` allowance;
-// there is no legitimate literal in any `.md` file today, and a heading naming a
-// hardcoded artifact path should fail.
+// inside a comment on its line: the one legitimate case is default-path
+// documentation in the config template (`skills/ce-setup/references/config-template.yaml`,
+// a `#` comment). Markdown uses `#` for headings (not comments), so `.md` gets no
+// `#` allowance; there is no legitimate literal in any `.md` file today, and a
+// heading naming a hardcoded artifact path should fail.
 const COMMENT_MARKERS: Record<string, string[]> = {
   ".sh": ["#"],
   ".py": ["#"],

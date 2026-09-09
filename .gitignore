@@ -6,7 +6,6 @@ node_modules/
 todos/
 .worktrees
 .context/
-.claude/worktrees/
 __pycache__/
 *.pyc
 

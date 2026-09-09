@@ -85,7 +85,7 @@ One scenario is not an eval for a skill people run every day. Enumerate entry pa
 
 ## Eval-harness gotchas
 
-Headless invocations of the local harnesses, measured 2026-08-17; none are skill defects, all look like one. `tests/skill-eval-cell/hosts.ts` bakes these in.
+Historical (pre-fork, 2026-08-17): the four-harness table below records the multi-harness eval posture this learning was written under; the fork's eval cell now runs the `omp` CLI only (see `tests/skill-eval-cell/hosts.ts`), and the gotchas here are kept as upstream-era evidence, not as the shipped invocation.
 
 | Harness | Invocation that worked | Gotcha |
 |---|---|---|

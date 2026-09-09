@@ -1,36 +1,20 @@
 /**
  * One eval cell: extract skills/<name> from a git ref and run the same
- * prompt on the host CLIs that are installed.
+ * prompt headlessly through the omp CLI.
  *
  *   bun run test:skill-eval-cell -- --skill ce-debug --task "mode:pipeline …"
  *
- * Does not run in default `bun test` / CI. Missing CLIs skip.
+ * Does not run in default `bun test` / CI. A missing omp CLI exits 2.
  */
 import { spawn, spawnSync } from "node:child_process"
 import fs from "node:fs"
 import path from "node:path"
 import { arg, flag } from "./cli"
 import { REPO_ROOT, WORKTREE_REF, extractSkill, mintCellDir } from "./extract"
-import { HOSTS, planHost, resolveRunHosts, wrapPrompt, type Host, type HostPlan } from "./hosts"
+import { planCell, resolveOnPath, wrapPrompt, type CellPlan } from "./hosts"
 import { installPathShims, type PathShim } from "./path-shim"
 import { fingerprint, prepareOutput, sealEvidence, sha256, writeJSON } from "./provenance"
 
-function parseHosts(): Host[] | undefined {
-  const raw = arg("--hosts")
-  if (raw === undefined) return undefined
-  if (!raw) {
-    console.error("usage: --hosts claude,codex,grok,opencode")
-    process.exit(2)
-  }
-  const wanted = raw.split(",").map((s) => s.trim()).filter(Boolean) as Host[]
-  for (const host of wanted) {
-    if (!HOSTS.includes(host)) {
-      console.error(`unknown host ${host} (want ${HOSTS.join(", ")})`)
-      process.exit(2)
-    }
-  }
-  return wanted
-}
 
 function copyFixture(src: string, dest: string) {
   fs.cpSync(src, dest, { recursive: true })
@@ -87,7 +71,7 @@ process.on("exit", () => {
 })
 
 async function runPlan(
-  plan: HostPlan,
+  plan: CellPlan,
   cwd: string,
   timeoutMs: number,
 ): Promise<{ exitCode: number | null; stdout: string; stderr: string; timedOut: boolean }> {
@@ -159,7 +143,7 @@ async function main() {
   const taskFile = arg("--task-file")
   if (!skill) {
     console.error(
-      "usage: bun run test:skill-eval-cell -- --skill <name> --task \"...\" [--task-file p] [--ref WORKTREE|<git-ref>] [--hosts claude,codex,grok] [--fixture dir] [--out dir] [--timeout-secs 600] [--read-only] [--git-init] [--git-untracked p,p] [--git-staged p,p] [--shim-git-push] [--shim-gh-pr]\n       default --hosts is the other two harnesses from this session; missing CLIs warn and continue",
+      "usage: bun run test:skill-eval-cell -- --skill <name> --task \"...\" [--task-file p] [--ref WORKTREE|<git-ref>] [--fixture dir] [--out dir] [--timeout-secs 600] [--read-only] [--git-init] [--git-untracked p,p] [--git-staged p,p] [--shim-git-push] [--shim-gh-pr]",
     )
     process.exit(2)
   }
@@ -173,13 +157,11 @@ async function main() {
   const timeoutMs = Number(arg("--timeout-secs", "600")) * 1000
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) throw new Error("--timeout-secs must be positive and finite")
   const readOnly = flag("--read-only")
-  const resolution = resolveRunHosts({ explicit: parseHosts() })
-  for (const line of resolution.warnings) console.error(line)
-  const hosts = resolution.run
-  if (hosts.length === 0) {
-    console.error(`error: no harness CLIs on PATH (wanted ${resolution.wanted.join(", ")})`)
+  if (!resolveOnPath("omp")) {
+    console.error("error: no harness on PATH: omp CLI not found")
     process.exit(2)
   }
+
 
   const out = prepareOutput(arg("--out") ?? mintCellDir())
   fs.writeFileSync(path.join(out, "task.md"), taskText, { flag: "wx" })
@@ -254,34 +236,30 @@ async function main() {
     out,
     skillDir,
     workspace,
-    current_harness: resolution.current,
-    hosts_wanted: resolution.wanted,
-    hosts_run: hosts,
-    hosts_skipped: resolution.skipped,
-    own_eval_only: resolution.ownEvalOnly,
-    warnings: resolution.warnings,
+    hosts_run: ["omp"],
     read_only: readOnly,
     seed_sha: seedSha,
     cells: {},
   }
 
   writeJSON(path.join(out, "summary.json"), summary)
-  for (const host of hosts) {
+  {
+    const host = "omp"
     const hostDir = path.join(out, "hosts", host)
     const hostWorkspace = path.join(hostDir, "workspace")
     const hostSkillDir = path.join(hostDir, "skill")
     fs.mkdirSync(hostDir, { recursive: true })
     copyFixture(workspace, hostWorkspace)
     // Script imports can create caches. Keep the input snapshot unchanged and
-    // give every host its own execution copy, included in the sealed evidence.
+    // give the cell its own execution copy, included in the sealed evidence.
     fs.cpSync(skillDir, hostSkillDir, { recursive: true })
     const hostPrompt = wrapPrompt({ skillDir: hostSkillDir, workspace: hostWorkspace, task: taskText })
     const promptFile = path.join(hostDir, "prompt.md")
     fs.writeFileSync(promptFile, hostPrompt)
-    const plan = planHost(host, {
+    const plan = planCell({
       cwd: hostWorkspace,
-      prompt: hostPrompt,
       promptFile,
+      skillDir: hostSkillDir,
       readOnly,
     })
     const shims: PathShim[] = []

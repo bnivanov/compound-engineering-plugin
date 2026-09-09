@@ -52,10 +52,10 @@ export type Grade = {
   must_include?: string[]
   /**
    * Scope must_include to this delimited field of the answer (e.g. `OPENING`) instead
-   * of the whole answer. The trailers wrapPrompt mandates are part of stdout, so an
-   * unscoped needle can be satisfied by a read path in FILES_READ or a branch name in
-   * ACTIONS rather than by the text under test. A run that emitted no such field fails,
-   * so declaring nothing cannot pass.
+   * of the whole answer. The trailers wrapPrompt mandates are part of the omp cell's
+   * plain-text stdout, so an unscoped needle can be satisfied by a read path in
+   * FILES_READ or a branch name in ACTIONS rather than by the text under test. A run
+   * that emitted no such field fails, so declaring nothing cannot pass.
    */
   must_include_field?: string
   /** Exact value of the answer's `Classification:` field. */

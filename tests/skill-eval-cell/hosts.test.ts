@@ -1,123 +1,74 @@
 import { describe, expect, test } from "bun:test"
 import os from "node:os"
 import path from "node:path"
-import { attestCurrentHost, cellEnv, peerHosts, planHost, resolveRunHosts, wrapPrompt } from "./hosts"
+import { READ_ONLY_TOOLS, WRITE_TOOLS, cellEnv, planCell, wrapPrompt } from "./hosts"
 
-describe("skill-eval-cell host plans pin measured gotchas", () => {
+describe("skill-eval-cell omp builder pins the measured invocation", () => {
   const cwd = os.tmpdir()
   const promptFile = path.join(cwd, "prompt.md")
+  const skillDir = path.join(cwd, "skill")
 
-  test("every host unsets CLAUDECODE and forces NO_COLOR", () => {
-    const env = cellEnv({ CLAUDECODE: "1", CLICOLOR_FORCE: "1", GH_FORCE_TTY: "1" })
-    expect(env.CLAUDECODE).toBeUndefined()
+  test("cellEnv keeps stdout greppable for trailer scans", () => {
+    const env = cellEnv({ CLICOLOR_FORCE: "1", GH_FORCE_TTY: "1" })
     expect(env.CLICOLOR_FORCE).toBeUndefined()
     expect(env.GH_FORCE_TTY).toBeUndefined()
     expect(env.NO_COLOR).toBe("1")
   })
 
-  test("claude uses print mode and skip-permissions", () => {
-    const plan = planHost("claude", { cwd, prompt: "task", promptFile })
+  test("the read-only cell runs plain print mode with discovery isolation", () => {
+    const plan = planCell({ cwd, promptFile, skillDir, readOnly: true })
     expect(plan.argv).toEqual([
-      "claude",
+      "omp",
+      `@${promptFile}`,
+      "Follow the attached brief.",
       "-p",
-      "task",
-      "--dangerously-skip-permissions",
-      "--output-format",
-      "text",
+      "--no-session",
+      "--no-skills",
+      "--no-rules",
+      "--no-extensions",
+      "--add-dir",
+      skillDir,
+      "--tools",
+      READ_ONLY_TOOLS,
+      "--cwd",
+      cwd,
     ])
-    expect(plan.stdin).toBe("null")
+    expect(Object.keys(plan).sort()).toEqual(["argv", "env", "notes"])
+    expect(plan.env.NO_COLOR).toBe("1")
   })
 
-  test("codex closes stdin and skips the git-repo check", () => {
-    const plan = planHost("codex", { cwd, prompt: "task", promptFile })
-    expect(plan.argv).toContain("exec")
-    expect(plan.argv).toContain("--dangerously-bypass-approvals-and-sandbox")
-    expect(plan.argv).toContain("--skip-git-repo-check")
-    expect(plan.argv).toContain("-C")
-    expect(plan.argv).toContain(cwd)
-    expect(plan.stdin).toBe("null")
-    expect(plan.env.CLAUDECODE).toBeUndefined()
-  })
-
-  test("grok uses --prompt-file, not a unused -p write", () => {
-    const plan = planHost("grok", { cwd, prompt: "task", promptFile })
-    expect(plan.argv).toContain("--prompt-file")
-    expect(plan.argv).toContain(promptFile)
-    expect(plan.argv).toContain("--verbatim")
-    expect(plan.argv).toContain("--cwd")
-    expect(plan.argv).toContain("--disable-web-search")
-    expect(plan.argv).not.toContain("-p")
-    expect(plan.stdin).toBe("null")
-  })
-
-  test("opencode uses run --dir and omits --auto when read-only", () => {
-    const plan = planHost("opencode", { cwd, prompt: "task", promptFile })
-    expect(plan.argv).toEqual(["opencode", "run", "--dir", cwd, "task", "--auto"])
-    const readOnly = planHost("opencode", { cwd, prompt: "task", promptFile, readOnly: true })
-    expect(readOnly.argv).toEqual(["opencode", "run", "--dir", cwd, "task"])
-    expect(readOnly.argv).not.toContain("--auto")
-    expect(attestCurrentHost({ OPENCODE_TERMINAL: "1" })).toBe("opencode")
-  })
-
-  test("from grok the default peers are claude, codex, and opencode", () => {
-    expect(attestCurrentHost({ GROK_AGENT: "1" })).toBe("grok")
-    expect(peerHosts("grok")).toEqual(["claude", "codex", "opencode"])
-    const resolved = resolveRunHosts({
-      env: { GROK_AGENT: "1" },
-      onPath: (host) => host === "claude" || host === "codex" || host === "opencode",
-    })
-    expect(resolved.run).toEqual(["claude", "codex", "opencode"])
-    expect(resolved.ownEvalOnly).toBe(false)
-    expect(resolved.warnings).toEqual([])
-  })
-
-  test("missing peer CLIs warn and continue; self-only is own-eval", () => {
-    const limited = resolveRunHosts({
-      env: { GROK_AGENT: "1" },
-      onPath: (host) => host === "claude",
-    })
-    expect(limited.run).toEqual(["claude"])
-    expect(limited.warnings.some((line) => line.startsWith("warning: skipping codex"))).toBe(true)
-    expect(limited.warnings.some((line) => line.includes("limited multi-harness"))).toBe(true)
-
-    const own = resolveRunHosts({
-      env: { GROK_AGENT: "1" },
-      onPath: (host) => host === "grok",
-    })
-    expect(own.run).toEqual(["grok"])
-    expect(own.ownEvalOnly).toBe(true)
-    expect(own.warnings.some((line) => line.includes("own-eval only"))).toBe(true)
-  })
-
-  test("an explicit --hosts that is unavailable does not fall back to self", () => {
-    const explicit = resolveRunHosts({
-      explicit: ["claude"],
-      env: { CODEX_SESSION_ID: "x" },
-      onPath: (host) => host === "codex",
-    })
-    expect(explicit.run).toEqual([])
-    expect(explicit.ownEvalOnly).toBe(false)
-  })
-
-  test("read-only maps to each host's measured flags", () => {
-    const claude = planHost("claude", { cwd, prompt: "task", promptFile, readOnly: true })
-    expect(claude.argv).toContain("--allowedTools")
-    expect(claude.argv).toContain("Read,Glob,Grep")
-    const codex = planHost("codex", { cwd, prompt: "task", promptFile, readOnly: true })
-    expect(codex.argv).toContain("--sandbox")
-    expect(codex.argv).toContain("read-only")
-    expect(codex.argv).not.toContain("--dangerously-bypass-approvals-and-sandbox")
-    const grok = planHost("grok", { cwd, prompt: "task", promptFile, readOnly: true })
-    expect(grok.argv).toContain("--deny")
-    expect(grok.argv).toContain("Bash")
-  })
-
-  test("claude read-only also denies the tools skip-permissions leaves callable", () => {
-    const plan = planHost("claude", { cwd, prompt: "task", promptFile, readOnly: true })
-    const deny = plan.argv[plan.argv.indexOf("--disallowedTools") + 1]?.split(",") ?? []
-    for (const tool of ["Bash", "Edit", "Write", "NotebookEdit", "Task", "Skill", "WebFetch", "WebSearch"]) {
-      expect(deny).toContain(tool)
+  test("the write arm widens the toolset and pins --approval-mode yolo", () => {
+    const plan = planCell({ cwd, promptFile, skillDir })
+    expect(plan.argv).toContain("--tools")
+    expect(plan.argv[plan.argv.indexOf("--tools") + 1]).toBe(WRITE_TOOLS)
+    for (const tool of ["read", "grep", "glob", "edit", "write", "bash"]) {
+      expect(WRITE_TOOLS.split(",")).toContain(tool)
     }
+    expect(plan.argv).toContain("--approval-mode")
+    expect(plan.argv[plan.argv.indexOf("--approval-mode") + 1]).toBe("yolo")
+    // The cell spawns with stdin from /dev/null, so any approval prompt burns the
+    // full timeout; both postures must stay approval-free.
+    const readOnly = planCell({ cwd, promptFile, skillDir, readOnly: true })
+    expect(readOnly.argv).not.toContain("--approval-mode")
+  })
+
+  test("discovery isolation keeps installed and repo-local skill surfaces out", () => {
+    const plan = planCell({ cwd, promptFile, skillDir, readOnly: true })
+    for (const flagName of ["--no-skills", "--no-rules", "--no-extensions"]) {
+      expect(plan.argv).toContain(flagName)
+    }
+    // The extracted git-ref copy is attached beyond the working directory...
+    expect(plan.argv[plan.argv.indexOf("--add-dir") + 1]).toBe(skillDir)
+    // ...and the cell runs in its own workspace, not the authoring checkout.
+    expect(plan.argv[plan.argv.indexOf("--cwd") + 1]).toBe(cwd)
+  })
+
+  test("notes record the isolation and approval contract", () => {
+    const readOnly = planCell({ cwd, promptFile, skillDir, readOnly: true })
+    const write = planCell({ cwd, promptFile, skillDir })
+    expect(readOnly.notes.join("\n")).toMatch(/--no-skills/)
+    expect(readOnly.notes.join("\n")).toMatch(/approval-free/)
+    expect(write.notes.join("\n")).toMatch(/yolo/)
   })
 
   test("wrapPrompt does not tell the model it is an eval", () => {
@@ -129,7 +80,6 @@ describe("skill-eval-cell host plans pin measured gotchas", () => {
     expect(prompt.toLowerCase()).not.toContain("eval")
     expect(prompt).toContain("Babysit PR #12.")
     expect(prompt).toContain("FILES_READ:")
-    expect(prompt).toContain("~/.config/opencode")
-    expect(prompt).toContain("project .opencode")
+    expect(prompt).toContain("plugin cache")
   })
 })
