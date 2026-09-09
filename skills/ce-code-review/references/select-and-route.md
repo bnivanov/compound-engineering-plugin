@@ -22,6 +22,7 @@ Reviewer personas are selected in layers. The persona catalog in `references/per
 - `security-reviewer` — auth, public endpoints, user input, permissions
 - `performance-reviewer` — DB queries, data transforms, caching, async
 - `api-contract-reviewer` — routes, serializers, type signatures, versioning
+- `blast-radius-reviewer` — undeclared readers beyond the diff; not when every consumer is inside the diff
 - `data-migration-reviewer` — migration files / schema dumps / backfills (see spawn gate in Stage 3)
 - `reliability-reviewer` — error handling, retries, timeouts, background jobs
 - `adversarial-reviewer` lens — >=50 changed code lines, or auth / payments / persistence writes / event publication / retry or concurrency semantics / external APIs, or a **silent-pass verification mechanism** regardless of size. Satisfy this lens with the independent `reviewer` agent when its host `task` dispatch starts. Use the in-process `adversarial-reviewer` only when that agent cannot start or fold-in requires the did-not-run fallback; never run both same-brief reviews.
