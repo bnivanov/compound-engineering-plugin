@@ -1,6 +1,6 @@
 ---
 name: ce-worktree
-description: Set up isolated git worktrees — create a new branch for fresh work, or attach a worktree to an existing branch, PR, or commit. Use when starting isolated work or isolating an existing ref.
+description: Set up isolated git worktrees — create a new branch for fresh work, or attach a worktree to an existing branch, PR, or commit. Use when starting isolated work or isolating an existing ref. Use when leftover linked worktrees should be classified and the safe ones removed.
 ---
 
 # Worktree Isolation
@@ -52,3 +52,17 @@ Only when there is no native tool **and** Step 0 found no existing isolation.
 6. `cd` into it, then report the path and branch.
 
 If `git worktree add` fails with a sandbox or permission error, the requested isolation does not exist. Do **not** proceed in the current checkout — the user chose isolation specifically to avoid it. Report the failure and ask, offering options such as "work in the current checkout" vs "stop and resolve the permission issue", using the host's blocking question tool already in the current tool list (match by capability, not by a host-specific name). Presence in the current tool list is proof the tool exists; never call a user-facing question tool to discover whether it exists. If a matching tool is listed but unloaded, use the host's tool-discovery primitive to load that capability — do not search for another host's tool name. Only when no such tool is in the list or a real question call errors, present the numbered options in chat and wait for the reply. Never skip the confirmation, and do not retry alternative paths automatically.
+
+## Prune
+
+When leftover linked worktrees should go, classify each one, then remove only the safe candidates the user confirms.
+
+**Done when:** every linked worktree is labeled **safe**, **unsafe**, or **current**; the user has answered which safe ones to drop; those paths are gone; unsafe and current trees are untouched.
+
+- **current** — the tree this session is in. Never a candidate.
+- **safe** — its branch is fully merged to trunk *or* gone from remote, `git status --porcelain` is empty, and there are no unpushed commits.
+- **unsafe** — any other linked worktree.
+
+Ask once which safe candidates to remove. Remove nothing before that answer. Then `git worktree remove <path>` for each confirmed path, then `git worktree prune`. Never `--force`. Never delete a branch. Never touch the current tree.
+
+A missing directory is bookkeeping, not a removal: run `git worktree prune` for it and do not offer it as a candidate.
