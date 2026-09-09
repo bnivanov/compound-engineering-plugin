@@ -594,8 +594,8 @@ describe("ce-code-review contract", () => {
     expect(content).toContain("### Stage 5b: Validation pass")
 
     // Cross-model corroboration is the only validator shortcut.
-    expect(content).toMatch(/ordinary reviewer plus an `adversarial-<provider>` reviewer/i)
-    expect(content).toMatch(/Same-model corroboration never licenses this shortcut/i)
+    expect(content).toMatch(/ordinary reviewer plus an `adversarial-omp` reviewer/i)
+    expect(content).toMatch(/Same-model or unverified corroboration never licenses this shortcut/i)
 
     // Remaining findings use one bounded foreground batch.
     expect(content).toMatch(/deterministic validator batch/i)

@@ -280,22 +280,19 @@ The defining rule: if the bug is sensitive to observation, the fix must survive 
 
 ## Browser Debugging
 
-When investigating UI bugs with `agent-browser` or equivalent tools:
+When investigating UI bugs, use OMP `browser` through eval and its tab helpers. If it is missing, stop and report that the host must expose it. Resolve the port below before opening the affected route. Run interaction steps after inspecting the observation, using selectors from the actual page:
 
-```bash
-# Open the affected page
-agent-browser open http://localhost:${PORT:-3000}/affected/route
+```javascript
+const tab = await browser.open({ name: "bug-repro", url: "http://localhost:<resolved-port>/affected/route" });
+display(await tab.observe());
+display(await tab.ariaSnapshot());
 
-# Capture current state
-agent-browser snapshot -i
-
-# Interact with the page
-agent-browser click @ref          # click an element
-agent-browser fill @ref "text"    # fill a form field
-agent-browser snapshot -i         # capture state after interaction
-
-# Save visual evidence
-agent-browser screenshot bug-evidence.png
+// Use selectors identified in the observation
+await tab.click("<observed-button-selector>");
+display(await tab.observe());
+await tab.fill("<observed-field-selector>", "text");
+display(await tab.observe());
+await tab.screenshot();
 ```
 
 **Port detection:** If your in-context project instructions explicitly state the dev-server port, use it (don't grep instruction prose for a port — it's false-positive-prone); otherwise check `package.json` dev scripts, then `.env` files, falling back to `3000`.

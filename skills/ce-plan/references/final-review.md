@@ -50,7 +50,7 @@ Fires **whenever Phase 0.2 resolved an upstream Product Contract source** — a 
 
 #### 5.2 Write Plan File
 
-Return to the kernel for its model-elevation boundary. Resume here only after that step has settled; this reference does not dispatch the authoring route itself.
+Return to the kernel for session-model authoring. Resume here only after that step has settled; this reference does not dispatch the authoring route itself.
 
 **REQUIRED: Write the plan file to disk before presenting any options.**
 

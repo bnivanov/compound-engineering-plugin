@@ -1,6 +1,6 @@
 # `ce-test-browser`
 
-> Run end-to-end browser tests on the pages the current PR or branch actually changed, using the best approved browser driver available.
+> Run end-to-end browser tests on the pages the current PR or branch actually changed, using OMP `browser`.
 
 `ce-test-browser` is on-demand browser testing. It maps changed files to routes, checks (or, in pipeline mode, starts) the dev server, drives each affected page, captures rendered state and screenshots, pauses for human checks on external flows, and prints a structured summary.
 
@@ -14,7 +14,7 @@ Default is manual: you own the server. `mode:pipeline` is for `lfg` and other un
 
 | Question | Answer |
 |----------|--------|
-| What does it do? | Maps the diff to routes, drives those pages in an approved browser, asks you to confirm external flows |
+| What does it do? | Maps the diff to routes, drives those pages in OMP `browser`, asks you to confirm external flows |
 | When to use it | After UI changes, before a PR, or when you want evidence that the affected pages still work |
 | What it produces | Per-route status table, console errors, human verifications, screenshots, overall PASS / FAIL / PARTIAL |
 | Modes | Manual (default: you start the server). `mode:pipeline` auto-starts the server and picks a free port |
@@ -53,7 +53,7 @@ If no server is listening in manual mode, the skill prints the start command and
 
 Browser checks are easy to skip or to do with the wrong tool:
 
-- A missing preferred driver tempts an agent toward standalone Playwright, Puppeteer, or some other stack this skill will not use
+- A missing OMP browser tempts an agent toward standalone Playwright, Puppeteer, or some other stack this skill will not use
 - Figuring out which routes a PR touched is its own task
 - Tests fail because the server is down, on the wrong port, or stale
 - The page looks fine while console errors pile up
@@ -64,7 +64,7 @@ Browser checks are easy to skip or to do with the wrong tool:
 
 A fixed flow:
 
-- Pick one approved driver and keep it for the whole run
+- Use OMP `browser` for the whole run
 - Map changed files to URLs
 - Manual mode requires your server; pipeline mode starts one and will not assume port 3000 is free
 - Per page: navigate, inspect, exercise critical actions, screenshot
@@ -76,13 +76,13 @@ A fixed flow:
 
 ## What Makes It Novel
 
-### Host-native browser first, `agent-browser` as fallback
+### OMP `browser` only
 
-The skill prefers a host-native integrated browser: a surface embedded in or directly owned by the active harness that can open local URLs, inspect rendered and interactive state, click/fill/press, screenshot, and read console errors. A separately configured browser extension or MCP does not count. If the host has no such surface, the run has to fall back to `agent-browser`.
+The skill uses OMP `browser` through eval and its tab helpers: a host-native integrated browser embedded in or directly owned by the active harness that can open local URLs, inspect rendered and interactive state, click/fill/press, screenshot, and read console errors. A separately configured browser extension or MCP does not count.
 
 One driver owns the run. The skill will not install standalone Playwright, Puppeteer, or another automation stack. A Playwright API inside the selected host browser is still that browser, not a substitute stack.
 
-If neither a native browser nor `agent-browser` is available, it stops and points at `/ce-setup`.
+If OMP `browser` is unavailable, the skill stops and reports that the host must expose it. There is no alternate driver to install.
 
 ### File-to-route mapping
 
@@ -104,8 +104,8 @@ Starting patterns, not a closed list. The skill still uses judgment for the real
 
 | Mode | Server | Port | Browser |
 |------|--------|------|---------|
-| Manual (default) | You start it | Preferred port as-is | Native browser stays visible; `agent-browser` asks headed or headless |
-| `mode:pipeline` | Auto-started in the background | Scans upward from the preferred port | No prompts. Native browser stays visible and non-blocking; `agent-browser` is headless |
+| Manual (default) | You start it | Preferred port as-is | OMP browser stays visible |
+| `mode:pipeline` | Auto-started in the background | Scans upward from the preferred port | No prompts. OMP browser stays visible and non-blocking |
 
 Preferred port order: `--port`, a port already stated in the agent's active project instructions, `package.json` dev/start scripts, `.env` / `.env.local` / `.env.development`, then `3000`. Manual mode does not hunt for another port. Pipeline mode will.
 
@@ -152,7 +152,7 @@ Use `ce-test-browser` when:
 Skip it when:
 
 - The change has no browser-visible behavior
-- Neither a host-native browser nor `agent-browser` is available
+- OMP `browser` is unavailable; stop until the host exposes it
 - You want unit or integration tests → the project's test runner
 - You want autonomous fixes and a durable QA doc → `/ce-dogfood`
 - You want to sit with the page and refine feel → `/ce-polish`
@@ -180,7 +180,7 @@ Bare and `mode:agent` `ce-code-review` runs are report-only and can share the ch
 | `--port <number>` | Skip port detection |
 | `mode:pipeline` | Auto-start server, free-port scan, no questions, skip human-only flows |
 
-Required: a host-native integrated browser or `agent-browser`. Manual mode also needs a listening server (or you restart after starting one).
+Required: OMP `browser` through eval and its tab helpers. Manual mode also needs a listening server (or you restart after starting one).
 
 The selected driver must navigate locally, inspect rendered and interactive state, click/fill/press, screenshot, and read console errors.
 
@@ -190,8 +190,8 @@ Pipeline mode starts the server via `bin/dev`, `bin/rails server`, or `npm run d
 
 ## FAQ
 
-**Why not require `agent-browser` everywhere?**
-A host-owned browser stays inside the harness and is usually easier to watch. `agent-browser` is the fallback for CLI hosts and hosts with no integrated browser.
+**What if OMP `browser` is missing?**
+The skill stops and reports that the host must expose it. It does not install or use a substitute driver.
 
 **What is still banned?**
 Standalone Playwright, Puppeteer, separately configured browser extensions or MCPs, and ad hoc automation. A Playwright-named API inside the selected host browser is not a substitute stack.
@@ -216,5 +216,5 @@ Yes when review is report-only (default markdown or `mode:agent`). `apply:local`
 - [`ce-test-xcode`](./ce-test-xcode.md): iOS simulator equivalent
 - [`lfg`](./lfg.md): calls this with `mode:pipeline`
 - [`ce-commit-push-pr`](./ce-commit-push-pr.md): PR body can carry the summary
-- [`ce-setup`](./ce-setup.md): whether `agent-browser` is installed, and how to install it
+- [`ce-setup`](./ce-setup.md): CE configuration and optional capability diagnostics; OMP supplies browser access natively
 - [`ce-polish`](./ce-polish.md): conversational UX on a working feature

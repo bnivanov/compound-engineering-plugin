@@ -67,9 +67,6 @@ An empty invoke uses the current conversation if one is already underway (includ
 
 # Skip the pre-plan scoping-confirmation pause for this run only
 /ce-plan add a background email digest at 8am UTC confirm:auto
-
-# Keep the session on your usual model; author the plan on a named one
-/ce-plan turn the notification mute requirements into an implementation-ready plan, use <model-alias>
 ```
 
 Start with `ce-brainstorm` when the product shape is still unsettled. Direct planning works best when the intended outcome is already clear.
@@ -247,11 +244,13 @@ Plenty of work never goes through a brainstorm. Direct invocations that work wel
 | `<task in another repo>` | Cross-repo announcement; plan lands in the target |
 | `output:html` | Write the plan as a single self-contained HTML file instead of markdown. Exclusive: the plan is `.md` or `.html`, never both. Default is markdown. Set `plan_output: html` in CE config (`config.local.yaml` then `config.yaml`) to make HTML the default. Pipeline mode (LFG, `disable-model-invocation`) always forces markdown. See the [configuration reference](./configuration.md). |
 | `confirm:auto` | Skip the pre-plan scoping-confirmation pause for this run. The skill writes the scope summary for itself, records inferred scope under `Assumptions`, announces it is proceeding, and keeps going. Genuine blockers and the post-plan menu still appear. Use `confirm:ask` to force the gate on for one run. Set `plan_skip_scoping_confirm: true` in CE config to make skipping the default. |
-| `use <model-alias>` / `have <model-alias> plan this` | Elevate only the interpret-findings-then-author step to that model. Also settable as `plan_model: <model-alias>` in CE config. A prompt request overrides the config key. |
 
 ---
 
 ## FAQ
+
+**Which model does it use?**
+It runs on the session model. For stronger reasoning, run the session on a stronger model or dispatch a `planner` agent natively.
 
 **Doesn't a plan tell you HOW to build something?**
 Not in `ce-plan`'s framing. The plan tells you what must be honored: decisions, scope, units, files, tests, risks. The implementing agent figures out HOW with code in front of them. That same frame is what lets one engine plan a software refactor, a tank-maintenance job, and a 6-week study plan.
@@ -272,12 +271,6 @@ Disallowed by default. Pseudo-code and DSL grammars are permitted in High-Level 
 No. Proof is on the non-software wrap-up menu (save, publish, or both). Software next steps are `ce-work`, `/goal` when supported, review or prototype, create an issue, or open an HTML file. Publish a markdown plan later with `/ce-proof` if you want a shareable link.
 
 ---
-
-## Model elevation
-
-When you want a specific model for the heavy reasoning step, `ce-plan` can author the plan on that model instead of your session model. Only the interpret-findings-then-author step is dispatched, with read access so it can verify its brief. Dialogue and research stay on your session model. Name a model in the prompt (`use <model-alias>`, `have <model-alias> plan this`) or set `plan_model: <model-alias>` in CE config; a prompt request overrides the config key.
-
-On OMP, a set key reports the requested alias as unresolvable and runs the step inline on the session model. For stronger reasoning, run the session on a stronger model or dispatch a `planner` agent natively.
 
 ## See Also
 

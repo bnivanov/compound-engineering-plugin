@@ -78,9 +78,9 @@ Planning has to land an implementation-ready code plan. Implementation has to re
 
 ### Native stages, one shipping tail
 
-Planning and implementation both stay native on OMP. `ce-plan` uses its `plan_model` config (a set key reports the requested alias as unresolvable and runs inline) and `ce-work` always runs on the session model. See [`ce-work`](./ce-work.md#choose-the-implementation-author) for the native execution contract.
+Planning and implementation both stay native on OMP: `ce-plan` and `ce-work` always run on the session model. For stronger reasoning, run the session on a stronger model or dispatch a `planner` agent natively. See [`ce-work`](./ce-work.md#choose-the-implementation-author) for the native execution contract.
 
-On string-only hosts the implementation seam is `mode:return-to-caller <plan-path>`. The `plan_model:<alias>` carrier rides beside, never inside, `ce-plan`'s request. Neither carrier becomes plan content, a settled product decision, or review input.
+On string-only hosts the implementation seam is `mode:return-to-caller <plan-path>`. Unknown `plan_model:<alias>` and `brainstorm_model:<alias>` carriers are stripped and discarded. Neither carrier becomes plan content, a settled product decision, or review input.
 
 ### Residuals and CI leftovers outlive the session
 

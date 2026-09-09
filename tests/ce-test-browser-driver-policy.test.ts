@@ -94,16 +94,20 @@ describe("ce-test-browser browser-driver policy", () => {
     })
   })
 
-  test("user documentation describes the same hierarchy", async () => {
+  test("user documentation describes the same OMP-only policy", async () => {
     const docs = await readRepoFile("docs/guides/ce-test-browser.md")
     const catalog = await readRepoFile("docs/guides/README.md")
 
     expect(docs).toMatch(/host-native.+integrated browser/is)
     expect(docs).toMatch(/embedded in or directly owned by the active harness/i)
-    expect(docs).toMatch(/fall back to `agent-browser`/i)
+    expect(docs).toMatch(/OMP `browser`/i)
+    expect(docs).not.toMatch(/fall back to `agent-browser`/i)
+    expect(docs).not.toMatch(/host-native browser.+`agent-browser` fallback/i)
     expect(docs).toMatch(/standalone Playwright.+Puppeteer/is)
     expect(docs).toMatch(/separately configured browser extensions or MCPs/i)
     expect(docs).toMatch(/visible.+non-blocking/is)
-    expect(catalog).toMatch(/host-native browser.+`agent-browser` fallback/i)
+    expect(catalog).toMatch(/using OMP `browser`/i)
+    expect(catalog).not.toMatch(/fall back to `agent-browser`/i)
+    expect(catalog).not.toMatch(/host-native browser.+`agent-browser` fallback/i)
   })
 })

@@ -1,54 +1,59 @@
 # Cross-Model Adversarial Pass: Skill-Creator Eval Spec
 
-This is the load-bearing behavioral eval for ce-code-review's cross-model
-adversarial pass. Deterministic route tests cover the worker; these cases cover
-the SKILL.md/reference orchestration that only a fresh agent can execute. Inject
-the current `SKILL.md`, `references/cross-model-review.md`, and the relevant
-Stage 5 synthesis prose through the `skill-creator` workflow. Run on OMP
-with a fake `omp` CLI first on PATH.
+This behavioral eval covers ce-code-review's host-task adversarial orchestration.
+Inject the current `SKILL.md`, `references/cross-model-review.md`, and Stage 5
+synthesis prose through the `skill-creator` workflow. Run on OMP with controlled
+host `task` returns and host/backend attestation metadata.
 
 ## Eval cases
 
-1. **Activation fires only on the existing gate.** A local-aligned or standalone
-   diff that selects `adversarial-reviewer` runs one foreground worker call in
-   the Stage 4 wave. A trivial diff that does not select the persona runs none.
-   A `pr-remote` or `branch-remote` review runs none even when adversarial
-   analysis is warranted.
+1. **Activation uses the existing gate.** A local-aligned or standalone diff
+   selecting `adversarial-reviewer` starts the separate pass at Stage 3d, subject
+   to the checkout policy and explicit user prohibition. A trivial diff without
+   that persona starts none. Both `pr-remote` and `branch-remote` skip the
+   separate pass and keep the selected in-process adversarial lens.
 
-2. **Fixed omp dispatch precedes egress.** The orchestrator passes
-   `CROSS_MODEL_HOST_HARNESS` set to `omp` and `CROSS_MODEL_FIXED_ROUTE` set to
-   `omp` in the environment; the worker exits 2 on any other value. The
-   orchestrator discloses the reviewed-code egress, prints the shared deadline
-   in the same shell as the worker call, then runs the worker foreground with a
-   Bash timeout above the worker 1200s self-cap and reads the artifact.
+2. **Dispatch uses one reviewer task.** Before dispatch, the orchestrator writes
+   separate constraints and semantic-brief files under the private run directory,
+   each at most 32 KiB. Missing or oversized constraints prevent dispatch. It then
+   sends one host `task` item with `agent: reviewer`, the read-only persona
+   prompt, and allowed tools `read`, `grep`, `glob`, and `lsp`. The prompt
+   forbids shell and writes. No shell worker, subprocess, or foreign CLI runs.
+   Collect the terminal return with the host's blocking collection capability.
 
-3. **Fold-in never promotes on an omp receipt.** Given a stubbed
-   `adversarial-omp.json` return with `independence_verified: false` whose
-   finding matches the in-process adversarial finding, synthesis keeps it as
-   attributed evidence and does not count it as corroboration. Omp findings
-   never gain silent apply authority.
+3. **Fold-in requires attested independence.** An `adversarial-omp.json` receipt
+   promotes agreement or licenses the validator shortcut only when
+   `independence_verified: true`: the known serving family differs from the
+   session family and comes from host/backend attestation, never reviewer prose.
+   A stub with `independence_verified: false` matching an ordinary reviewer
+   finding remains attributed evidence, not corroboration. Unknown or same-family
+   attestation cannot promote. OMP findings never gain silent apply authority;
+   reviewer `safe_auto` is downgraded to `gated_auto`.
 
-4. **Failures are additive and non-blocking.** With the `omp` CLI absent or
-   unauthed, no worker call starts and a human-facing markdown review reports
-   the pass as not run. A failed or unusable return is named in Coverage and
-   the in-process review completes.
+4. **Failures are non-blocking.** A reviewer agent that cannot start, fails,
+   times out, or returns a missing or unusable artifact is named in Coverage.
+   The in-process review completes; a did-not-run pass restores the selected
+   in-process `adversarial-reviewer`, never a duplicate completed same-brief
+   review. The separate pass's failure alone does not fail the review.
 
-5. **Mode-specific disclosure is honest.** Human-facing default mode announces
-   the fixed `omp` route and egress before dispatch and never calls it
-   independent since independence is always false. The announce names requested
-   `auto` with serving model unverified on this route. `mode:agent` emits no
-   user-facing prose but retains the worker stderr audit record.
+5. **Disclosure reflects the receipt.** Human-facing mode names requested
+   `reviewer`, route `omp`, and the host-attested serving model or
+   `unverified`. It never calls an unverified pass independent. Receipt fields
+   preserve attested versus unverified provenance; requested identity and reviewer
+   prose do not establish the serving model. `mode:agent` emits no progress
+   prose and preserves this information in its structured artifacts.
 
-6. **Oversized diffs recover without one giant prompt.** A fixture above the
-   inline token or file-count limit gives the reviewer the orchestrator compact
-   semantic review map plus a private exact-diff path, never the whole diff.
-   The worker does not cut semantic shards or invent risk divisions; the
-   orchestrator does, and the adversarial agent reads bounded ranges and narrows
-   them further rather than returning a progress note or silently omitting the
-   pass. A normal-sized fixture keeps the direct diff path.
+6. **Oversized diffs use paths, not giant prompts.** A fixture above the inline
+   token or file-count limit gives the reviewer the orchestrator's compact
+   semantic map plus a private exact-diff path, never the whole diff in the
+   prompt. The orchestrator derives material risk divisions; the reviewer reads
+   bounded ranges and narrows them further rather than returning a progress
+   note or silently omitting the pass. Normal-sized fixtures retain direct diff
+   access without manufacturing semantic shards.
 
 ## Pass criteria
 
-All six cases pass on the current on-disk source on OMP. The
-negative activation cases run no worker, the fixed-route case exits 2 on any
-non-`omp` value, and no omp artifact promotes agreement.
+All six cases pass on the current on-disk source on OMP. Negative activation
+cases dispatch no separate reviewer task. Eligible cases dispatch exactly one;
+only host-attested different-family receipts promote agreement. Failure remains
+visible and non-blocking, and no finding gains implicit mutation authority.
