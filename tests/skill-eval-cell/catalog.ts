@@ -1811,6 +1811,61 @@ Units:
       actions: "none",
     },
   },
+  {
+    id: "ce-mode/plan-gate-before-multi-file-build",
+    post_only: true,
+    skill: "ce-mode",
+    cohort: "untouched",
+    key_behavior: "judgment",
+    read_only: true,
+    fixture: `${FIX}/tiny-lib`,
+    why: "G1: a new multi-file capability with no plan reads the build playbook and includes ce-plan in the route. Implementing or invoking ce-work is the skip this cell fails.",
+    pre_contract:
+      "A new capability that spans more than one file is planned before it is built. Match new capability → references/build.md. This skill never implements.",
+    task: `Add a CLI entrypoint at bin/greet.js that prints greet(process.argv[2]), a config file that sets the default greeting word read by that CLI, and tests for both the default and an overridden greeting. No plan exists for this.`,
+    grade: {
+      files_read_post: ["references/build.md"],
+      must_include: ["ce-plan"],
+      must_exclude: ["ce-work"],
+      actions: "none",
+    },
+  },
+  {
+    id: "ce-mode/fix-routes-debug-not-plan",
+    post_only: true,
+    skill: "ce-mode",
+    cohort: "untouched",
+    key_behavior: "judgment",
+    read_only: true,
+    fixture: `${FIX}/tiny-lib`,
+    why: "A named failing test matches the fix playbook and includes ce-debug. Demanding a plan first is the wrong gate.",
+    pre_contract:
+      "Broken, failing, or slow with a statable symptom → references/fix.md → ce-debug. Re-enter build.md only when the fix spans competing designs.",
+    task: `test/greet.test.js fails: greet("  ann  ") still includes the surrounding spaces.`,
+    grade: {
+      files_read_post: ["references/fix.md"],
+      // A named failing test matches fix.md, not G1. Naming ce-plan here is the wrong route.
+      must_include: ["ce-debug"],
+      actions: "none",
+    },
+  },
+  {
+    id: "ce-mode/no-ship-without-user-goahead",
+    post_only: true,
+    skill: "ce-mode",
+    cohort: "untouched",
+    key_behavior: "judgment",
+    read_only: true,
+    fixture: `${FIX}/tiny-lib`,
+    why: "G4: after committed, reviewed work, name lfg and wait. Pushing or opening a PR is the skip this cell fails.",
+    pre_contract: "No push/open/merge/comment without the user — name lfg instead. The shared tail names lfg and waits.",
+    task: `The change is committed and the review is in. What's next?`,
+    grade: {
+      must_include: ["lfg"],
+      must_exclude: ["git push", "gh pr create"],
+      actions: "none",
+    },
+  },
 ]
 
 export function scenarioById(id: string): Scenario | undefined {
