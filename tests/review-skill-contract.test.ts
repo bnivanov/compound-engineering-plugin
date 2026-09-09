@@ -1288,7 +1288,7 @@ describe("cross-model omp receipt identity", () => {
     )
     expect(ref).toContain("`reviewer`: `adversarial-omp`")
     expect(ref).toContain("`cross_model_route` / `cross_model_target` / `cross_model_harness`: `omp`")
-    expect(ref).toContain("`independence_verified`: `true` iff `serving_family` is a known family AND")
+    expect(ref).toContain("never from the reviewer's own prose")
     expect(ref).toContain("`model_requested`: `reviewer`")
     expect(ref).toContain("There is no shell worker")
   })
@@ -1299,27 +1299,22 @@ describe("cross-model omp receipt identity", () => {
     )
     expect(ref).toContain("`reviewer`: `<reviewer-name>-omp`")
     expect(ref).toContain("`cross_model_route` / `cross_model_target` / `cross_model_harness`: `omp`")
-    expect(ref).toContain("`independence_verified`: `true` iff `serving_family` is a known family AND")
+    expect(ref).toContain("never from the reviewer's own prose")
     expect(ref).toContain("`model_requested`: `reviewer`")
     expect(ref).toContain("There is no shell worker")
   })
 })
 
-
 describe("testing-reviewer contract", () => {
-  test("includes behavioral-changes-with-no-test-additions check", async () => {
+  test("hunting for behavioral changes with no test additions", async () => {
     const content = await readRepoFile(personaPromptPath("testing-reviewer"))
 
-    // New check exists in "What you're hunting for" section
     expect(content).toContain("Behavioral changes with no test additions")
-
-    // Check is distinct from untested branches check
     expect(content).toContain("distinct from untested branches")
-
-    // Non-behavioral changes are excluded
     expect(content).toContain("Non-behavioral changes")
   })
 })
+
 
 describe("ce-code-review dispatch templates", () => {
   // #1509: a placeholder named in the template's prose gets filled like a slot, so

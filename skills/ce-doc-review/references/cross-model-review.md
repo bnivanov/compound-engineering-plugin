@@ -52,13 +52,11 @@ Write `<run-dir>/<reviewer-name>-omp.json`:
 
 - `reviewer`: `<reviewer-name>-omp`
 - `cross_model_route` / `cross_model_target` / `cross_model_harness`: `omp`
-- `serving_family`: from the reviewer return if named, else `unknown`
-- `independence_verified`: `true` iff `serving_family` is a known family AND
-  differs from the session family; otherwise `false`
-- `model_requested`: `reviewer`; `model_actual`: from the return if named,
-  else `unverified`
+- `serving_family`: from host/backend attestation of the reviewer agent (event-stream or return metadata), else `unknown`
+- `independence_verified`: `true` only when `serving_family` is a known family, differs from the session family, AND came from that attestation — never from the reviewer's own prose. Otherwise `false`
+- `model_requested`: `reviewer`; `model_actual`: attested serving model, else `unverified`
 - `effort_requested` / `effort_actual`: `unverified`
-- `receipt_supported`: `true` when `model_actual` is named, else `false`
+- `receipt_supported`: `true` only when `model_actual` is attested, else `false`
 - `findings` (peer `safe_auto` downgraded to `gated_auto`), `residual_risks`,
   `deferred_questions`
 

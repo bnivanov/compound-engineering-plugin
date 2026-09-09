@@ -207,7 +207,7 @@ describe("ce-pov cross-model panel contract", () => {
     expect(panel).toContain("`agent: reviewer`")
     expect(panel).toContain("`voice`: `peer-omp`")
     expect(panel).toContain("`cross_model_route` / `cross_model_target` / `cross_model_harness`: `omp`")
-    expect(panel).toContain("`independence_verified`: `true` iff `serving_family` is a known family AND")
+    expect(panel).toContain("never from the reviewer's own prose")
     expect(panel).toContain("`model_requested`: `reviewer`")
   })
 

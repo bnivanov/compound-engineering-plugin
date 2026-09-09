@@ -94,28 +94,17 @@ Map changed files to concrete routes (views -> their pages, components -> pages 
 
 Determine the port (priority: explicit `--port` > a port explicitly stated in your in-context project instructions > `package.json` dev script > `.env*` `PORT=` > default `3000`). If a server is already listening on it, reuse it. Otherwise start the project's dev command (`bin/dev`, `rails server`, `npm run dev`, etc.) in the background and poll the port until it accepts connections before opening the browser. This skill is hands-off, so start the server automatically without asking — do not block on a confirmation.
 
-```bash
-agent-browser open "http://localhost:${PORT}"
-agent-browser snapshot -i
-```
+Open `http://localhost:${PORT}` with OMP `browser` (eval `browser` / tab helpers) and take a snapshot of the interactive tree.
+
 
 ### Phase 4: Execute the Matrix
 
 Work the task list **one item at a time**. For each scenario, mark the task `in_progress`, then:
 
 1. **Document** what you're testing (the journey and the expected outcome).
-2. **Drive it** with agent-browser — navigate, snapshot for interactive refs, click, fill, submit, follow the journey to its real end state:
+2. **Drive it** with OMP `browser` — navigate, snapshot, click, fill, submit, follow the journey to its real end state. Write transient screenshots to OS temp (e.g. `mktemp -d "${TMPDIR:-/tmp}/ce-dogfood-XXXXXX"`), never the repo root. Only copy a screenshot into the report's location if you intend to embed it in the final report. Check console/page errors through the same `browser` surface.
 
-   ```bash
-   agent-browser open "http://localhost:${PORT}/<route>"
-   agent-browser snapshot -i
-   agent-browser click @e1
-   agent-browser fill @e2 "value"
-   agent-browser screenshot "$(mktemp -d "${TMPDIR:-/tmp}/ce-dogfood-XXXXXX")/<scenario>.png"   # scratch dir, not the repo root
-   agent-browser errors      # check console/page errors
-   ```
 
-   Write transient screenshots to OS temp (e.g. `mktemp -d "${TMPDIR:-/tmp}/ce-dogfood-XXXXXX"`), never the repo root. Only copy a screenshot into the report's location if you intend to embed it in the final report.
 
 3. **Judge** both correctness and experience: right data, right destination, sensible content, no console errors, and does it feel aligned with the product?
 4. **Walk it as each persona.** Re-run the journey in your head from each primary persona's perspective (from Phase 1) and ask where they'd feel a **paper cut** — a small friction that wouldn't fail a functional test but degrades the experience: a confusing label, an extra click, an unexpected jump, a slow-feeling step, missing feedback, copy that doesn't match how that persona thinks. A scenario can be functionally `Pass` yet still carry paper cuts. Note each paper cut, which persona feels it, and its severity.

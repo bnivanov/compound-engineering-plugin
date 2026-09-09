@@ -10,4 +10,4 @@ If `max_run_budget` is set and remaining budget is below it, stop before step 1.
 implementation. On no, output DONE with the plan path; do not start step 2.
 
 **Review gate (after step 4):** STOP and ask whether to open the PR. On no, keep
-the local commits and skip steps 8–9.
+the local commits and skip steps 5–9 (no apply-push, no PR, no CI watch).

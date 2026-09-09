@@ -6,7 +6,7 @@ argument-hint: "[feature description; optionally assign planning and/or implemen
 
 CRITICAL: You MUST execute every step below IN ORDER. Do NOT jump ahead to coding or implementation. The plan phase (step 1) MUST be completed and verified BEFORE any work begins.
 
-LFG runs hands-off, from schedulers, loops, and nested orchestrators with no user to answer, so no step stops to ask. The one exception is the upfront routing question `references/stage-routing.md` defines. If invoked with `mode:supervised` or checkout `lfg_supervised: true`, read `references/supervised.md` before step 1.
+LFG runs hands-off, from schedulers, loops, and nested orchestrators with no user to answer, so no step stops to ask. The one exception is the upfront routing question `references/stage-routing.md` defines. Before step 1, if `max_run_budget` is set and remaining host budget is below it, stop. If invoked with `mode:supervised` or checkout `lfg_supervised: true`, read `references/supervised.md` before step 1.
 
 Resolve every skill named below against the host's available-skills list and invoke that exact entry; some hosts namespace it (`compound-engineering:ce-plan`), and a short-form guess that is not in the list fails.
 

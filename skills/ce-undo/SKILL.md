@@ -11,7 +11,7 @@ Reverse an agent's change set with one confirmation. Do not invent a fourth grad
 ## Grades
 
 1. **commits** (default) — `git revert` the commit(s) this agent made on the current branch this session. Prefer revert over reset when the commits were pushed.
-2. **tree** — restore tracked files to `HEAD` (`git checkout --` / `git restore`). Untracked files the agent created are listed and deleted only after confirmation.
+2. **tree** — restore tracked files to `HEAD` (`git restore --source=HEAD --worktree --staged -- <paths>`). Untracked files the agent created are listed and deleted only after confirmation.
 3. **branch** — switch back to the previous branch and leave the agent's branch unmerged. Do not `git branch -D` unless the user names the branch to delete.
 
 If the invocation names a grade, use it. Otherwise pick the smallest grade that undoes the visible damage and say which grade you picked.
