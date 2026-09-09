@@ -204,13 +204,9 @@ describe("ce-code-review always-loaded body pins", () => {
   test("the exclusive adversarial route is decided from the window", async () => {
     const body = await readRepoFile("skills/ce-code-review/SKILL.md")
 
-    // skills/ce-code-review/SKILL.md:28 (Stage 3d: fixed-omp read before local dispatch)
     expect(body).toMatch(/before any local persona dispatch/i)
-    // skills/ce-code-review/SKILL.md:28 (skill invocation is the authorization)
-    expect(body).toContain("Invoking this skill is itself the authorization for the fixed `omp` route")
-    // skills/ce-code-review/SKILL.md:28 (started read replaces local persona)
+    expect(body).toContain("Invoking this skill is itself the authorization for that pass")
     expect(body).toContain("A started separate read replaces the local adversarial persona")
-    // skills/ce-code-review/SKILL.md:28-29 (Stage 3d orders before Stage 4)
     const stage3d = body.indexOf("Stage 3d")
     const stage4 = body.indexOf("Stage 4.", stage3d)
     expect(stage3d).toBeGreaterThan(-1)
@@ -1286,215 +1282,29 @@ describe("ce-code-review contract", () => {
 })
 
 describe("cross-model omp receipt identity", () => {
-  // OMP-only: the fixed omp route carries evidence; independence is never
-  // verified and the serving family stays unknown. One case per consumer
-  // reference so a regression in either file fails by name.
-  test("code review receipt records omp transport with unverified independence", async () => {
+  test("code review receipt records omp transport with conditional independence", async () => {
     const ref = await readRepoFile(
       "skills/ce-code-review/references/cross-model-review.md",
     )
-    // skills/ce-code-review/references/cross-model-review.md:66-74 (receipt schema)
     expect(ref).toContain("`reviewer`: `adversarial-omp`")
     expect(ref).toContain("`cross_model_route` / `cross_model_target` / `cross_model_harness`: `omp`")
-    expect(ref).toContain("`serving_family`: `unknown`")
-    expect(ref).toContain("`independence_verified`: always `false`")
-    expect(ref).toContain("`model_requested`: `auto`; `model_actual`: `unverified`")
-    expect(ref).toContain("`effort_requested` / `effort_actual`: `unverified`")
-    expect(ref).toContain("`receipt_supported`: `false`")
+    expect(ref).toContain("`independence_verified`: `true` iff `serving_family` is a known family AND")
+    expect(ref).toContain("`model_requested`: `reviewer`")
+    expect(ref).toContain("There is no shell worker")
   })
 
-  test("doc review receipt records omp transport with unverified independence", async () => {
+  test("doc review receipt records omp transport with conditional independence", async () => {
     const ref = await readRepoFile(
       "skills/ce-doc-review/references/cross-model-review.md",
     )
-    // skills/ce-doc-review/references/cross-model-review.md:63-71 (receipt schema)
     expect(ref).toContain("`reviewer`: `<reviewer-name>-omp`")
     expect(ref).toContain("`cross_model_route` / `cross_model_target` / `cross_model_harness`: `omp`")
-    expect(ref).toContain("`serving_family`: `unknown`")
-    expect(ref).toContain("`independence_verified`: always `false`")
-    expect(ref).toContain("`model_requested`: `auto`; `model_actual`: `unverified`")
-    expect(ref).toContain("`effort_requested` / `effort_actual`: `unverified`")
-    expect(ref).toContain("`receipt_supported`: `false`")
+    expect(ref).toContain("`independence_verified`: `true` iff `serving_family` is a known family AND")
+    expect(ref).toContain("`model_requested`: `reviewer`")
+    expect(ref).toContain("There is no shell worker")
   })
 })
 
-describe("cross-model worker env gate", () => {
-  // Each worker fail-closes without the OMP harness (exit 2) and skips
-  // without output when the gate passes but required input is absent (exit 0).
-  test("code worker exits 2 without OMP and skips without a base ref", async () => {
-    const worker = path.join(
-      process.cwd(),
-      "skills/ce-code-review/scripts/cross-model-adversarial-review.sh",
-    )
-    const cleanEnv = { ...process.env }
-    delete cleanEnv.OMPCODE
-    delete cleanEnv.CROSS_MODEL_HOST_HARNESS
-    delete cleanEnv.CROSS_MODEL_FIXED_ROUTE
-    // skills/ce-code-review/scripts/cross-model-adversarial-review.sh:18 (OMPCODE gate)
-    const denied = spawnSync("bash", [worker, "unknown", "omp", "HEAD", tmpdir()], {
-      encoding: "utf8",
-      env: cleanEnv,
-    })
-    expect(denied.status).toBe(2)
-    expect(`${denied.stderr}`).toContain("OMPCODE=1 required")
-    // skills/ce-code-review/scripts/cross-model-adversarial-review.sh:23 (missing base skips)
-    const skipped = spawnSync("bash", [worker, "unknown", "omp", "", tmpdir()], {
-      encoding: "utf8",
-      env: {
-        ...cleanEnv,
-        OMPCODE: "1",
-        CROSS_MODEL_HOST_HARNESS: "omp",
-        CROSS_MODEL_FIXED_ROUTE: "omp",
-      },
-    })
-    expect(skipped.status).toBe(0)
-    expect(`${skipped.stderr}`).toContain("no base ref given")
-  })
-
-  test("doc worker exits 2 without OMP and skips without reviewer input", async () => {
-    const worker = path.join(
-      process.cwd(),
-      "skills/ce-doc-review/scripts/cross-model-doc-review.sh",
-    )
-    const cleanEnv = { ...process.env }
-    delete cleanEnv.OMPCODE
-    delete cleanEnv.CROSS_MODEL_HOST_HARNESS
-    delete cleanEnv.CROSS_MODEL_FIXED_ROUTE
-    // skills/ce-doc-review/scripts/cross-model-doc-review.sh:17 (OMPCODE gate)
-    const denied = spawnSync("bash", [worker, "unknown", "omp", "", "", "", "", tmpdir()], {
-      encoding: "utf8",
-      env: cleanEnv,
-    })
-    expect(denied.status).toBe(2)
-    expect(`${denied.stderr}`).toContain("OMPCODE=1 required")
-    // skills/ce-doc-review/scripts/cross-model-doc-review.sh:22 (missing reviewer skips)
-    const skipped = spawnSync("bash", [worker, "unknown", "omp", "", "", "", "", tmpdir()], {
-      encoding: "utf8",
-      env: {
-        ...cleanEnv,
-        OMPCODE: "1",
-        CROSS_MODEL_HOST_HARNESS: "omp",
-        CROSS_MODEL_FIXED_ROUTE: "omp",
-      },
-    })
-    expect(skipped.status).toBe(0)
-    expect(`${skipped.stderr}`).toContain("no reviewer-name given")
-  })
-})
-
-describe("cross-model exclusivity and promotion", () => {
-  test("code review exclusivity pointers allow in-process restore after a failed same-route rate-limit retry", async () => {
-    const skill = await readCodeReviewRuntimeContract()
-    const dispatch = await readRepoFile(
-      "skills/ce-code-review/references/dispatch-reviewers.md",
-    )
-
-    expect(skill).toMatch(/failed same-route rate-limit retry/)
-    expect(dispatch).toMatch(/failed same-route rate-limit retry/)
-  })
-
-  test("code-review promotion requires a verified independent serving family", async () => {
-    const skill = await readCodeReviewRuntimeContract()
-    const mechanics = await readRepoFile(
-      "skills/ce-code-review/scripts/findings-mechanics.py",
-    )
-    expect(skill).toMatch(/`independence_verified:?\s*true`/)
-    expect(mechanics).toContain('source.get("independence_verified") is True')
-    expect(mechanics).toContain('name.startswith("adversarial-")')
-  })
-})
-
-describe("cross-model omp event parsing", () => {
-  function extractOmpParser(src: string): string {
-    const m = src.match(/^parse_omp_events\(\) \{.*$\n(?:.*\n)*?^\}$/m)
-    expect(m).toBeTruthy()
-    return m![0]
-  }
-
-  // The parser runs the worker's own extracted function against a recorded-shape
-  // omp --mode json envelope (shapes verified against omp 18.1.13 output), so
-  // this guards the shipped parsing logic rather than duplicating it.
-  async function runOmpParser(worker: string, lines: string[]): Promise<{ status: number | null; out: string }> {
-    const src = await readRepoFile(worker)
-    const dir = mkdtempSync(path.join(tmpdir(), "omp-parse-"))
-    const env = path.join(dir, "envelope.ndjson")
-    const out = path.join(dir, "out.json")
-    writeFileSync(env, `${lines.join("\n")}\n`)
-    const script = [
-      extractOmpParser(src),
-      'parse_omp_events "$OMP_PARSE_ENV" "$OMP_PARSE_OUT"',
-    ].join("\n")
-    const r = spawnSync("bash", ["-c", script], {
-      encoding: "utf8",
-      env: { ...process.env, OMP_PARSE_ENV: env, OMP_PARSE_OUT: out },
-    })
-    let parsed = ""
-    try {
-      parsed = readFileSync(out, "utf8")
-    } catch {
-      parsed = ""
-    }
-    return { status: r.status, out: parsed }
-  }
-
-  const ompParserWorkers = [
-    { worker: "skills/ce-code-review/scripts/cross-model-adversarial-review.sh", doc: '{"findings":[{"note":"n"}],"residual_risks":[],"testing_gaps":[]}' },
-    { worker: "skills/ce-doc-review/scripts/cross-model-doc-review.sh", doc: '{"findings":[{"note":"n"}],"residual_risks":[],"testing_gaps":[]}' },
-    // pov validates any JSON object, not a findings schema
-    { worker: "skills/ce-pov/scripts/cross-model-pov.sh", doc: '{"voice":"peer-omp","position":"p","reasoning":"r"}' },
-  ]
-  for (const { worker, doc } of ompParserWorkers) {
-    test(`${worker} parse_omp_events recovers schema JSON from streamed text deltas`, async () => {
-      // Real omp 18.1.13 shape: assistantMessageEvent is TOP-LEVEL on
-      // message_update, and thinking_delta carries the same .delta key — only
-      // text_delta events may join into the answer.
-      const delta = (d: string) =>
-        JSON.stringify({
-          type: "message_update",
-          assistantMessageEvent: { type: "text_delta", contentIndex: 1, delta: d },
-        })
-      const thinking = JSON.stringify({
-        type: "message_update",
-        assistantMessageEvent: { type: "thinking_delta", contentIndex: 0, delta: "SECRET-REASONING" },
-      })
-      const streamed = await runOmpParser(worker, [
-        thinking,
-        delta(doc.slice(0, 20)),
-        delta(doc.slice(20)),
-      ])
-      expect(streamed.status).toBe(0)
-      expect(JSON.parse(streamed.out)).toEqual(JSON.parse(doc))
-      expect(streamed.out).not.toContain("SECRET-REASONING")
-    })
-
-    test(`${worker} parse_omp_events falls back to the turn_end message text`, async () => {
-      const turnOnly = await runOmpParser(worker, [
-        JSON.stringify({
-          type: "turn_end",
-          message: { role: "assistant", content: [{ type: "thinking", thinking: "SECRET-REASONING" }, { type: "text", text: doc }] },
-        }),
-      ])
-      expect(turnOnly.status).toBe(0)
-      expect(JSON.parse(turnOnly.out)).toEqual(JSON.parse(doc))
-      expect(turnOnly.out).not.toContain("SECRET-REASONING")
-    })
-  }
-
-  test("omp event parsers keep the shared envelope shape across workers", async () => {
-    const [adv, docr, pov] = await Promise.all([
-      readRepoFile("skills/ce-code-review/scripts/cross-model-adversarial-review.sh"),
-      readRepoFile("skills/ce-doc-review/scripts/cross-model-doc-review.sh"),
-      readRepoFile("skills/ce-pov/scripts/cross-model-pov.sh"),
-    ])
-    // code/doc extract the same parser; pov differs only in schema validation
-    // and its recovery hook, not in the envelope shape it reads.
-    expect(extractOmpParser(docr)).toBe(extractOmpParser(adv))
-    const povParser = extractOmpParser(pov)
-    expect(povParser).toContain('select(.type=="text_delta")')
-    expect(povParser).toContain("recover_pov_json")
-    expect(povParser).toContain('select(.type=="turn_end")')
-  })
-})
 
 describe("testing-reviewer contract", () => {
   test("includes behavioral-changes-with-no-test-additions check", async () => {
@@ -1554,25 +1364,20 @@ describe("ce-code-review dispatch templates", () => {
 describe("cross-model fold-in", () => {
   // The foreground peer return folds in exactly once; an omp receipt never
   // promotes agreement and a missing artifact is a pass that did not run.
-  test("the peer folds in once with omp receipts never promoting agreement", async () => {
+  test("the reviewer folds in once and promotes agreement only when independence is verified", async () => {
     const skill = await readRepoFile("skills/ce-code-review/SKILL.md")
-    // skills/ce-code-review/SKILL.md:30 (Stages 5 and 6 fold the peer once)
-    expect(skill).toContain("Fold in the peer once")
+    expect(skill).toContain("independent `reviewer` pass")
     const code = await readRepoFile(
       "skills/ce-code-review/references/cross-model-review.md",
     )
-    // skills/ce-code-review/references/cross-model-review.md:77-83 (fold-in)
-    expect(code).toContain("Run foreground and read the artifact.")
-    expect(code).toMatch(/never promote agreement on an omp\s+receipt since independence is always false/i)
+    expect(code).toContain("Promote agreement, and skip a validator, only when")
     expect(code).toMatch(/A missing file means the pass did\s+not run/i)
-    expect(code).toMatch(/never fail the review for it/i)
+    expect(code).toMatch(/never fail the\s+review for it/i)
     const doc = await readRepoFile(
       "skills/ce-doc-review/references/cross-model-review.md",
     )
-    // skills/ce-doc-review/references/cross-model-review.md:74-79 (fold-in)
-    expect(doc).toContain("Run foreground and read the artifact.")
-    expect(doc).toMatch(/never promote agreement on an omp\s+receipt since independence is always false/i)
-    expect(doc).toMatch(/A missing file means the pass did\s+not run/i)
-    expect(doc).toMatch(/never fail the review for it/i)
+    expect(doc).toContain("Promote agreement only when `independence_verified` is `true`")
+    expect(doc).toMatch(/A\s+missing file means the pass did\s+not run/i)
+    expect(doc).toMatch(/never fail the\s+review for it/i)
   })
 })

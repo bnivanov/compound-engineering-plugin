@@ -64,4 +64,4 @@ These rules hold without any read:
 
 **When a file is written, do not declare it written or enter Phase 4 while any check fails** in the Ready for Planning Check; a chat result enters Phase 4 with no check to run. An improvised Phase 4 menu is the other silent failure: it surfaces options that must be hidden and passes the wrong payload downstream.
 
-The Phase 1.1 grounding scout, the Phase 2.6 claim verifier, and the opt-in Slack researcher are tiered by task shape, never hardcoded to a model name; read `references/model-tiers.md` before dispatching one. Model elevation is a separate mechanism (`references/reasoning-elevation.md`).
+The Phase 1.1 grounding scout, the Phase 2.6 claim verifier, and the opt-in Slack researcher are tiered by task shape, never hardcoded to a model name; read `references/model-tiers.md` before dispatching one.

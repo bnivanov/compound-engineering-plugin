@@ -9,10 +9,8 @@ into a fresh subagent at dispatch time (per AGENTS.md "Validating Agent and Skil
 Changes"). Run it with `/skill-creator` and its eval workflow; do not rely on
 in-session typed-agent dispatch (it tests the pre-edit cached copy).
 
-The deterministic pieces of the pass are already covered without a model call:
-`scripts/cross-model-doc-review.sh` input-validation, skip, and JSON-normalization
-paths are exercised with stubbed input and `jq`. This eval covers the parts only
-an end-to-end behavioral run can prove.
+The pass is a `task` `reviewer` dispatch, not a shell worker. This eval covers
+the parts only an end-to-end behavioral run can prove.
 
 ## Eval cases
 

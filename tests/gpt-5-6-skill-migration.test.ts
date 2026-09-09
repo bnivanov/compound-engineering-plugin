@@ -53,8 +53,8 @@ describe("GPT-5.6 skill migration", () => {
     const codeReview = `${codeReviewSkill}\n${codeReviewDispatch}`
 
     expect(codeReviewSkill).toMatch(/Stage 3d/i)
-    expect(codeReviewSkill).toMatch(/fixed-`omp` separate read/i)
-    expect(codeReviewSkill).toMatch(/explicit user prohibition on external review overrides/i)
+    expect(codeReviewSkill).toMatch(/independent `reviewer` pass/i)
+    expect(codeReviewSkill).toMatch(/explicit user prohibition on a separate read overrides/i)
     for (const skill of [codeReview, simplifyCode]) {
       expect(skill).toMatch(/no .*override/i)
       expect(skill).toMatch(/inherit the (parent|session) model/i)

@@ -156,10 +156,9 @@ describe("ce-plan output:html mode", () => {
     expect(domainRoute).toMatch(/settle any pending config\/default resolution before selecting the renderer or continuing to Phase 0\.2/i)
   })
 
-  test("the kernel is the sole model-elevation dispatcher", () => {
-    expect(SKILL_BODY).toContain("Immediately before authoring, read `references/reasoning-elevation.md`")
-    expect(FINAL_REVIEW_BODY).toContain("Return to the kernel for its model-elevation boundary")
-    expect(FINAL_REVIEW_BODY).toContain("does not dispatch the authoring route itself")
+  test("authoring stays on the session model", () => {
+    expect(SKILL_BODY).toContain("Author on the session model")
+    expect(SKILL_BODY).not.toContain("Immediately before authoring, read `references/reasoning-elevation.md`")
     expect(FINAL_REVIEW_BODY).not.toContain("load `references/reasoning-elevation.md`")
   })
 

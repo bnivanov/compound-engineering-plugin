@@ -17,7 +17,7 @@ This is **diff-scoped**, not whole-app exploration. You test what *this branch* 
 
 ## Boundaries
 
-- Drive the browser exclusively through the `agent-browser` CLI, never another browser MCP or a built-in browser-control tool, even when the platform offers one. Use the direct binary, never `npx agent-browser` (the direct binary uses the fast Rust client).
+- Drive the browser exclusively through OMP's `browser` primitive (eval `browser` / tab helpers). Never `agent-browser`, never another browser MCP, never `npx`.
 - Never dogfood the trunk on a branch-name or blank target (there is no diff). A PR target always has a base, so there is always a diff even when its head branch is named `main`.
 - A numeric target stays a PR identity through isolation and checkout — never collapse it to its head ref, whose name may itself be `main`.
 - Never switch the primary checkout out from under the user. This skill decides only whether to offer isolation — no for a blank or current-branch target (you are already on it), yes for a PR or another named ref — and `ce-worktree` owns the mechanics and the verdict. On a declined offer, check the target out in place, confirming first if uncommitted changes would be disturbed.
@@ -29,13 +29,7 @@ This is **diff-scoped**, not whole-app exploration. You test what *this branch* 
 **User-runnable invocation rendering.** In prerequisite failures, use `/skill:ce-setup` and `/skill:ce-dogfood <original arguments>`. Render only each invocation as inline code.
 
 - A local dev server you can start (`bin/dev`, `rails server`, `npm run dev`, etc.).
-- `agent-browser` installed. Check:
-
-  ```bash
-  command -v agent-browser >/dev/null 2>&1 && echo "Ready" || echo "NOT INSTALLED"
-  ```
-
-  If not installed, stop and tell the user to install `agent-browser`: print the rendered `ce-setup` invocation for the current install command, followed by the rendered `ce-dogfood <original arguments>` invocation to retry. This workflow cannot function without it.
+- OMP `browser` available in this session. If eval `browser` is missing, stop and say the host must expose it; do not tell the user to install `agent-browser`.
 
 ## Artifact Root
 
