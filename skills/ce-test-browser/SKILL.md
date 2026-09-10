@@ -1,6 +1,6 @@
 ---
 name: ce-test-browser
-description: Run browser tests for pages affected by the current branch or PR. Use when asked to run or check browser tests for the current change.
+description: "Drive the pages a branch or PR changed in a real browser and report Pass, Fail, or Skip for every affected route. Use when web UI changes need end-to-end evidence before review."
 argument-hint: "[PR number, branch name, 'current', or --port PORT]"
 ---
 

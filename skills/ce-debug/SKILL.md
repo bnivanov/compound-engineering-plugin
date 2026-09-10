@@ -1,6 +1,6 @@
 ---
 name: ce-debug
-description: "Diagnosis loop for bugs and failing behavior. Use when asked to debug or fix failing or slow behavior."
+description: "Trace a failure to its root cause, stating the causal chain from trigger to symptom with file and line evidence, then fix it test-first when the user chooses. Use when behavior is broken, failing, flaky, or slow and the cause is not yet known. Use ce-work when the change to make is already known."
 argument-hint: "[issue reference, error message, test path, or description of broken behavior]"
 ---
 

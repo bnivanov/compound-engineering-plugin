@@ -1,6 +1,6 @@
 ---
 name: ce-retune
-description: "Retune a skill corpus for a new model, measurement-first: mine the run archive for a baseline, establish a noise floor, audit the corpus adversarially, then cut in measured passes until a pre-registered bar clears. Requires a benchmark harness that can A/B two builds of the corpus; refuses without one."
+description: "Retune a skill corpus for a new model measurement-first: pre-register a bar, then cut in A/B-measured passes until the corpus clears it, with every removal attributable. Use when a corpus degraded on a model upgrade and the regression must be measured rather than guessed. Requires a benchmark harness that can A/B two builds of the corpus; it refuses without one. Manual invocation only."
 disable-model-invocation: true
 argument-hint: "[target model or symptom] [path to the corpus, defaults to ./skills] [bar:<n> consecutive clean runs]"
 ---

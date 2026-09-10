@@ -1,6 +1,6 @@
 ---
 name: ce-product-pulse
-description: "Generate time-windowed product pulse reports from configured signals."
+description: "Report how the product is doing over a time window: usage, performance, errors, and follow-ups pulled read-only from the project's configured analytics, tracing, and issue sources, saved as a dated single-page report. Use when someone wants a founder's read on the last day, week, or launch hour. Manual invocation only."
 disable-model-invocation: true
 argument-hint: "[lookback window, e.g. '24h', '7d', '1h'; default 24h]"
 allowed-tools:

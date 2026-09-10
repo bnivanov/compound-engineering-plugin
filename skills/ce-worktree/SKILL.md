@@ -1,6 +1,6 @@
 ---
 name: ce-worktree
-description: Set up isolated git worktrees — create a new branch for fresh work, or attach a worktree to an existing branch, PR, or commit. Use when starting isolated work or isolating an existing ref. Use when leftover linked worktrees should be classified and the safe ones removed.
+description: "Put work in an isolated git worktree: detect isolation that already exists, prefer the harness's native worktree tool, and fall back to plain git. Use when starting fresh work on a new branch, or when an existing branch, PR, or commit must be checked out without disturbing the main checkout."
 ---
 
 # Worktree Isolation
