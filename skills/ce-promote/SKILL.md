@@ -1,6 +1,6 @@
 ---
 name: ce-promote
-description: "Draft launch or promotion copy for a shipped feature."
+description: "Draft copy-pasteable announcement copy for a feature that just shipped, one labeled block per channel. Use when shipped work needs a post, changelog line, or launch note. Drafts only: it never posts, publishes, or schedules. Manual invocation only."
 disable-model-invocation: true
 argument-hint: "[optional: what shipped and/or channels, e.g. 'a tweet thread and a LinkedIn post']"
 ---

@@ -1,6 +1,6 @@
 ---
 name: ce-start
-description: "Guided front door into Compound Engineering. Use when the user asks what to do next, how to get started, which skill to run, or describes a goal without naming a skill."
+description: "Ask one question, then route to and invoke the right Compound Engineering skill. Use when the user asks what to do next, which skill to run, or states a goal without naming a skill."
 argument-hint: "[what you want to do]"
 ---
 

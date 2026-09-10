@@ -1,6 +1,6 @@
 ---
 name: ce-commit-push-pr
-description: Commit, push, and open a PR. Use when asked to ship/open a PR, or for PR-description-only flows like writing, rewriting, or describing a PR body.
+description: "Commit, push, and open a PR with a description. Use when asked to ship or open a PR, or rewrite its body. Use ce-commit to keep the change local."
 argument-hint: "[PR ref] [mode:pipeline] [archive:on|off] [branding:on|off] [babysit:off|continuous|checkpoint]"
 ---
 

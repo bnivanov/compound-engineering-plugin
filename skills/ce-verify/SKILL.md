@@ -1,6 +1,6 @@
 ---
 name: ce-verify
-description: "Generates and maintains a repo-local drive-and-verify skill with a durable feature map for any surface — CLI/TUI/service/desktop/web. Use when creating that skill for an app or surface that has no durable launch-doctor-drive-evidence path. Use when refreshing an existing verify skill after the product or its drive recipes drifted. Use ce-dogfood for a QA matrix or dogfood report; use ce-test-browser for diff-scoped browser tests of the current change."
+description: "Generate and maintain a repo-local drive-and-verify skill with a durable feature map, proved on the spot by launching the app, running a doctor check, driving one mapped feature, and keeping the evidence. Use when an app or surface has no repeatable launch-doctor-drive-evidence path and one should exist. Use when the product or its drive recipes drifted and an existing verify skill needs refreshing. Use ce-dogfood for a QA matrix or dogfood report, ce-test-browser for diff-scoped browser tests, and ce-debug or ce-code-review to check a change you just made."
 argument-hint: "[create | refresh] [app or surface hint]"
 ---
 

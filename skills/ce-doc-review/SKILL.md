@@ -1,6 +1,6 @@
 ---
 name: ce-doc-review
-description: Review requirements, plans, or specs with role-specific lenses. Use when the user wants to improve an existing planning document.
+description: "Review a requirements, plan, or spec document with dispatched reviewer personas, then apply the findings that route to Apply in the document's own format. Use when an existing planning document should be improved before it is executed. Use ce-pov for a holistic take instead of findings; use ce-code-review for code."
 argument-hint: "[mode:non-interactive] [path/to/document.{md,html}]"
 ---
 

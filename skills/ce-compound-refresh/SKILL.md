@@ -1,6 +1,6 @@
 ---
 name: ce-compound-refresh
-description: Refresh the repo's captured learnings against the current codebase. Use when auditing stale, overlapping, superseded, or drifted learnings; avoid general refactor, debugging, or code review unless the learnings store is explicit.
+description: "Audit the repo's captured learnings against the current code and apply Keep, Update, Consolidate, Replace, or Delete to each. Use when learnings may be stale, duplicated, or due for culling. Use ce-compound to capture one new learning."
 argument-hint: "[optional: scope hint — directory, filename, module, or keyword] [mode:non-interactive] "
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: ce-plan
-description: "Create structured plans for multi-step work, including software and non-software tasks. Use when asked to plan, break down implementation, plan from requirements, or deepen an existing plan; prefer ce-brainstorm for exploratory framing."
+description: "Turn a request, a requirements document, or an existing plan into an implementation-ready plan with scoped units, test scenarios, and a confidence check; software or not. Use when multi-step work needs breaking down before it is built, or when an existing plan needs deepening. Use ce-brainstorm when what to build is still open; use ce-work to execute a plan."
 argument-hint: "[optional: feature description, requirements doc path, plan path to deepen, or any task to plan] [output:html]"
 ---
 

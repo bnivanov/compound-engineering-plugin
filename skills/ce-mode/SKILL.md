@@ -1,6 +1,6 @@
 ---
 name: ce-mode
-description: "Armed in-the-loop session mode that matches each request to a playbook and holds gates. Use for `/skill:ce-mode`."
+description: "Arm a session so every later request is matched to a build, fix, decide, or ship playbook and five gates hold: plan before a multi-file build, evidence before a done claim, review before a PR, no push or merge without the user, and an artifact or a stop at each step. Use when that discipline should persist across a whole session rather than one task; disarm or inspect it with `/skill:ce-mode off` and `/skill:ce-mode status`."
 disable-model-invocation: true
 argument-hint: "[blank to arm | off | status | a task to run under the mode]"
 ---

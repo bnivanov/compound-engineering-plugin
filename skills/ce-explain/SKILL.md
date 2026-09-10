@@ -1,6 +1,6 @@
 ---
 name: ce-explain
-description: "Create a durable visual teaching artifact for something worth learning. Use when the user wants to be taught, wants a deep explainer, wants to understand a substantial change, or wants a work recap built for retention. Not for ordinary Q&A, operational diagnosis, or a concise trade-off that belongs in chat. For learning, not repo docs or verdicts."
+description: "Create a durable visual teaching artifact so the user actually learns one thing: a concept, a change, an idea, or a window of their recent work. Use when they ask to be taught, to understand a substantial change, or for a recap built for retention. Use ce-pov for a verdict and ce-compound for a repo learning. Not for ordinary Q&A or a trade-off that belongs in chat."
 argument-hint: "[a concept, a diff ref, an idea, or 'what happened this week?'] — or invoke bare to be asked"
 ---
 

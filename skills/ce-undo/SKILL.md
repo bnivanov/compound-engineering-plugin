@@ -1,6 +1,6 @@
 ---
 name: ce-undo
-description: "Graded revert of the last agent change set. Use when the user asks to undo, roll back, or reverse what the agent just did."
+description: "Reverse the agent's last change set at the smallest grade that undoes it — commits, working tree, or branch — after one confirmation. Use when the agent's own recent changes should be taken back."
 argument-hint: "[commits | tree | branch]"
 ---
 

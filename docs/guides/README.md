@@ -53,9 +53,9 @@ Skills that anchor, feed, or maintain the loop without being steps inside it.
 | Skill | Description |
 |-------|-------------|
 | [`/ce-strategy`](./ce-strategy.md) | Create or maintain `STRATEGY.md`, the upstream anchor `ce-ideate`, `ce-brainstorm`, and `ce-plan` read as grounding |
-| [`/ce-product-pulse`](./ce-product-pulse.md) | Outer observation loop: a time-windowed report on usage, performance, errors, and follow-ups, saved to `docs/pulse-reports/` |
-| [`/ce-sweep`](./ce-sweep.md) | Recurring feedback sweep: ingest Slack/GitHub items (email experimental), acknowledge at source, and keep an `/lfg`-ready rolling plan |
-| [`/ce-compound-refresh`](./ce-compound-refresh.md) | Maintain `docs/solutions/` over time (Keep / Update / Consolidate / Replace / Delete), Interactive or Autofix |
+| [`/ce-product-pulse`](./ce-product-pulse.md) | Time-windowed report on usage, performance, errors, and follow-ups pulled read-only from configured signals, saved as a dated single-page report |
+| [`/ce-sweep`](./ce-sweep.md) | Sweep feedback sources for items since the last run, acknowledge at source, verify claimed fixes merged, and fold the open ones into an `/lfg`-ready rolling plan |
+| [`/ce-compound-refresh`](./ce-compound-refresh.md) | Audit the repo's captured learnings against the current code and apply Keep / Update / Consolidate / Replace / Delete to each |
 
 ---
 
@@ -132,7 +132,7 @@ Invoked when a specific need arises, not part of any chain.
 | [`/ce-verify`](./ce-verify.md) | Generate or refresh a repo-local drive-and-verify skill plus a durable feature map for CLI, TUI, service, desktop, or web. |
 | [`/ce-setup`](./ce-setup.md) | Diagnose optional tool capabilities and create or repair repo `config.yaml` |
 | [`/ce-start`](./ce-start.md) | Front door: one question, then a route to the right skill |
-| [`/ce-mode`](./ce-mode.md) | Opt-in playbook router: match each request to a gated CE skill. Invoke per task. |
+| [`/ce-mode`](./ce-mode.md) | Opt-in armed session mode: every request routed through a gated CE playbook (build / fix / decide / ship) until disarmed |
 | [`/ce-undo`](./ce-undo.md) | Graded revert of the last agent change set (commits, tree, or branch) |
 | [`/ce-handoff`](./ce-handoff.md) | Write a session handoff, or find and orient from a selected source. Does not auto-continue. |
 

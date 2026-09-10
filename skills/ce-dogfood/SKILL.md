@@ -1,6 +1,6 @@
 ---
 name: ce-dogfood
-description: "Hands-off, diff-scoped browser QA of the active branch: maps user flows, drives a real browser, autonomously fixes small breakages with regression tests and commits, judges experience against product personas, and writes a durable dogfood report. Manual invocation only."
+description: "Dogfood the active branch end-to-end in a real browser, scoped to its diff: drive every changed journey, fix small breakages with a regression test and a commit, judge the experience against the product's personas, and write a dogfood report. Use when a branch needs hands-off QA before anyone reviews it. Manual invocation only."
 disable-model-invocation: true
 argument-hint: "[PR number, branch name, or blank for current branch] [--port PORT]"
 ---

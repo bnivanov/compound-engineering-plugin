@@ -1,6 +1,6 @@
 ---
 name: ce-prototype
-description: Build a throwaway prototype to answer how something should work, feel, or read. Use when committing the wrong answer would be expensive to unravel and a cheap sketch cannot settle it. Not a rough visual probe during brainstorming, not for deciding what to build, not polishing a feature that already works, not implementing the real thing.
+description: "Build a throwaway prototype at the fidelity that can answer how something should work, feel, or read, so the user decides against a real artifact instead of a description. Use when committing the wrong answer would be expensive to unravel and talk cannot settle it. Use ce-brainstorm for a rough visual probe or for deciding what to build. Not for polishing a feature that already works, and never for building the real thing."
 argument-hint: "[prompt, brainstorm path, or plan path]"
 ---
 
