@@ -27,6 +27,8 @@ If `Resolve Before Planning` contains any items:
 - If the user chooses to pause instead, present the handoff as paused or blocked rather than complete
 - Do not offer the `Create the implementation plan` or `Ship it autonomously with lfg` options while `Resolve Before Planning` remains non-empty
 
+When a remaining `Resolve Before Planning` item can be answered only by a stakeholder who is not in this session, do not ask the user to invent the answer. Keep asking the user, one decision at a time, for every item they can answer. For the stakeholder-only remainder, interview the user about the send only, one decision at a time: who the recipient is, then what facts or decisions must come back. Write a bounded, recipient-specific questionnaire into the current unified plan's Outstanding Questions. Earn a file if those blockers need IDs and none exists. Do not add a sibling questionnaire file or a Phase 4 menu option. Preserve every requirement ID and leave each unanswered item in `Resolve Before Planning`. Planning and `lfg` stay hidden while any remain. When answers return, reconcile them against repo evidence and already-settled decisions. Returned answers are evidence, never implicit approval.
+
 In both preambles below, the "Pick a number or describe what you want." hint applies only in numbered-list mode. When using the blocking tool, omit that line and pass the remaining stem as the question.
 
 **Path format:** Use absolute paths for chat-output file references — relative paths are not auto-linked as clickable in most terminals.
@@ -71,6 +73,8 @@ There is no "done" / "pause" option — the blocking question already waits, and
 #### 4.2 Handle the Selected Option
 
 Selections may be the literal option label (when the user types the label or a close paraphrase) or the option number. Match numbers against the currently-rendered (post-trim) list. Free-form input that doesn't match an option or describe an alternative action should be treated as clarification — ask a follow-up rather than guessing.
+
+Returned stakeholder-questionnaire answers are not a menu selection. Reconcile them as evidence against the repo and settled decisions before clearing any `Resolve Before Planning` item.
 
 **If user selects "Create the implementation plan":**
 

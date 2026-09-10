@@ -178,6 +178,13 @@ present. They carry the contracts downstream consumers depend on.
   each is independently executable. Each unit names Goal, Requirements,
   Files, Approach, Test Scenarios, and Verification. `ce-work` and goal-mode
   executors consume these units.
+  Cut a vertical tracer-bullet unit only when a horizontal split by layer
+  would hide end-to-end integration risk. A vertical unit is one narrow path
+  through the layers the behavior crosses. Otherwise keep the unit on one
+  component, behavior, or seam. U-IDs and the R/A/F/AE IDs they cite stay the
+  canonical packet identifiers. Test Scenarios stay the unit's observable
+  coverage. Tracker issue IDs and local ticket files are not a second packet
+  grammar. This section does not authorize tracker writes.
   - **Unit Index (large plans only, ~10+ units).** When the plan has roughly
     ten or more units, open the section with a compact navigation table — one
     row per unit: **U-ID · one-line title · files touched · depends-on**. It

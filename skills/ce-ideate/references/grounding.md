@@ -45,6 +45,7 @@ Run grounding agents in parallel in the **foreground** (do not background — re
    > - current patterns and conventions relevant to the focus
    > - pain points or gaps relevant to the focus
    > - likely leverage points
+   > - structural hotspot candidates, only when recent-change concentration coincides with evidenced maintenance cost and a real module boundary; omit churn-only paths
    > - relevant product strategy and boundaries, if a product doc was read
    > - `User-named references` section (when the focus hint named root-level `*.md` files)
    >
@@ -53,6 +54,8 @@ Run grounding agents in parallel in the **foreground** (do not background — re
    > Focus hint: {focus_hint}
    >
    > Research artifacts (gist-only under `Additional context` — do not fully read; a separate agent distills these): {research_artifact_files, or "none"}
+
+**Structural hotspot signal.** When recent-change concentration is used to pick structural candidates, a hotspot counts only if that churn coincides with evidenced maintenance cost and a real module boundary. Churn alone is not a defect and does not license a refactor. Do not treat hotspots as a `ce-simplify-code` scope input.
 
 2. **Learnings search** — read `references/agents/learnings-researcher.md` and dispatch a generic subagent seeded with that local prompt plus a brief summary of the ideation focus.
 
@@ -103,6 +106,7 @@ Read `references/user-research-artifacts.md` and follow it for the distiller dis
 Consolidate all dispatched results into a short grounding summary using these sections (omit any section that produced nothing). Phase 1.5 will append a `Topic axes` section to this same summary after consolidation completes:
 
 - **Codebase context** *(repo mode)* — project shape, notable patterns, pain points, leverage points OR **Topic context** *(elsewhere mode)* — topic shape, stated constraints, user-named pain points, opportunity hooks
+- **Structural hotspots** *(repo mode, when present)* — candidates that passed the cost-and-boundary test; churn-only paths omitted
 - **User-named references** *(repo mode)* — full content from directive files the user named. Phase 2 treats these as constraint
 - **Additional context** *(repo mode)* — one-line gists of root-level markdown discovered but not named. Phase 2 treats these as background, not direction
 - **Past learnings** — relevant institutional knowledge from `<root>/solutions/`

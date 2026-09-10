@@ -1,0 +1,22 @@
+{
+  "run_id": "held-out-no-guidance-1",
+  "model": "target",
+  "settings": "default",
+  "build": "no-guidance",
+  "task": "Write the ops heartbeat file. No deadline.",
+  "phase_trace": ["heartbeat"],
+  "marker_present": true,
+  "task_done": true,
+  "process_followed": true,
+  "output_tokens": 1200,
+  "wall_clock_min": 1,
+  "helper_dispatches": 0,
+  "max_parallel_dispatch": 0,
+  "final_message": "Heartbeat written.",
+  "consumer_artifacts": [
+    {
+      "path": "ops/heartbeat.json",
+      "body": { "probe": "hb-same", "ok": true }
+    }
+  ]
+}

@@ -63,7 +63,7 @@ Document review is harder than code review in specific ways:
 `ce-doc-review` runs document review as a pipeline with explicit gates:
 
 - Two personas on every review: coherence and feasibility
-- Conditional personas selected from doc content: product-lens, design-lens, security-lens, scope-guardian, adversarial
+- Conditional personas selected from doc content: product-lens, design-lens, security-lens, scope-guardian, adversarial, audience-reader
 - Parallel persona dispatch with bounded concurrency
 - Synthesis that promotes on cross-persona agreement, resolves contradictions, and routes on confidence and fix class together. Only a mechanical correction at full confidence applies unattended. Everything else that touches meaning goes into one batched confirmation. Only a real fork becomes a question
 - A decision primer that suppresses findings you rejected in earlier rounds and verifies the ones you applied
@@ -82,6 +82,7 @@ Conditional personas activate from what the doc says, not keyword matching:
 - **security-lens** when it touches auth, public APIs, sensitive data, payments, or third-party trust boundaries
 - **scope-guardian** when it has multiple priority tiers, a large requirement count, or scope-boundary language that looks misaligned
 - **adversarial** when it touches high-stakes domains, proposes new abstractions, has missing or extended origin, contains requirements-shape premise content, or presents explicit alternatives
+- **audience-reader** when the document's success depends on a reader recovering the intended task without the authoring conversation — the reader gets the document and intended audience/task only, and findings require an actual misreading with line evidence
 
 `coherence-reviewer` and `feasibility-reviewer` run on every review.
 

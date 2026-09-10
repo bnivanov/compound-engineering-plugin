@@ -122,6 +122,12 @@ A failure that moves to a later phase is progress and names the next target. A f
 
 **Report the limit.** Name the paths that remain unmeasured and what would be needed to measure them. Do not let a cleared bar imply coverage it does not have.
 
+**Pressure probes.** A cooperative prompt cannot show that a gate held. When the claimed fix is a rule that costs time, rework, or social ease, the measurement task must make skipping that rule the locally attractive move — same files, same deliverable, and a reason to cheat — then score what a fresh downstream consumer would open without this transcript. Do not grade a promise to comply, and do not force a multiple-choice confession.
+
+Pair that task. The variant is the corpus under test. The other arm is the baseline checkout when the claim is a change, and a no-guidance arm (skill not loaded, same task and resources) when the claim is that the skill discriminates at all. How those arms are scored, when an assertion is non-discriminating, held-out controls, and the noise floor are `references/baseline-mining.md` and `references/noise-floor.md`. Do not start a second measurement vocabulary here.
+
+A probe that never applies that cost cannot fail the gate. Record it as unmeasured, the same way an unentered phase is unmeasured.
+
 ## Ship (Phase 6)
 
 Commit each pass separately with its own message so the history says which change was made and why, and so release tooling can classify intent. Keep the measurement artifacts.

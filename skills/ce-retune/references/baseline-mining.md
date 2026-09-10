@@ -35,6 +35,7 @@ Write a script, not a per-run read. Reading 458 transcripts by hand is the failu
 | `helper_dispatches` | count of subagent/helper dispatches | how far the run got, and how it got there |
 | `max_parallel_dispatch` | most dispatched in a single message | separates fan-out from serial plodding; a corpus that mandates parallelism and never gets it is a finding |
 | `final_message` | verbatim, untruncated | halt language lives here and nowhere else. Do not summarize it during extraction |
+| `consumer_artifact` | path plus the field a downstream reader uses (id, amount, status), from the written file or a recorded body | existence-only `task_done` cannot tell arms apart |
 
 Derive `phase_trace` from **artifacts, not claims**. A phase fired if the trace shows its side effect: the reference file it must read, the helper it must dispatch, the file it must write. A run asserting "Phase 3 complete" in prose is not evidence — the defect class you are hunting is exactly runs that report success without doing the work.
 
@@ -98,6 +99,26 @@ Each of these was believed by someone competent before being ruled out. Run the 
 | "More helper dispatches cause success" | `helper_dispatches` is a **collider**: it measures how far the run got. A run that stopped in phase 2 cannot dispatch phase 5's helpers | never reading it as a cause. Use it as a position estimate. If you want the causal claim, it needs a build that changes dispatch behavior and a Phase 2 comparison |
 | A clean dose-response across a setting | `broken` runs cluster by cell (one config, one date range, one machine), manufacturing the gradient | re-running the cross-tab with `broken` excluded. If the effect vanishes, it was never there. Also check whether exclusions land evenly across arms |
 | "This model is worse at the task" | model identity and workload are often confounded in an archive nobody designed | checking whether the arms ran the *same* task list. Unequal task mixes make any per-model rate meaningless |
+| "The variant complied" | `final_message` or a quiz choice can change while the consumer artifact does not | compare the field a downstream reader uses; if it matches across arms, the assertion is non-discriminating |
+
+## Paired arms and discrimination
+
+Archive rates are observational. When the claim is that **guidance changed behavior**, the rows you score must be matched arms of the **same task and resources**:
+
+- **baseline / variant** — two checkouts of the corpus, for a change.
+- **no-guidance** — the skill not loaded, when the question is whether the skill discriminates at all. Omit this arm when both corpora already load a skill and you are only comparing those checkouts.
+
+Do not batch one arm then the other, and do not spawn measurement arms concurrently: interleave per `references/noise-floor.md`. Contention is a confound, not a speedup.
+
+Score a **consumer artifact**, not assistant wording and not a marker the run can emit while skipping the work. `task_done` already requires the deliverable; discrimination additionally requires that deliverable **differs across arms** in a field a later consumer would read. A fresh grader that never saw the producing transcript is the consumer — not the same agent grading its own promise.
+
+An assertion that passes on every arm is **non-discriminating**. Phrase-only pairs (identical artifacts, different compliance prose) are non-discriminating. Do not credit them as a measured benefit, including when a stakeholder wants a win from budget already spent.
+
+For each task pair, emit one line in the exact shape `discriminates: yes` or `discriminates: no`; that token is the scored verdict.
+
+Hold out at least one task the change should not move. A delta there is contamination or noise, not support for the claim. Token spread on identical corpora is the floor (`references/noise-floor.md`); a pair whose artifact delta sits inside that floor is inconclusive.
+
+Pressure-probe construction — when the gate is one agents skip under cost — is `references/cut-passes.md`. This file only scores the pair.
 
 ## Stratify before believing anything
 
@@ -115,7 +136,7 @@ Watch cell counts. A 3-of-4 cell is not a rate; label small cells rather than ra
 
 ## Hand off
 
-Carry forward: the `broken`-excluded baseline rate for `complete`, the observed `output_tokens` range, the tokens/min clusters, and the ranked list of phase boundaries where runs die. Phase 2 needs the baseline rate to compute a bar (`references/noise-floor.md`); Phase 3 needs the phase list to know which files to read first.
+Carry forward: the `broken`-excluded baseline rate for `complete`, the observed `output_tokens` range, the tokens/min clusters, the ranked list of phase boundaries where runs die, the assertions that discriminated, the ones labeled non-discriminating, and the held-out result. Phase 2 needs the baseline rate to compute a bar (`references/noise-floor.md`); Phase 3 needs the phase list to know which files to read first. A non-discriminating archive is not a bar.
 
 ## The limit
 

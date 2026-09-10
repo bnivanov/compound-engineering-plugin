@@ -16,6 +16,14 @@ Run these **serially**, after the parallel batch:
 
 - Read-only database queries, only when `pulse_db_enabled` is `true`. One at a time. Tight, scoped queries only. Never full-table scans on large tables. If a DB query would be expensive, skip it and note "DB query skipped (estimated cost too high)".
 
+## Observed freshness
+
+For each source this run actually queried, record the observation instant on this run's clock. When the payload carries its own event or version date, record that too. Keep a timestamp only when it can change a headline, a coverage claim, or a followup. Cap what you keep with the existing report limits: 30-40 lines, top 5 errors or the configured count, and 1-5 followups. Do not invent numbers, dates, or events.
+
+A configured source that is unavailable, stale for this window, or returns nothing usable still occupies its report slot, marked as such. Do not omit it so the page reads as a complete success. Unconfigured optional rows stay omitted (quality sample, payments window, extra conversion events).
+
+When the pulse is reading a deployed environment — a launch window, or observation evidence a verify skill already captured — identify the environment, the expected deployed revision, and the observed state. The target is an isolated instance or one the user explicitly authorized as read-only. This skill consumes that evidence. It does not deploy, mutate production, or mint that authorization.
+
 ## Optional: sample quality scoring
 
 If `pulse_quality_scoring` is `true` (AI products only), sample up to 10 sessions or conversations from the window and score each 1-5 on the dimension recorded in `pulse_quality_dimension`.
@@ -33,7 +41,7 @@ Read `references/report-template.md`. Fill in the template using the query resul
 3. **System performance** - latency (p50/p95/p99) and top 5 errors by count with one-line explanation each
 4. **Followups** - 1-5 things worth investigating
 
-Keep the total to 30-40 lines. If a section is thin, leave it thin; do not pad.
+Keep the total to 30-40 lines. If a section is thin because the window was quiet, leave it thin; do not pad. Fill the footer source windows with each queried source's observation instant; a configured source that did not yield live data stays in that footer as unavailable or stale.
 
 ## Write and surface
 

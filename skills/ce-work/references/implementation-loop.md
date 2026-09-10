@@ -103,7 +103,7 @@ git add <files related to this logical unit>
 git commit -m "feat(scope): description of this unit" -- <files related to this logical unit>
 ```
 
-**Handling merge conflicts:** If conflicts arise during rebasing or merging, resolve them immediately. Incremental commits make conflict resolution easier since each commit is small and focused.
+**Handling merge conflicts:** If an in-progress merge, rebase, or cherry-pick offers conflicted files, read `references/merge-conflicts.md` before editing them. That helper traces intent on both sides including base. After it returns: when the offered files are resolved and verification passes, this loop owns the continue/abort decision for the in-progress operation; when the helper marks semantic ambiguity, this loop stops for the caller. Never auto-finish the operation. Incremental commits make conflict resolution easier since each commit is small and focused.
 
 **Note:** Incremental commits use clean conventional messages without attribution footers. The final Phase 4 handoff passes `branding:on` so `ce-commit-push-pr` can add generic Compound Engineering branding to the PR.
 
