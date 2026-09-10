@@ -26,6 +26,8 @@ Activate a conditional persona when the document shows its signals:
 
 Do NOT activate adversarial on a routine plan that derives from a validated upstream Product Contract, stays in scope, and introduces no high-stakes domain or new abstraction. Validated provenance includes legacy `origin: docs/brainstorms/...`, `product_contract_source: ce-brainstorm`, and `product_contract_source: legacy-requirements`; a direct `product_contract_source: ce-plan-bootstrap` plan is greenfield and does not suppress premise-level techniques by itself. A well-structured plan with stated rationale is the plan doing its job, not adversarial signal — activating on that alone re-litigates settled questions.
 
+**audience-reader** — document success depends on a reader who was not in the authoring conversation correctly understanding the intended task from the document itself. The document is that reader's contract: a later person or agent must decide or act from the text without author rationale or expected answers. The audience may be an implementer, stakeholder, operator, or another agent; the criterion is whether this document has to stand alone for them. A derived plan whose implementer recovers the contract from a validated upstream Product Contract plus the codebase, and that names no distinct audience or standalone reader-task, does not meet this.
+
 ## Announce the review team
 
 Tell the user which personas will review and why, with a justification for each conditional one:
@@ -38,4 +40,4 @@ Reviewing with:
 - security-lens-reviewer -- plan adds API endpoints with auth flow
 ```
 
-The team is `coherence-reviewer` and `feasibility-reviewer` always, plus each activated conditional persona (`product-lens-reviewer`, `design-lens-reviewer`, `security-lens-reviewer`, `scope-guardian-reviewer`, `adversarial-document-reviewer`).
+The team is `coherence-reviewer` and `feasibility-reviewer` always, plus each activated conditional persona (`product-lens-reviewer`, `design-lens-reviewer`, `security-lens-reviewer`, `scope-guardian-reviewer`, `adversarial-document-reviewer`, `audience-reader`).

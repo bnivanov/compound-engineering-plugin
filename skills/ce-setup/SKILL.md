@@ -52,6 +52,8 @@ If the script is unavailable, run the inline equivalent listed in `references/re
 
 Display the diagnostic output to the user. Missing optional tools are not setup failures. The health report includes the resolved artifact root and which config layer supplied it (per Artifact Root Resolution above); surface that line so the operator can confirm where CE artifacts will be written. Missing `config.yaml` is a reported absence, not a project issue.
 
+When a version appears in the report, it is the value this run read from plugin metadata, the health script, or the owning manifest — name that source. If no version was read, omit it. Optional-tool presence or absence is a capability report for this checkout; it does not mean Compound Engineering supports a second agent harness.
+
 ### Step 3: Decide Whether Fixes Are Needed
 
 Report-gated repo-local remediations apply only to the checkout the health report diagnosed; if Phase 2 will write a different writable checkout, diagnose that checkout first, while session-level findings such as plugin version and optional tools remain from this session's Phase 1.

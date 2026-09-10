@@ -64,4 +64,6 @@ These rules hold without any read:
 
 **When a file is written, do not declare it written or enter Phase 4 while any check fails** in the Ready for Planning Check; a chat result enters Phase 4 with no check to run. An improvised Phase 4 menu is the other silent failure: it surfaces options that must be hidden and passes the wrong payload downstream.
 
+**Overloaded terms.** Surface a term only when overload or a clash with `CONCEPTS.md`, verified code, or the grounding dossier would change a requirement or decision. Challenge with a contrasting edge case and a code cross-check; repository domain meaning is authoritative. Record the decision-relevant definition in the unified plan — no parallel glossary or ADR.
+
 The Phase 1.1 grounding scout, the Phase 2.6 claim verifier, and the opt-in Slack researcher are tiered by task shape, never hardcoded to a model name; read `references/model-tiers.md` before dispatching one.

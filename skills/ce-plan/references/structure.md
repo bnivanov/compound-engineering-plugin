@@ -54,6 +54,23 @@ Avoid:
 - Units that span multiple unrelated concerns
 - Units that are so vague an implementer still has to invent the plan
 
+Cut a vertical tracer-bullet unit only when a horizontal split by layer would
+hide end-to-end integration risk. A vertical unit is one narrow, independently
+executable path through the layers the behavior crosses. Otherwise the default
+above stands.
+
+Clean cutover is the default compatibility path. Migrate every in-repo caller
+and remove the old form in the owning unit. Sequence expand (new form beside
+old), migrate, then contract (delete old) as separate U-IDs with explicit
+blocking Dependencies only when a real consumer still needs the old form — a
+published API, persisted data, another repository, or a named compatibility
+window. Do not invent that window.
+
+Units stay in this plan under U-IDs. Do not rewrite them as tracker tickets or
+local issue files while structuring. Tracker creation runs only through the
+authorized adapter in `references/plan-handoff.md` after the user selects
+Create Issue.
+
 Each unit carries a stable plan-local **U-ID** assigned in Phase 3.5 (`U1`, `U2`, …). U-IDs survive reordering, splitting, and deletion: new units take the next unused number, gaps are fine, and existing IDs are never renumbered. This lets `ce-work` reference units unambiguously across plan edits.
 
 #### 3.4 High-Level Technical Design
@@ -89,7 +106,7 @@ Each unit is a level-3 heading carrying a stable U-ID prefix matching the format
 For each unit, include:
 - **Goal** - what this unit accomplishes
 - **Requirements** - which requirements or success criteria it advances (cite R-IDs, and A/F/AE IDs when origin supplies them)
-- **Dependencies** - what must exist first (cite by U-ID, e.g., "U1, U3")
+- **Dependencies** - blocking U-IDs that must complete first (e.g., "U1, U3"); none when the unit can start immediately
 - **Files** - repo-relative file paths to create, modify, or test (never absolute paths)
 - **Approach** - key decisions, data flow, component boundaries, or integration notes. **Unit-local content only:** cite the governing R-IDs / KTD-IDs for any product or protocol rule rather than restating it. When the content enumerates sequenced steps or per-file changes, write it as a short ordered list under the field label, one step per item — a sentence chaining more than two semicolons is a list wearing a paragraph
 - **Execution note** - optional natural-language direction, only when the unit benefits from non-default sequencing or proof. Do not treat this as an enum; phrase the evidence the implementer should seek.

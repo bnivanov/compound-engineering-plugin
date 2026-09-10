@@ -45,7 +45,7 @@ Walk each flow as each primary persona (from STRATEGY.md or PRODUCT.md "Users" â
 ## 5. Cross-cutting
 
 - **Responsiveness:** key pages at mobile and desktop widths.
-- **Accessibility:** focus order, labels on inputs, keyboard operability of new interactive elements.
+- **Accessibility:** focus order, labels on inputs, keyboard operability of new interactive elements. When the journey changes the interactive tree without a full reload, complete that changed step by keyboard: the updated surface must be reachable and named, and focus must remain on a control that continues the journey â€” including after the surface is dismissed when the journey dismisses it. A pass on the initial tree does not cover this. Observed keyboard and focus behavior is the evidence; do not treat a WCAG or checklist claim as the scenario.
 - **Regression:** adjacent journeys a change could plausibly have broken, even if not directly modified.
 
 ## Mapping files to routes

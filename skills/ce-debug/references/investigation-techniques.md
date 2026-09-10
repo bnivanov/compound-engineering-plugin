@@ -125,14 +125,22 @@ A 5% reproduction rate confirms the bug exists but suggests timing or data sensi
 - Does the input size, encoding, or edge value matter?
 - Is the data order significant (sorted vs random)?
 
-**Test-order pollution.** If an individual test passes in isolation but fails when the suite runs, tests are leaking state between each other:
+**Test-order pollution.** If an individual test passes in isolation but fails when the suite runs, tests are leaking state between each other. Diagnose that leak in isolated throwaway state so the experiment cannot mutate the user's tree, databases, or shared caches.
 
-- Run the failing test alone — if it passes, pollution is confirmed
-- Run the failing test's file alone — narrows pollution to same-file or cross-file
-- Run the suite with randomized test order (most runners support a seed flag) — a different failing-test neighbor each run implies global state mutation
-- Bisect the preceding tests: run the failing test with just the first half of the earlier tests, then the second half, then narrow
+Confirm two facts with the project's own runner, capturing each command and its exit status:
+
+- Victim-alone: the failing test passes by itself. If it still fails, this is not order pollution.
+- Ordered predecessors: the same victim fails after the preceding tests from the failing run, using that run's order, seed, isolation, and reset settings.
+
+Preserve those runner facts for every later probe — order, seed, isolation mode, and reset/hook behavior. A probe that drops isolation or rerolls the seed is a different experiment.
+
+Narrow to the smallest predecessor sequence that still fails with the same command shape and the same victim status. Do not assume prefix bisection is monotonic: a later predecessor can reset state, so a passing prefix does not prove the polluter is in the other half, and a failing prefix does not prove every longer sequence fails. Combination pollution (A then B, neither alone) is still pollution; keep both.
+
+Run the failing test's file alone to narrow same-file versus cross-file. Shuffled order (when the runner exposes a seed) remains useful once the isolated sequence exists — a different failing neighbor each seed implies global mutation rather than a single predecessor.
 
 Common culprits once isolated: module-level state, mocks not torn down, temp files not cleaned up, database rows not rolled back, environment variables mutated and not restored.
+
+Do not vendor a polluter-finder script. Runner flags, reset contracts, and isolation differ; a generic driver hides those facts.
 
 ---
 
@@ -239,7 +247,9 @@ await new Promise(r => setTimeout(r, 100));
 - Event handlers that assume emission order
 - Database writes that assume read consistency
 
-**Condition-based waits instead of arbitrary delays.** Flaky tests are often built on `setTimeout`/`sleep` calls that guess at how long an operation takes. These pass on fast machines and fail under load or in CI. Replace the guess with polling the condition the test actually depends on, bounded by a timeout:
+**Condition-based waits instead of arbitrary delays.** Flaky tests are often built on `setTimeout`/`sleep` calls that guess at how long an operation takes. These pass on fast machines and fail under load or in CI. Use this technique only when that sleep-driven flake is evidenced — a delay in the test or a helper that races readiness — not as a default wait for every async assertion, and not as a `ce-verify` drive-recipe default.
+
+Replace the guess with waiting for the condition the test actually depends on, bounded by a timeout. The predicate must be a real observable (event, state, count, file, readiness flag), re-read inside the wait so the data stays fresh. The deadline is part of the contract: on timeout, fail with the predicate, the bound, and the last observed state, not a bare "timed out". Do not standardize a polling interval; the wait's contract is the predicate and the deadline.
 
 ```typescript
 // before: races under load

@@ -67,6 +67,14 @@ An approach-set POV judges only the options the user or conversation supplied; g
 
 Choose an approach and recommend it when verified project facts and the material tradeoffs provide a real basis. When the options are genuinely viable either way, say **"Either is viable"** and lay out the pros and cons instead of forcing a pick. Never manufacture certainty with a scorecard or mechanically select the option with the most checked boxes. Proceeding with an approach is never part of the POV itself; an analysis-only request offers it and waits, while an originally authorized continuation still must pass the Phase 4 authority gate.
 
+## Unresolved-decision frontier
+
+Carry a frontier only when remaining questions cannot be closed in this session and still block knowing the way. Conditions, Hold, and Blocked cover single-session uncertainty. A Tier 1 verdict never carries a frontier.
+
+The frontier is a bounded list in this chat block: each still-open question, what it depends on, what evidence would resolve it, and the stop — the way is clear when those questions are answered, then stop. It is not a plan, not an issue map, and not a third planner. `ce-plan` and `ce-brainstorm` remain the planners.
+
+Still-open strategic questions belong in STRATEGY.md; name `ce-strategy` in Handoff. Other remaining questions stay in this POV or in the existing plan or requirements artifact that already holds them. Do not open issues or labels for them.
+
 ## Output economy
 
 `ce-pov` writes no document, so the chat block *is* the whole deliverable — make it a tight POV, not a transcript of the investigation.
@@ -77,7 +85,7 @@ Lead with the grade for an external-adoption question and with the bottom line o
 
 For adoption subjects, length is governed by the tier, not by how much was found:
 
-- **Tier 1** — one screen: the grade, the incumbent, 1-2 project + 1-2 external cited facts, the conditions, the handoff. No reversal trigger, no alternatives walk-through.
+- **Tier 1** — one screen: the grade, the incumbent, 1-2 project + 1-2 external cited facts, the conditions, the handoff. No reversal trigger, no alternatives walk-through, no unresolved-decision frontier.
 - **Tier 2/3** — fuller (alternatives, the reversal trigger, deeper conditions), but still leads with the grade and keeps evidence to cited bullets, never walls of quoted text.
 
 If the verdict is running past its tier's budget, you are pasting evidence that belongs in a citation — cut it.

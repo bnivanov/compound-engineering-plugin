@@ -51,6 +51,12 @@ Collect:
 - Agent-native planning findings when the conditional triage dispatched: action/context parity decisions, tool/workspace/execution-lifecycle choices, scope boundaries, and verification scenarios
 - Lineage findings when the conditional lineage analyst dispatched: Preserve / Change / Avoid / Risk (each cited), `Sources consulted` (empty searches are findings), and `found` / `inferred` / `unknown` labels
 
+**Current-version provenance.** When a version is collected, pin the installed
+or target version from the owning manifest or lockfile this task actually uses,
+and cite the current primary source for that same dependency or provider. Do
+not survey unused providers or compile a tutorial-sized drift table. If the
+version or source cannot be read, keep the claim unknown rather than guessing.
+
 **Slack context** (opt-in) — never auto-dispatch. Route by condition:
 
 - **Tools available + user asked**: Dispatch a generic subagent with `references/agents/slack-researcher.md` and the planning context summary in parallel with other Phase 1.1 agents. If the origin document has a Slack context section, pass it verbatim so the researcher focuses on gaps. Include findings in consolidation.
@@ -92,7 +98,7 @@ Based on the origin document, user signals, and local findings, decide **whether
 
 **Leverage the repo research prompt's technology context:**
 
-Use technology facts already present in the project's active instructions, planning context, or task-specific repo research. Read any exact version fresh from the owning manifest when it materially affects an external-research decision:
+Use technology facts already present in the project's active instructions, planning context, or task-specific repo research. Read any exact version fresh from the owning manifest when it materially affects an external-research decision. Cite that pin and the current primary source for that same dependency or provider; if either is inaccessible, record unknown rather than guessing:
 
 - If specific frameworks and versions were detected (e.g., Rails 7.2, Next.js 14, Go 1.22), pass those exact identifiers to the `framework-docs-researcher` local prompt so it fetches version-specific documentation
 - If the feature touches a technology layer the scan found well-established in the repo (e.g., existing Sidekiq jobs when planning a new background job), lean toward skipping external research -- local patterns are likely sufficient

@@ -50,8 +50,9 @@ For each entry in `feedback_sources`, dispatch a generic subagent at the **extra
 - the current cursor from `cursor-get --state <state> --source <source-id>`.
 
 The persona returns mapped items (`id`, `origin`, `author_class`, `body`, `media`, identity-scoped `existing_ack`, `existing_closeout`) or one of its degrade/skip sentences. Personas report facts and never advance cursors.
-- **Skipped source** (read tools unavailable): drop it this run, note in the summary.
+- **Skipped source** (read tools unavailable): drop it this run; name it as unavailable in the summary. It is coverage, not an implicit empty success.
 - **Write-degraded source** (read works, no ack-write tool): upsert its items as `ack_deferred` and do NOT advance the cursor past them — they get acked on a later run once write capability returns.
+- **Freshness.** Stamp `observed_at` (this run, ISO) on each item JSON at upsert; the state schema keeps additive fields. When the item or cursor already is a source event date (Slack `ts`, GitHub `updatedAt`, email received), keep that date. Do not invent items or dates. A truncated fetch is named truncated.
 
 #### 2c. Circuit breaker (before any acknowledgment batch)
 
@@ -118,7 +119,7 @@ Interactive only. For items needing a product call, ask the user — grouped by 
 Render the handoff invocation exactly as the skill body's 2i section states.
 
 - **Commit.** `git add` ONLY `<root>/plans/feedback-sweep-plan.md` plus `<state>` when it is repo-internal (never `-A`; machine-local state under `/tmp` is never committed), then commit `docs(sweep): feedback sweep <date>`. A commit failure is reported, not fatal. In local-commit mode, never push. In shared-branch mode (`sweep_shared_branch: true`), fetch, rebase, and push the final commit.
-- **Record the run.** `run-record --state <state> --writer <writer> --outcome <completed|partial|failed> --counts '<per-source JSON>' --timestamp <ISO now>`.
+- **Record the run.** `run-record --state <state> --writer <writer> --outcome <completed|partial|failed> --counts '<per-source JSON>' --timestamp <ISO now>`. `completed` is for a run whose every configured source was live-fetched or explicitly named in the summary as skipped, unavailable, stale, or truncated. A quiet live fetch with zero new items may be `completed`. A run that lists zero items with no such named source is `partial`.
 - **Release.** `lease-release --state <state> --writer <writer>`.
-- **Summary** (always emit): new items by source; recordings analyzed, each with its one-line finding; closed items with their fix evidence; the `ack_deferred` / `manual_stuck` / needs-attention list; any circuit-breaker or stale-reclaim note; and always the plan path with the handoff line:
+- **Summary** (always emit): new items by source; each configured source's observation instant or skipped/unavailable/stale/truncated reason; recordings analyzed, each with its one-line finding; closed items with their fix evidence; the `ack_deferred` / `manual_stuck` / needs-attention list; any circuit-breaker or stale-reclaim note; and always the plan path with the handoff line:
 

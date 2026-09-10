@@ -34,6 +34,8 @@ Confirm the bug exists and understand its behavior — run the test, trigger the
 - **Performance symptoms** (slow, latency or throughput regression, timeout): read the Performance Regressions section of `references/investigation-techniques.md` before tracing — the reproduction check is a numeric baseline measurement, and code reading substitutes for neither it nor the re-measurement that verifies a fix.
 - **Browser bugs:** prefer OMP `browser` through eval and its tab helpers. If it is missing, stop and report that the host must expose OMP `browser`; do not substitute another browser driver.
 - **Manual setup required:** if reproduction needs conditions the agent cannot create alone (data states, user roles, external services, env config), document the exact setup steps and guide the user through them.
+- **Order-dependent failure** (victim passes alone, fails after ordered predecessors or in the suite): read the Test-order pollution section of `references/investigation-techniques.md`. Diagnose in isolated throwaway state; retrying the suite is not the method.
+- **Sleep-driven readiness flake** (a `setTimeout`/`sleep` that guesses at readiness): read the Condition-based waits technique in `references/investigation-techniques.md`. Use it only for that evidenced flake, not as a default wait.
 - **Does not reproduce after 2-3 attempts:** read `references/investigation-techniques.md` for intermittent-bug techniques.
 - **Cannot reproduce at all here:** document what was tried and which conditions appear to be missing.
 
