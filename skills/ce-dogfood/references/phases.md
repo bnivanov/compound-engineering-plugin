@@ -64,6 +64,8 @@ Do not jump straight to a flat list of pages. First **understand the user flows 
 
 #### 2a. Map the user flows (required)
 
+Detect a feature map by globbing `.agents/skills/verify-*/features/README.md`. Absence is a normal state: map the journeys from the diff alone. When a map is present, use each touched feature file as the source of entry points and drive recipes for surfaces the diff touches. Those files carry `## Sub-features`, `## How to get to it (user POV)`, `## Driving it with <harness>`, and `## Gotchas`. The map does not replace flowcharts for new or changed flows.
+
 For every user-visible change, trace the **complete journey** end to end and draw it. Map each flow as a **Mermaid `flowchart`** so the journey is explicit and reviewable before any testing happens — entry point, each user action, branch points (success / validation error / empty / permission-denied), side effects (emails, jobs, notifications), and the true end state.
 
 > Email example: it's not enough that "an email sends." Does it go to the *right* recipient? When the user clicks through, does the app land on and scroll to the *right* message? Does the content make sense? Does the whole flow align with the product's vision and UX? The flowchart must carry the click-through and its destination, not stop at "email sent."
@@ -89,6 +91,8 @@ Walk each flowchart and turn every node and branch into one or more test scenari
 Map changed files to concrete routes (views -> their pages, components -> pages rendering them, layouts -> all pages, stylesheets -> visual regression on key pages) and attach those routes to the flows that exercise them.
 
 **Load the matrix as a task list** (the todo tool), one task per scenario, so progress is tracked and nothing is skipped. Order tasks by flow, following the flowcharts, not by file.
+
+If a present map lists a touched feature the matrix omitted, add a scenario. When the map and the running app disagree, the app wins this run. Record the suspected drift in the report and do not edit the map here.
 
 ### Phase 3: Detect Port and Start the Dev Server
 

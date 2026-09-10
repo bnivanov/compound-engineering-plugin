@@ -24,7 +24,7 @@ These lenses are broadly applicable but not automatically useful. Spawn only whe
 | `agent-native` | `agent-native-reviewer` | Agent-facing features or surfaces: skills, agents, prompts, commands, tools, MCP, or a product capability expected to be agent-accessible. |
 | `learnings` | `learnings-researcher` | An existing `<root>/solutions/` corpus has a plausible path/title match for the changed modules or patterns. Run a cheap search first; corpus existence alone does not select it. |
 
-## Conditional (7 personas)
+## Conditional (8 personas)
 
 Spawned when the orchestrator identifies relevant patterns in the diff. The orchestrator reads the full diff and reasons about selection -- this is agent judgment, not keyword matching.
 
@@ -33,6 +33,7 @@ Spawned when the orchestrator identifies relevant patterns in the diff. The orch
 | `security` | `security-reviewer` | Auth middleware, public endpoints, user input handling, permission checks, secrets management |
 | `performance` | `performance-reviewer` | Concrete performance-sensitive behavior: database/ORM query shape, algorithmic complexity, large loop-heavy transforms, batching/fan-out, or cache policy with material resource impact. Async/concurrent code or a cache data structure alone does not select it when correctness/reliability already own the changed semantics. |
 | `api-contract` | `api-contract-reviewer` | An externally consumed boundary changes: route/request/response definitions, serializers, published event schemas, API versioning, or a public package signature with evidenced downstream callers. A new or changed exported symbol inside one module is insufficient by itself. |
+| `blast-radius` | `blast-radius-reviewer` | Undeclared readers beyond the diff: serialized fields, DB columns, wire formats, other-language consumers, flags, pinned libraries, timing, or code three hops down. Not when every consumer is inside the diff. |
 | `data-migration` | `data-migration-reviewer` | Migration files, schema dumps (`db/schema.rb`, `structure.sql`), backfill scripts, data transformations — **not** model/query-only changes without migration artifacts |
 | `reliability` | `reliability-reviewer` | Error handling, retry logic, circuit breakers, timeouts, background jobs, async handlers, health checks |
 | `adversarial` | `adversarial-reviewer` fallback | >=50 changed code lines; auth/payments; persistence writes or event publication; retry/partial-failure or concurrency/ordering semantics; external APIs; or a silent-pass verification mechanism. The lens runs through the independent cross-model peer when a sanctioned peer starts. Spawn this in-process persona when the peer cannot start, when fold-in runs the did-not-run fallback, or when fold-in restores local after a failed same-route rate-limit retry. A started peer that produced a review artifact and the fallback are mutually exclusive. |

@@ -191,6 +191,9 @@ const NAME_CHAR_BUDGET = 64
 
 const EXPECTED_USER_INVOKED_SKILLS = new Set([
   "ce-dogfood",
+  // ce-mode: opt-in session router. Model-routing it would let a routine
+  // request hijack session routing, so it stays user-invoked.
+  "ce-mode",
   "ce-polish",
   "ce-product-pulse",
   "ce-promote",

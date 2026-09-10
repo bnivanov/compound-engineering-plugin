@@ -40,6 +40,8 @@ Run these agents in parallel:
 
 Do **not** dispatch for cosmetic, layout-only, animation-only, brand, low-value preference, or narrow work in a product with no agent surface. If the signal is borderline, do not dispatch; carry only a short future parity consideration when it affects a high-value domain action. Include any resulting findings in consolidation as planning inputs, not as a standalone advice appendix.
 
+**Code lineage** (conditional) — same research wave, dispatch selectively. Dispatch a generic subagent with `references/agents/code-lineage-analyst.md` and the planning context summary in parallel with the local research agents when the plan modifies existing code with history and at least one of: altering a defensive shape, reversing an earlier key technical decision (KTD), or a legacy/fragile area. Do not dispatch for Lightweight plans or greenfield work.
+
 Collect:
 - Exact dependency or runtime versions only when they materially affect the plan or an external research decision
 - Relevant architecture and implementation patterns, files, modules, and tests for the requested scope
@@ -47,6 +49,7 @@ Collect:
 - Institutional learnings from `<root>/solutions/`
 - Product strategy context when any product doc is present — flag any plan decisions that pull away from the active tracks or the stated positioning, or that land inside its stated boundaries or non-goals
 - Agent-native planning findings when the conditional triage dispatched: action/context parity decisions, tool/workspace/execution-lifecycle choices, scope boundaries, and verification scenarios
+- Lineage findings when the conditional lineage analyst dispatched: Preserve / Change / Avoid / Risk (each cited), `Sources consulted` (empty searches are findings), and `found` / `inferred` / `unknown` labels
 
 **Slack context** (opt-in) — never auto-dispatch. Route by condition:
 
@@ -141,6 +144,8 @@ Summarize:
 - Any constraints that should materially shape the plan
 
 **Land external findings in decisions, not an appendix.** Any external research that ran must surface where it changes a choice — Key Technical Decisions rationale, Alternatives, Risks, or Sources & Research — not as a detached list with no bearing on the plan. If a finding shaped nothing, it was not load-bearing; do not pad the plan with it.
+
+**Pass lineage labels through unrewritten.** Keep each claim's `found` / `inferred` / `unknown` label as returned. Land `Avoid` in Alternatives or Risks.
 
 **Mark whether external research was load-bearing.** Record a single internal flag: did external findings materially shape a KTD, Alternative, Scope boundary, or Risk? This flag answers only that question — it does **not** gate whether research runs (Phase 1.2 owns that decision). Phase 5.3.2 reads it to decide whether to enter a confidence-scoring pass.
 

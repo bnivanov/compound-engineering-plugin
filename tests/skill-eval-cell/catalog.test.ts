@@ -72,7 +72,9 @@ describe("skill-eval-cell catalog", () => {
   test("every scenario skill exists at PRE_SWEEP_REF and POST_SWEEP_REF", () => {
     const missing: string[] = []
     for (const scenario of SCENARIOS) {
-      if (!gitShowExists(PRE_SWEEP_REF, scenario.skill)) {
+      // A skill created after the sweep has no pre arm (pack.ts armsFor
+      // already returns [] for pre on post_only).
+      if (!scenario.post_only && !gitShowExists(PRE_SWEEP_REF, scenario.skill)) {
         missing.push(`${scenario.skill} missing at ${PRE_SWEEP_REF}`)
       }
       if (!gitShowExists(POST_SWEEP_REF, scenario.skill)) {
@@ -151,6 +153,8 @@ describe("skill-eval-cell catalog", () => {
         "ce-debug/pipeline-divergent-defer:references/pipeline-mode.md",
         "ce-handoff/resume-asks-does-not-act:references/resume.md",
         "ce-ideate/unidentified-subject-reads-scope-gates:references/scope-gates.md",
+        "ce-mode/fix-routes-debug-not-plan:references/fix.md",
+        "ce-mode/plan-gate-before-multi-file-build:references/build.md",
         "ce-optimize/cost-attribution-before-search:references/loop.md",
         "ce-optimize/legacy-qualitative-report:references/wrap-up.md",
         "ce-optimize/opportunity-estimates:references/loop.md",
@@ -208,6 +212,9 @@ describe("skill-eval-cell catalog", () => {
       "ce-compound-refresh/plain-refresh-keeps-redundant-accurate-doc",
       "ce-compound-refresh/worth-lens-intent-confirms-before-loading",
       "ce-debug/pipeline-divergent-defer",
+      "ce-mode/fix-routes-debug-not-plan",
+      "ce-mode/no-ship-without-user-goahead",
+      "ce-mode/plan-gate-before-multi-file-build",
       "ce-prototype/batch-conflict-asks",
       "ce-prototype/clear-batch-applies-in-place",
       "ce-prototype/question-stays-in-chat",

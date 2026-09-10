@@ -92,7 +92,7 @@ Invoked when a specific need arises, not part of any chain.
 | [`/ce-commit`](./ce-commit.md) | Local git commit(s) only: convention-aware, named-file staging, file-level splits (up to three). No push. |
 | [`/ce-commit-push-pr`](./ce-commit-push-pr.md) | Working changes to an open PR. Three modes: full ship, rewrite an existing description, or description-only from a URL. |
 | [`/ce-babysit-pr`](./ce-babysit-pr.md) | Watch an open PR over time: incoming review via `/ce-resolve-pr-feedback`, CI via `/ce-debug`. Does not merge under `target` or `stack-ready`; `stack-land` can merge a confirmed managed stack. |
-| [`/ce-worktree`](./ce-worktree.md) | Isolate work in a git worktree: detect existing isolation, prefer the host's native tool, else plain git |
+| [`/ce-worktree`](./ce-worktree.md) | Isolate work in a git worktree: detect existing isolation, prefer the host's native tool, else plain git. Prune classifies linked worktrees and removes only confirmed-safe ones. |
 
 ---
 
@@ -129,8 +129,10 @@ Invoked when a specific need arises, not part of any chain.
 | [`/ce-dogfood`](./ce-dogfood.md) | Hands-off browser QA of the branch: map flows, fix small breakages, write a report. Manual invoke only. |
 | [`/ce-test-browser`](./ce-test-browser.md) | End-to-end browser tests of the current diff using OMP `browser`. Does not check out a PR or branch. |
 | [`/ce-test-xcode`](./ce-test-xcode.md) | Build and test an iOS app on the simulator (screenshots, logs, human verification). Not XCUITest. |
+| [`/ce-verify`](./ce-verify.md) | Generate or refresh a repo-local drive-and-verify skill plus a durable feature map for CLI, TUI, service, desktop, or web. |
 | [`/ce-setup`](./ce-setup.md) | Diagnose optional tool capabilities and create or repair repo `config.yaml` |
 | [`/ce-start`](./ce-start.md) | Front door: one question, then a route to the right skill |
+| [`/ce-mode`](./ce-mode.md) | Opt-in playbook router: match each request to a gated CE skill. Invoke per task. |
 | [`/ce-undo`](./ce-undo.md) | Graded revert of the last agent change set (commits, tree, or branch) |
 | [`/ce-handoff`](./ce-handoff.md) | Write a session handoff, or find and orient from a selected source. Does not auto-continue. |
 

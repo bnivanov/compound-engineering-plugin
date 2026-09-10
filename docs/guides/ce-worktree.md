@@ -12,16 +12,16 @@ There is no bundled script. The agent runs inline git from the project directory
 
 | Question | Answer |
 |----------|--------|
-| What does it do? | Makes sure isolation exists. Detects an existing worktree, prefers the harness tool, else `git worktree add` under `.worktrees/<branch>` |
-| When to use it | Starting work that should stay off the current checkout, or when `ce-work` / `ce-code-review` offers a worktree |
-| What it produces | Either "already isolated, work here" or a new isolated worktree, with path and branch reported |
+| What does it do? | Makes sure isolation exists. Detects an existing worktree, prefers the harness tool, else `git worktree add` under `.worktrees/<branch>`. Also classifies leftover linked worktrees and removes the safe ones you confirm |
+| When to use it | Starting work that should stay off the current checkout, when `ce-work` / `ce-code-review` offers a worktree, or leftover linked worktrees should be classified and the safe ones removed |
+| What it produces | Either "already isolated, work here" or a new isolated worktree, with path and branch reported; or a classification of linked worktrees and removal of the confirmed safe ones |
 | Skip when | Single-task work that fits on a branch in the current checkout |
 
 ---
 
 ## Example invocations
 
-Empty or a work description means **new work**. `isolate` plus a ref means **attach**. If this checkout is already a linked worktree, every form works in place rather than nesting.
+Empty or a work description means **new work**. `isolate` plus a ref means **attach**. `prune` classifies leftover linked worktrees and removes only the safe ones you confirm. If this checkout is already a linked worktree, the isolation forms work in place rather than nesting.
 
 ```text
 # New work. Detect isolation first. If none, create .worktrees/<named-branch> from trunk.
@@ -38,6 +38,9 @@ Empty or a work description means **new work**. `isolate` plus a ref means **att
 
 # Attach a worktree at an existing commit
 /ce-worktree isolate abcdef1
+
+# Classify leftover linked worktrees; remove only the safe ones you confirm
+/ce-worktree prune
 ```
 
 Git allows a branch in only one worktree at a time. If the named ref is already checked out somewhere, the skill reports that path and stops instead of forcing a second worktree. Work there, or ask for a detached worktree at the same commit if you truly need a separate tree.
@@ -67,6 +70,8 @@ The two modes share the fallback. **New work** creates `feat/...` or `fix/...` f
 
 If `git worktree add` fails on sandbox or permissions, the skill does **not** continue in the current checkout. You chose isolation for a reason. It reports the failure and asks whether to work here anyway or stop.
 
+**4. Prune leftover trees.** Classify each linked worktree as **safe** (branch fully merged to trunk *or* gone from remote, porcelain empty, no unpushed commits), **unsafe**, or **current** (the tree this session is in — never a candidate). Ask once which safe candidates to remove. Then `git worktree remove` those paths and `git worktree prune`. Never `--force`, never delete a branch, never touch the current tree. A missing directory is bookkeeping (`git worktree prune`), not a removal.
+
 ---
 
 ## Quick Example
@@ -83,6 +88,7 @@ Use `ce-worktree` when:
 
 - The work should stay off the current checkout
 - `ce-work` or `ce-code-review` offered a worktree
+- Leftover linked worktrees should be classified and the safe ones removed
 
 Skip it when:
 
@@ -112,17 +118,17 @@ On-demand isolation. Callers pass a meaningful branch name (`feat/...`, `fix/...
 | `<work description>` | New work: create a named branch worktree from trunk |
 | `isolate <branch\|tag\|commit>` | Attach a worktree to that ref |
 | `isolate PR <n>` | Attach a worktree to that PR head on local `pr-<n>` |
+| `prune` | Classify linked worktrees as safe / unsafe / current; remove only confirmed safe ones |
 
-List, remove, and switch are plain git. The skill does not wrap them:
+List and switch are plain git. The skill does not wrap them:
 
 ```bash
 git worktree list
-git worktree remove .worktrees/<branch>
 cd .worktrees/<branch>
 cd "$(git rev-parse --show-toplevel)"
 ```
 
-To clean up when you are done, leave with `cd "$(git rev-parse --show-toplevel)"`, then `git worktree remove .worktrees/<branch>`. If the remote tracking branch is gone, `git fetch --prune` and `git branch -d <branch>` after you confirm it is merged.
+To leave one tree you just finished, `cd "$(git rev-parse --show-toplevel)"`, then `git worktree remove .worktrees/<branch>`. To classify leftover linked worktrees and drop the safe ones, use the prune route: it asks once, never `--force`, never deletes a branch, and never touches the current tree. A missing directory is bookkeeping, not a removal.
 
 ---
 
