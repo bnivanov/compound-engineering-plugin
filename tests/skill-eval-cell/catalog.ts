@@ -1871,6 +1871,63 @@ Units:
     },
   },
   {
+    id: "ce-mode/revert-request-routes-undo",
+    post_only: true,
+    skill: "ce-mode",
+    cohort: "untouched",
+    key_behavior: "judgment",
+    read_only: true,
+    fixture: `${FIX}/tiny-lib`,
+    why: "A request to take back the agent's own last change matches fix.md's route-out and names ce-undo. Diagnosing it is the skip this cell fails.",
+    pre_contract:
+      "A request to take the agent's own last change set back rather than diagnose it is ce-undo. Broken, failing, or slow with a statable symptom is ce-debug.",
+    task: `You added the trim() change to src/greet.js a minute ago and two other tests started failing. Take that change back out.`,
+    grade: {
+      files_read_post: ["references/fix.md"],
+      // Ruling ce-debug out by name is correct here, so only the required
+      // read plus the positive probe discriminate.
+      must_include: ["ce-undo"],
+      actions: "none",
+    },
+  },
+  {
+    id: "ce-mode/throwaway-question-routes-prototype",
+    post_only: true,
+    skill: "ce-mode",
+    cohort: "untouched",
+    key_behavior: "judgment",
+    read_only: true,
+    fixture: `${FIX}/tiny-lib`,
+    why: "A capability-framed throwaway question matches build.md's route-out and names ce-prototype. Planning it or invoking ce-work is the skip this cell fails.",
+    pre_contract:
+      "A question about how something should work, feel, or read whose answer is a decision and where nothing is meant to survive is ce-prototype. A capability the user intends to keep is still a build.",
+    task: `Spike three throwaway shapes of a retry helper for greet() so I can feel which one fits. Nothing here needs to survive — I just want to pick a direction before we build it.`,
+    grade: {
+      files_read_post: ["references/build.md"],
+      must_include: ["ce-prototype"],
+      must_exclude: ["ce-work"],
+      actions: "none",
+    },
+  },
+  {
+    id: "ce-start/metric-target-routes-optimize",
+    post_only: true,
+    skill: "ce-start",
+    cohort: "untouched",
+    key_behavior: "judgment",
+    read_only: true,
+    fixture: `${FIX}/tiny-lib`,
+    why: "A working thing with a metric target routes to ce-optimize from ce-start. Naming ce-debug is the skip this cell fails.",
+    pre_contract:
+      "Make a working thing faster or cheaper → ce-optimize. Fix something broken → ce-debug.",
+    // Pre-answers ce-start's blocking question: the cell is non-interactive.
+    task: `Use ce-start to route this. I already know what I want, so skip the question: greet() works fine, but a 2M-call batch takes 40ms and I want it under 15ms. Route only; do not implement.`,
+    grade: {
+      must_include: ["ce-optimize"],
+      actions: "none",
+    },
+  },
+  {
     id: "ce-mode/no-ship-without-user-goahead",
     post_only: true,
     skill: "ce-mode",
