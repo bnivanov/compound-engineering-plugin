@@ -156,6 +156,8 @@ describe("skill-eval-cell catalog", () => {
         "ce-mode/fix-routes-debug-not-plan:references/fix.md",
         "ce-mode/optimize-target-routes-optimize-not-debug:references/fix.md",
         "ce-mode/plan-gate-before-multi-file-build:references/build.md",
+        "ce-mode/revert-request-routes-undo:references/fix.md",
+        "ce-mode/throwaway-question-routes-prototype:references/build.md",
         "ce-optimize/cost-attribution-before-search:references/loop.md",
         "ce-optimize/legacy-qualitative-report:references/wrap-up.md",
         "ce-optimize/opportunity-estimates:references/loop.md",
@@ -217,6 +219,8 @@ describe("skill-eval-cell catalog", () => {
       "ce-mode/no-ship-without-user-goahead",
       "ce-mode/optimize-target-routes-optimize-not-debug",
       "ce-mode/plan-gate-before-multi-file-build",
+      "ce-mode/revert-request-routes-undo",
+      "ce-mode/throwaway-question-routes-prototype",
       "ce-prototype/batch-conflict-asks",
       "ce-prototype/clear-batch-applies-in-place",
       "ce-prototype/question-stays-in-chat",
@@ -224,6 +228,7 @@ describe("skill-eval-cell catalog", () => {
       "ce-resolve-pr-feedback/pipeline-returns-complete-human-decision",
       "ce-setup/instruction-file-covered-offers-nothing",
       "ce-setup/instruction-file-gap-offers-store-and-directive",
+      "ce-start/metric-target-routes-optimize",
     ])
   })
 

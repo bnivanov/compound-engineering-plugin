@@ -2,6 +2,8 @@
 
 **Entry:** a capability the repo does not have.
 
+**Not this playbook:** a question about how something should work, feel, or read whose answer is a decision and where nothing is meant to survive. Invoke `ce-prototype` and stay armed. A capability the user intends to keep is still a build.
+
 If the request no longer matches this playbook, return to the match table.
 
 1. **Scope.** Invoke `ce-brainstorm` when the user cannot already state done. Artifact: a requirements-only plan, or a chat paragraph. Skip when they can.

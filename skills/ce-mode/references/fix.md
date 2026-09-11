@@ -2,7 +2,7 @@
 
 **Entry:** broken, failing, or slow behavior with a statable symptom.
 
-**Not this playbook:** a system that already works as designed, where a named metric should move and the winning change is not known. Invoke `ce-optimize` and stay armed. A performance *regression* — it used to be faster — is still a fix.
+**Not this playbook:** a system that already works as designed, where a named metric should move and the winning change is not known. Invoke `ce-optimize` and stay armed. A request to take the agent's own last change set back rather than diagnose it is `ce-undo`; invoke it and stay armed. A performance *regression* — it used to be faster — is still a fix.
 
 If the request no longer matches this playbook, return to the match table.
 
