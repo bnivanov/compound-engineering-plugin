@@ -51,7 +51,7 @@ Send scouts directly to candidate-specific current evidence, never a generic rep
 
 First form ce-pov's own independent POV under the active subject-shape contract in `references/method.md`, but do not emit it. Freeze that position. Keep it out of an independent peer's initial context; expose it only when the task is to critique that position, or in a later reconciliation round.
 
-A summons is an affirmative request to consult or reconcile peers — a panel, a cross-check, `oracle` — anywhere in the invocation context. Declining one, or merely recounting one, is not a summons. On a summons, or when a cold POV may qualify for a proactive offer, read `references/cross-model-panel.md` before resolving participation or deciding whether to offer. Finish the panel branch before composing the result. A POV that follows a summons states which peers ran, or that none did and why. A POV with no summons carries no panel note.
+A summons is an affirmative request to consult or reconcile peers — a panel, a cross-check, `oracle`, or council — anywhere in the invocation context. Declining one, or merely recounting one, is not a summons. On a summons, or when a cold POV may qualify for a proactive offer, read `references/cross-model-panel.md` before resolving participation or deciding whether to offer. Finish the panel branch before composing the result. A POV that follows a summons states which peers ran, or that none did and why. A POV with no summons carries no panel note.
 
 Only then emit the subject shape's contract, as a **compact chat block, not a research report**. Lead with the grade, bottom line, or position, and never reprint dossiers or raw output.
 

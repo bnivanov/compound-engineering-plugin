@@ -201,10 +201,14 @@ describe("ce-pov cross-model panel contract", () => {
     expect(panel).toContain('[ "${OMPCODE:-}" = "1" ] || fail "must run under OMPCODE=1"')
   })
 
-  test("dispatches a reviewer agent with a conditional independence receipt", async () => {
+  test("dispatches a reviewer-plus-planner council with a conditional independence receipt", async () => {
     const panel = await skillFile("references/cross-model-panel.md")
 
     expect(panel).toContain("`agent: reviewer`")
+    expect(panel).toContain("`agent: planner`")
+    expect(panel).toMatch(/session model aggregates/)
+    expect(panel).toContain("pairwise distinct")
+    expect(panel).toContain("they do not authorize")
     expect(panel).toContain("`voice`: `peer-omp`")
     expect(panel).toContain("`cross_model_route` / `cross_model_target` / `cross_model_harness`: `omp`")
     expect(panel).toContain("never from the reviewer's own prose")
@@ -214,7 +218,7 @@ describe("ce-pov cross-model panel contract", () => {
   test("folds in without separate-model corroboration unless independence is verified", async () => {
     const panel = await skillFile("references/cross-model-panel.md")
 
-    expect(panel).toContain("Present the reviewer as separate-model corroboration only")
+    expect(panel).toContain("Present any surviving voice as separate-model corroboration only")
     expect(panel).toMatch(/A missing file means that voice did\s+not run/)
   })
 

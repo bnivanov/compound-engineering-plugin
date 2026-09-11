@@ -546,7 +546,7 @@ The same decision owns open review thread PRRT_ci_contract_7 at https://github.c
     timeout_secs: 900,
     why: "A summons must actually dispatch peers. Recognition-only quizzes cannot grade this. The grade is still the skill's own DELEGATES_DISPATCHED claim plus a required read of the panel protocol: peer job dirs live under a private scratch root outside the graded tree, and the protocol deletes them on completion, so no dispatch receipt survives for the cell to inspect (scenarios.md).",
     pre_contract:
-      "On a summons (panel, cross-check, oracle), run the panel. A POV that follows a summons states which peers ran, or that none did and why.",
+      "On a summons (panel, cross-check, oracle, council), run the two-voice council (reviewer and planner). The session model aggregates. A POV that follows a summons states which peers ran, or that none did and why.",
     task: `oracle: should this project adopt lodash?`,
     grade: {
       files_read_post: ["references/cross-model-panel.md"],
