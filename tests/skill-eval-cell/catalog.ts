@@ -1852,6 +1852,25 @@ Units:
     },
   },
   {
+    id: "ce-mode/optimize-target-routes-optimize-not-debug",
+    post_only: true,
+    skill: "ce-mode",
+    cohort: "untouched",
+    key_behavior: "judgment",
+    read_only: true,
+    fixture: `${FIX}/tiny-lib`,
+    why: "A working system with a target metric is ce-optimize, not a defect hunt. Invoking ce-debug is the skip this cell fails.",
+    pre_contract:
+      "A system that works as designed with a metric that should move is ce-optimize. Broken, failing, or a slow regression is ce-debug.",
+    task: `greet() runs 2M times per batch and the batch takes ~40ms. Nothing is broken; we want it under 15ms.`,
+    grade: {
+      files_read_post: ["references/fix.md"],
+      // A working system with a target metric matches the fix.md route-out, not Diagnose. Naming ce-debug here is the wrong route.
+      must_include: ["ce-optimize"],
+      actions: "none",
+    },
+  },
+  {
     id: "ce-mode/no-ship-without-user-goahead",
     post_only: true,
     skill: "ce-mode",
