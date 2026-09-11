@@ -4,13 +4,9 @@ Load only when delivery to a destination was requested. Use the available capabi
 
 Resolve only the destination information needed to complete the request. Do not require a menu or offer to rewrite or improve the explanation. Adapt the content for its intended reader before asking for any required consent to publish it. On a delivery failure, preserve the canonical local artifact and report what did not complete. Do not substitute another publisher without authorization.
 
-## Claude Artifact
-
-Available for HTML output when the session is Claude Code and its Artifact tool is present. Give the tool the canonical `$RUN_DIR/explainer.html`, follow its current contract, and confirm the returned URL or reference to the user. The tool owns any adaptation needed for its artifact runtime; do not pre-process the HTML for it.
-
 ## Publish publicly to ht-ml.app
 
-This is the preferred HTML publisher when the Claude Artifact adapter is not selected. ht-ml.app accepts the complete standalone HTML document and works through ordinary HTTP, independent of the agent harness.
+This is the preferred HTML publisher. ht-ml.app accepts the complete standalone HTML document and works through ordinary HTTP, independent of the agent harness.
 
 Before publishing, state that **the page is public and may be indexed, crawled, copied, or archived** and obtain explicit confirmation after that warning for the actual artifact being sent. The initial request itself does not count as confirmation. Confirmation given after the warning covers the same artifact. If the artifact changes materially, obtain confirmation for the changed content. If confirmation cannot be obtained, do not publish; preserve the canonical `$RUN_DIR/explainer.html` and report its local path. Never publish headlessly. If the content is sensitive, keep it local.
 

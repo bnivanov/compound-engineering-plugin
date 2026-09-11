@@ -40,7 +40,7 @@ describe("ce-explain consumer contract", () => {
   test("destinations are requested, and their adapter must be read before action", () => {
     expect(phase("### Phase 4")).toMatch(/destination was requested, read `references\/destinations.md` before acting/)
     expect(destinations).toMatch(/Do not require a menu/)
-    for (const adapter of ["Claude Artifact", "Publish publicly to ht-ml.app", "Local file", "Publish to Proof", "Send to Thinkroom"]) {
+    for (const adapter of ["Publish publicly to ht-ml.app", "Local file", "Publish to Proof", "Send to Thinkroom"]) {
       expect(destinations).toContain(`## ${adapter}`)
     }
     expect(destinations).toContain("verify the resulting file, URL, or document reference")
@@ -58,9 +58,6 @@ describe("ce-explain consumer contract", () => {
   })
 
   test("destination adapters execute through their owning capability", () => {
-    expect(destinations).toContain("Give the tool the canonical `$RUN_DIR/explainer.html`")
-    expect(destinations).toContain("tool owns any adaptation needed")
-    expect(destinations).toContain("do not pre-process the HTML")
     expect(destinations).toContain("skill-invocation primitive")
     expect(destinations).toContain("https://ht-ml.app/llms.txt")
     expect(destinations).toContain("Do not assume a particular skill name or installation path")
