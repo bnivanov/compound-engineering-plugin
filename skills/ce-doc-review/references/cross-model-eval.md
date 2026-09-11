@@ -62,12 +62,15 @@ metadata. Do not use a fake CLI. Reviewer prose is never attestation.
    corroboration wording. With host-attested `independence_verified: true`,
    promote the merged anchor one step (`50 → 75`, `75 → 100`), not beyond 100.
    A stubbed false receipt does not promote, even if reviewer prose claims
-   independence. Separately, a peer-only finding never silently applies as
-   `safe_auto`, regardless of attestation. A peer-only `manual` finding at 100
-   with a mechanically implied fix stays `manual`; it is not swept into grouped
-   confirmation. Only a peer-only finding otherwise eligible for Apply is
-   diverted to `gated_auto` confirmation. Independence grants corroboration,
-   not apply authority.
+   independence. Separately, the peer cap withholds *permission to apply
+   fixes without approval*: a peer-only finding never silently applies as
+   `safe_auto`, regardless of attestation, and a peer-only `manual` finding may
+   reach grouped confirmation only after the lead verifies evidence and
+   resolves its remedy within the permission already granted. Preserve a paired
+   control where an unsettled user commitment stays `manual`, even with a
+   concrete suggested fix and independent corroboration. Lead investigation
+   must not be recorded as an independent in-process reviewer. Independence
+   grants corroboration, not apply authority.
 
 8. **Announce by mode (R12).** Interactive mode names the OMP `reviewer` task
    and document-content egress scope before dispatch. It never calls an

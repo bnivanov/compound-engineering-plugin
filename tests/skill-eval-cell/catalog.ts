@@ -212,6 +212,18 @@ C: A confirmed retained change reduces p95 particle-drawing time from 8 ms to 5 
     grade: { must_include: ["5 ms"], actions: "none", delegates: "none" },
   },
   {
+    id: "ce-doc-review/approval-versus-judgment-summary",
+    skill: "ce-doc-review",
+    cohort: "untouched",
+    key_behavior: "judgment",
+    read_only: true,
+    post_only: true,
+    why: "A determined fix may still require approval. The summary must distinguish that permission from a choice requiring user judgment.",
+    pre_contract: "Report completed changes separately from grouped proposals and decisions. A selected fix does not establish permission to apply it.",
+    task: "Use ce-doc-review at the presentation checkpoint. Read references/rendering-floor.md and references/review-output-template.md. Return only a user-facing summary of these already-verified results, not a full table or a new review. One broken guide link was fixed and verified. Two plan corrections have selected fixes: update the obsolete setup command and add the missing dependency so the guide can copy the completed asset. Both corrections await one grouped approval; neither has been applied. No question requiring user judgment remains. Do not ask for approval in this test, dispatch, inspect a project, or edit anything.",
+    grade: { must_include: ["approval"], actions: "none" },
+  },
+  {
     id: "ce-optimize/approval-message",
     skill: "ce-optimize",
     cohort: "untouched",
