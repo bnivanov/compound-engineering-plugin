@@ -543,6 +543,9 @@ describe("ce-code-review contract", () => {
     const content = await readRepoFile(
       "skills/ce-code-review/references/dispatch-reviewers.md",
     )
+    const solution = await readRepoFile(
+      "docs/solutions/skill-design/anti-poll-scope-and-async-subagent-dispatch.md",
+    )
 
     // skills/ce-code-review/SKILL.md:29 (one foreground batch, terminal collection)
     expect(skill).toContain("one foreground concurrent batch")
@@ -555,6 +558,20 @@ describe("ce-code-review contract", () => {
     expect(content).toMatch(/classify a terminal tool error or malformed output as a failed reviewer/i)
     expect(content).toMatch(/launch receipt is uncollected/i)
     expect(content).toMatch(/blocking collection capability until every successful launch reaches a terminal outcome/i)
+    // #1654: a host may deliver a subagent's final answer as a terminal message tagged with the
+    // launch's name. The collector rule must state the condition (an attributable terminal
+    // result reached in-turn), accept that channel, and still refuse a progress update as a
+    // result; it must not demand one ID-addressed tool.
+    expect(content).toMatch(/host-delivered terminal message/i)
+    expect(content).toMatch(/progress or a state change is not a terminal result/i)
+    expect(content).toMatch(/within this turn/i)
+    expect(content).toMatch(/instead of ending the turn to wait/i)
+    expect(content).not.toMatch(/instead of waiting for notifications/i)
+    expect(content).not.toMatch(/accepts the launch identifier, blocks until terminal, and returns the terminal outcome/i)
+    expect(skill).toMatch(/host-delivered terminal message that names the launch and carries its payload/i)
+    expect(skill).toMatch(/never end the turn on progress/i)
+    expect(skill).not.toMatch(/wait for a notification/i)
+    expect(solution).toMatch(/host-delivered terminal message/i)
   })
 
   test("Stage 5 synthesis uses anchor gate and one-anchor promotion", async () => {
@@ -611,6 +628,7 @@ describe("ce-code-review contract", () => {
     expect(content).toMatch(/launch receipt.*uncollected/i)
     expect(content).toMatch(/blocking collection/i)
     expect(content).toMatch(/terminal outcome/i)
+    expect(content).toMatch(/host-delivered terminal message/i)
     expect(content).toMatch(/malformed output.*validator infrastructure failure/i)
     expect(content).toMatch(/validator infrastructure failure/i)
     expect(content).not.toMatch(/A foreground Agent call is the wait/i)

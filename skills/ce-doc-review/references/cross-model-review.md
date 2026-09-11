@@ -60,8 +60,16 @@ Write `<run-dir>/<reviewer-name>-omp.json`:
 - `findings` (peer `safe_auto` downgraded to `gated_auto`), `residual_risks`,
   `deferred_questions`
 
-## 4. Fold-in
+## 4. Collect outcomes and clean up
 
-Collect each task return, then read the artifact. Fold findings through ordinary
-synthesis. Promote agreement only when `independence_verified` is `true`. A
+Collect every started task return before synthesis or any return; each return
+carries its reviewer name, so a terminal outcome is attributable to its lens.
+Fold findings through ordinary synthesis only when the review proceeds to
+synthesis; an incomplete review reports reviewer outcomes without applying
+findings. Promote agreement only when `independence_verified` is `true`. A
 missing file means the pass did not run; never fail the review for it.
+
+Name each started reviewer whose terminal outcome was not a usable return in
+the Coverage line with its lens and state, per the naming rules of the skills
+that dispatch this pass. Silent absence remains correct only for lenses that
+were never started (gate not met / skip).
