@@ -1405,12 +1405,12 @@ Units:
     fixture: `${FIX}/requirements-only-plan`,
     timeout_secs: 300,
     post_only: true,
-    why: "Session-model self-audit of a Durable plan is the skip this cell fails. Bounded to the 5.3.9 decision so the cell stays cheap; live planner dispatch is unexercised here.",
+    why: "Presenting Phase 5.4 without planner PASS is the skip this cell fails. Bounded to the 5.3.9 gate; live planner dispatch is unexercised because the cell host has no task tool.",
     pre_contract:
       "After writing a Durable plan, confirm it is stronger, the boundary is intact, and origin decisions were preserved, then present the handoff menu.",
-    task: `Use ce-plan for this bounded checkpoint. A Durable plan is already at docs/plans/widget-plan.md. Confidence passed. Document review is unreachable. Execute only Phase 5.3.9: name the dispatch you will make for the final check, then stop. Do not write files, do not present the handoff menu, and do not implement.`,
+    task: `Use ce-plan for this bounded checkpoint. A Durable plan is already at docs/plans/widget-plan.md. Confidence passed. Document review is unreachable. The planner cannot launch. Execute only Phase 5.3.9: state whether Phase 5.4 is reachable, then stop. Do not write files, do not present the handoff menu, and do not implement.`,
     grade: {
-      must_include: ["planner"],
+      must_include: ["planner", "blocked"],
       actions: "none",
       delegates: "none",
     },

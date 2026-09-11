@@ -314,7 +314,7 @@ describe("ce-plan post-generation menu routing", () => {
     expect(HANDOFF_BODY).toContain('**Question:** "Plan ready at `<absolute path to plan>`. What would you like to do next?"')
   })
 
-  test("Durable final checks dispatch a planner agent and do not self-certify", () => {
+  test("Durable final checks gate Phase 5.4 on planner PASS", () => {
     const checksStart = HANDOFF_BODY.indexOf("## 5.3.9 Final Checks and Cleanup")
     const checksEnd = HANDOFF_BODY.indexOf("## 5.4 Post-Generation Options")
     const checksSection = HANDOFF_BODY.slice(checksStart, checksEnd)
@@ -323,11 +323,24 @@ describe("ce-plan post-generation menu routing", () => {
     expect(checksEnd).toBeGreaterThan(checksStart)
     expect(checksSection).toContain("`agent: planner`")
     expect(checksSection).toMatch(/does not certify/i)
+    expect(checksSection).toMatch(/5\.4 is unreachable until/i)
+    expect(checksSection).toContain("PASS")
     expect(checksSection).toContain("planner_check: unreachable")
-    expect(checksSection).toMatch(/not a pass/i)
+    expect(checksSection).toContain("status: blocked")
+    expect(checksSection).not.toMatch(/unreachable[\s\S]{0,80}proceed/)
     expect(checksSection).not.toContain("reasoning-elevation")
     expect(SKILL_BODY).toMatch(/session model that authored the plan does not certify/i)
-    expect(topContractForPlanner()).toMatch(/planner_check: unreachable/)
+    expect(SKILL_BODY).toMatch(/5\.4 is unreachable until the planner returns PASS/)
+    expect(topContractForPlanner()).toMatch(/planner returns PASS/)
+    expect(topContractForPlanner()).not.toMatch(/planner_check: unreachable/)
+
+    const menuPipeline = HANDOFF_BODY.match(
+      /## 5\.4 Post-Generation Options[\s\S]*?\*\*Pipeline mode:\*\*[^\n]+/,
+    )?.[0]
+    expect(menuPipeline).toBeDefined()
+    expect(menuPipeline!).toMatch(/planner returned PASS/)
+    expect(menuPipeline!).toMatch(/status: blocked/)
+    expect(menuPipeline!).not.toMatch(/planner check completed or recorded/)
 
     function topContractForPlanner(): string {
       const contractStart = SKILL_BODY.indexOf("## Mandatory Completion Contract")
