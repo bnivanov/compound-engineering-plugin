@@ -102,7 +102,7 @@ On-demand, after the feature works:
 /ce-work or /ce-debug  ->  feature works  ->  /ce-polish  ->  /ce-commit-push-pr
 ```
 
-Nothing in the core loop calls this. `ce-explain` may suggest it; you still type `/ce-polish` yourself. Shipping afterward is a separate choice, because polish often spans more than one sitting and a PR every time would pile up.
+Nothing in the core loop calls this. Start `/ce-polish` yourself when a working feature needs feel-level refinement. Shipping afterward is a separate choice, because polish often spans more than one sitting and a PR every time would pile up.
 
 ---
 

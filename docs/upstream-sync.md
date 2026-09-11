@@ -56,6 +56,8 @@ Running log of syncs between this fork (`bnivanov/compound-engineering-plugin`, 
 | `1a9f16c4` | refactor(skills): restate skill bodies in plain language (#1671) | skipped | Conflicts wholesale with OMP-adapted prose; revisit only if upstream style becomes canonical. Ported files land at pre-restatement state — re-check them against upstream HEAD if this is ever adopted |
 | `c4a643b1` | refactor(skills): restate remaining dense skill references (#1681) | skipped | Same as 1a9f16c4 |
 
+All dispositions verified 2026-09-11 against upstream HEAD `c4a643b1`.
+
 ### Port notes
 
 - Ports are file-granular, not cherry-picks: every commit except `f831db7c` fails `git apply --check` on at least one file because the fork drifted. Commit messages cite the upstream SHA.

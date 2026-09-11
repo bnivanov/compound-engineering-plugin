@@ -204,7 +204,7 @@ Report NEXT: handoff if babysit should be invoked, NEXT: continue if the active 
     read_only: true,
     baseline_ref: PROGRESS_MESSAGES_BASE_REF,
     why: "Homepage optimization repeatedly announced preparation and exposed experiment bookkeeping before producing findings. Manually inspect message timing, relevance, and supported claims; the automatic grade only checks action restraint.",
-    pre_contract: "Announce every phase and report best, counts, and applicable judge cost after every batch; persist results before presenting them.",
+    pre_contract: "Report findings, decisions, blockers, and results; routine preparation and phase or batch transitions need no separate announcement; persist results before presenting them.",
     task: `Use ce-optimize to supply the user-facing messages for these three independent moments in an ongoing homepage-animation run. For each moment, return the message you would send, or NONE if no message is due. Do not execute work or write files.
 A: The user approved the scope and baseline. Your last update was 15 seconds ago. Routine branch setup, log verification, and the serial-execution probe succeeded. No new finding or decision exists; next is hypothesis generation.
 B: The user approved experiments. Two candidates finished 20 seconds after your last update. Results are persisted and verified. Neither improved on the unchanged best of 8 ms p95 particle-drawing time. No blocker or strategy change; a third candidate is already running.
@@ -630,7 +630,7 @@ The same decision owns open review thread PRRT_ci_contract_7 at https://github.c
     baseline_ref: UNDERSTANDING_BASE_REF,
     timeout_secs: 180,
     why: "The old path created HTML for a planning input. The answer must preserve undocumented rationale and return without artifact work; inspect prose for unsupported concurrency guarantees.",
-    pre_contract: "Teaching artifacts are the primary result; operational questions may answer directly in chat.",
+    pre_contract: "Delivery follows the intended use; a planning input returns an answer with evidence and constraints, not a teaching artifact.",
     task: "I am planning an event-driven queue worker. Explain how claim works and why polling and the 30-second lease exist. I need the explanation as input to my next planning step.",
     grade: { workspace_read: ["queue.js", "DECISION.md"], must_include: ["polling", "30"], actions: "none" },
   },
@@ -686,7 +686,7 @@ The same decision owns open review thread PRRT_ci_contract_7 at https://github.c
     baseline_ref: UNDERSTANDING_BASE_REF,
     timeout_secs: 180,
     why: "An unattended caller with no recoverable subject needs the missing question returned, not an invented subject or clarification dialogue.",
-    pre_contract: "A bare subject requires asking what to explain; never invent a default artifact.",
+    pre_contract: "A bare invocation with no recoverable subject returns the unresolved question and its consequence instead of inventing a topic.",
     task: "An unattended workflow delegated this task: explain why they chose that instead. The delegation contains no other context.",
     grade: { must_include: ["subject"], actions: "none", delegates: "none" },
   },

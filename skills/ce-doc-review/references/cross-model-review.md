@@ -61,9 +61,9 @@ Write `<run-dir>/<reviewer-name>-omp.json`:
   `deferred_questions`
 
 ## 4. Collect outcomes and clean up
-
-Collect every started task return before synthesis or any return; each return
-carries its reviewer name, so a terminal outcome is attributable to its lens.
+Collect every started task return before synthesis or any return; each
+return maps to its lens through the per-lens receipt file it wrote
+(`<reviewer-name>-omp.json`), so a terminal outcome is attributable to its lens.
 Fold findings through ordinary synthesis only when the review proceeds to
 synthesis; an incomplete review reports reviewer outcomes without applying
 findings. Promote agreement only when `independence_verified` is `true`. A
