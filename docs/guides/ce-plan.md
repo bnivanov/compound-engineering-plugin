@@ -282,3 +282,7 @@ No. Proof is on the non-software wrap-up menu (save, publish, or both). Software
 - [`ce-debug`](./ce-debug.md): bug-shaped prompts route here
 - [`ce-strategy`](./ce-strategy.md): anchor plans to documented product strategy
 - [`ce-proof`](./ce-proof.md): publish a non-software plan, or any markdown plan you ask to share
+
+## Understanding existing behavior and rationale
+
+When an unanswered question about behavior or rationale would materially change the work, this skill can use `ce-explain`. It passes the question, its scope, and its intended use, then uses the resulting evidence, constraints, and unknowns. The calling skill remains responsible for the plan or requirements. It reuses sufficient existing research and follows the same source restrictions. Explanation is not a mandatory extra stage.
