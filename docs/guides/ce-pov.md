@@ -42,10 +42,10 @@ After a position lands, it proposes one next step (edit, plan, scope, or spike).
 # Revisit a past decision
 /ce-pov we passed on Redis last year. still right?
 
-# Separate read: forms its own POV, then consults one explicit reviewer read
+# Council: forms its own POV, then reviewer + planner; this chat aggregates
 /ce-pov compare your take on docs/plans/new-checkout.md with a separate reviewer read
 
-# oracle: one explicit reviewer read, then bounded reconciliation
+# oracle: two-voice council, then bounded reconciliation
 /ce-pov oracle that proposal
 
 # Warm: infers the question from this conversation, returns a POV, hands control back
@@ -104,11 +104,11 @@ Adoption verdicts use the five grades and a fixed schema: incumbent, verified fa
 
 ### Cross-model panels (OMP-only)
 
-A separate read never replaces the skill's own judgment. Ask for an independent reviewer read in ordinary language, use `oracle` as shorthand for one explicit reviewer read, or accept a proactive offer on a decision with meaningful correction cost. Warm invocations never offer a panel.
+A separate read never replaces the skill's own judgment. Ask for an independent council in ordinary language, use `oracle` as shorthand for the two-voice council (reviewer and planner), or accept a proactive offer on a decision with meaningful correction cost. The session you are in aggregates; there is no third aggregator model. Warm invocations never offer a panel. Reversibility tiers size grounding; they do not start a council on their own.
 
-The reviewer inspects the shared working tree directly. The first round carries the framed question, subject, read scope, and evidence, but withholds this skill's own conclusion so the read stays independent. When the subject is itself an already-formed position, that position ships as the subject and the reviewer gives its own verdict on the underlying question.
+Each voice inspects the shared working tree directly. The first round carries the framed question, subject, read scope, and evidence, but withholds this skill's own conclusion so the read stays independent. When the subject is itself an already-formed position, that position ships as the subject and each voice gives its own verdict on the underlying question.
 
-A default panel is one blind round plus at most two reconciliations. Before each exchange, disputed project claims get verified and every voice sees the same evidence. Convergence is reasoned confidence, not a vote. At the cap, automatic dispatch stops and further rounds need your approval unless you supplied a larger limit up front. A failed read never blocks the solo POV. Any POV that follows a panel request states whether the reviewer ran, or that none did and why. The receipt records `independence_verified` from host/backend attestation of the reviewer agent, never from the reviewer's own prose.
+A default panel is one blind round plus at most two reconciliations. Before each exchange, disputed project claims get verified and every voice sees the same evidence. Convergence is reasoned confidence, not a vote. At the cap, automatic dispatch stops and further rounds need your approval unless you supplied a larger limit up front. A failed read never blocks the solo POV. Any POV that follows a panel request states which peers ran, or that none did and why. A voice is separate-model corroboration only from host/backend attestation of that agent, never from the voice's own prose. The pair is a cross-family council only when both attested families are known and pairwise distinct.
 
 ### Follow-up
 
@@ -181,12 +181,12 @@ Skip `ce-pov` when:
 | `<a bare link>` | Orients on the link, then proposes candidate framings before grounding |
 | `<a selection question>` | Picks from a bounded field. Routes to `/ce-ideate` if the field cannot be bounded |
 | `<a document or supplied approach set>` | Returns a holistic take or a project-grounded position in that subject's shape |
-| `compare/cross-check with a reviewer` | Forms its own POV, then consults one explicit reviewer read |
-| `oracle` | Blind initial reviewer read, then bounded reconciliation when needed |
+| `compare/cross-check with a reviewer` | Forms its own POV, then consults the two-voice council (reviewer and planner) |
+| `oracle` | Two-voice council, then bounded reconciliation when needed. This chat aggregates |
 
 ### Reviewer route
 
-OMP has one reviewer route. An explicit request in conversation runs one `reviewer` read; route selection is conversation-only. `independence_verified` is `true` only when the serving family is a known family, differs from the session family, and came from that attestation. Otherwise the read is attributed evidence, never separate-model corroboration.
+OMP has no per-item model parameter, so a two-family council uses two agent types: `reviewer` and `planner`. An explicit request in conversation runs that batch; route selection is conversation-only. `independence_verified` is `true` only when the serving family is a known family, differs from the session family, and came from that attestation. Council-level family diversity requires both voices attested and pairwise distinct. Otherwise the reads are attributed evidence, never separate-model corroboration.
 
 ---
 
