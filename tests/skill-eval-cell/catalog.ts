@@ -1842,7 +1842,7 @@ Units:
     fixture: `${FIX}/tiny-lib`,
     why: "A named failing test matches the fix playbook and includes ce-debug. Demanding a plan first is the wrong gate.",
     pre_contract:
-      "Broken, failing, or slow with a statable symptom → references/fix.md → ce-debug. Re-enter build.md only when the fix spans competing designs.",
+      "Broken, failing, or slow with a statable symptom → references/fix.md → ce-debug. A working system whose metric should move is ce-optimize. Re-enter build.md only when the fix spans competing designs.",
     task: `test/greet.test.js fails: greet("  ann  ") still includes the surrounding spaces.`,
     grade: {
       files_read_post: ["references/fix.md"],
