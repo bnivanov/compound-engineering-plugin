@@ -21,11 +21,6 @@ const modelVisibleRendererCases = [
     singleForm: true,
   },
   {
-    file: "skills/ce-babysit-pr/SKILL.md",
-    skill: ["/skill:ce-babysit-pr <url>"],
-    singleForm: false,
-  },
-  {
     file: "skills/ce-babysit-pr/references/setup.md",
     skill: ["/skill:ce-babysit-pr <url>"],
     singleForm: false,

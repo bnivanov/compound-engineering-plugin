@@ -30,6 +30,8 @@ export const HOLDABLE_OBJECTIVE_BASE_REF = "0e758b60b35cec165470443fde5acf60db8b
 export const CE_OPTIMIZE_BASE_REF = "b159e1fa4c70efa995742269d38269bcc7524dd2"
 /** feat/adapt-reviewed-grafts base: A/B for the O35+A01 measurement graft. */
 export const PAIRED_MEASUREMENT_BASE_REF = "6220f6d592183fa1bd11e5b52b4982cb7d24de51"
+/** The sustained-handoff A/B base: upstream main before the babysit mode-selection and handoff-boundary change (#1659 port). */
+export const SUSTAINED_HANDOFF_BASE_REF = "153e605e1622154a0d7da095fceed13edcb68bf7"
 /** The working tree, not HEAD — the post arm exists to grade the edit you have not committed yet. */
 export const POST_SWEEP_REF = WORKTREE_REF
 
@@ -136,6 +138,59 @@ export const WAVE1 = [
 ] as const
 
 export const SCENARIOS: Scenario[] = [
+  ...[
+    {
+      id: "sustain-process-session",
+      state: "The harness can start `pr-snapshot watch` as a background process and keep this session active, waking this agent on the process's `BABYSIT_WAKE` output. There is no notification callback or scheduler to arm instead. The user has not selected a monitoring mode.",
+      decision: "continuous",
+    },
+    {
+      id: "sustain-explicit-checkpoint",
+      state: "The harness can keep the session active while waiting for the detector's output. The user requested checkpoint mode.",
+      decision: "checkpoint",
+    },
+    {
+      id: "sustain-no-wait",
+      state: "The harness can run one snapshot, but cannot retain a running process, wait for its output, or schedule another agent turn. The user has not selected a monitoring mode.",
+      decision: "checkpoint",
+    },
+  ].map(({ id, state, decision }): Scenario => ({
+    id: `ce-babysit-pr/${id}`,
+    skill: "ce-babysit-pr",
+    cohort: "resized",
+    key_behavior: "judgment",
+    baseline_ref: SUSTAINED_HANDOFF_BASE_REF,
+    read_only: true,
+    why: "Jaeger PR #1658 selected checkpoint because it lacked automatic background wake. Grade mode selection separately from actual detector execution.",
+    pre_contract: "Default to the self-sustaining in-session watch: keep the session active while waiting for the detector; checkpoint only when the user requests it or the harness cannot keep the session active while waiting for detector output.",
+    task: `Use ce-babysit-pr to select the monitoring mode for this harness. PR #21 is open, non-draft, pushable, and has CI running with no actionable feedback. ${state}
+
+This is a mode-selection question only. Do not access GitHub or start monitoring. Report your choice as MODE: continuous or MODE: checkpoint, then explain it.`,
+    grade: { must_include_field: "MODE", must_include: [decision], actions: "none" },
+  })),
+  ...[
+    { id: "handoff-declined-rewrite", state: "This interactive full workflow pushed new commits to an existing open PR. The user declined the description rewrite.", decision: "handoff" },
+    { id: "handoff-active-callee", state: "This interactive full workflow created a PR. ce-babysit-pr has loaded and started in this same agent session. Its first tick found CI still running and no actionable feedback. It selected continuous mode; no stop condition has been met.", decision: "continue" },
+    { id: "handoff-opt-out", state: "This interactive full workflow created a PR with babysit:off on the invocation.", decision: "stop" },
+    { id: "handoff-draft", state: "This interactive full workflow created a draft PR. No babysit mode was explicitly requested.", decision: "stop" },
+    { id: "handoff-description-update", state: "This description-update workflow applied a revised PR body. It did not commit or push.", decision: "stop" },
+    { id: "handoff-pipeline", state: "This mode:pipeline full workflow created one PR. It did not submit a stack.", decision: "stop" },
+  ].map(({ id, state, decision }): Scenario => ({
+    id: `ce-commit-push-pr/${id}`,
+    skill: "ce-commit-push-pr",
+    cohort: "resized",
+    key_behavior: "judgment",
+    baseline_ref: SUSTAINED_HANDOFF_BASE_REF,
+    read_only: true,
+    why: "Grade the completion boundary and its existing exclusions without claiming that a routing answer proves live skill handoff.",
+    pre_contract: "Full-workflow PR publication hands off by default, subject to explicit skips; the apply reference also says a declined rewrite continues to the handoff gate and interactive success means ce-babysit-pr owns the monitoring lifecycle.",
+    task: `Use ce-commit-push-pr to resolve the next action at the completion boundary. ${state}
+
+The PR is on GitHub and its head is pushable. Unless stated otherwise above, it is non-draft, neither CE config file exists, and the invocation has no babysit token. All publishing steps have succeeded. Do not repeat them.
+
+Report NEXT: handoff if babysit should be invoked, NEXT: continue if the active babysit run should keep executing, or NEXT: stop if this run can return its final report now. Explain the decision without running git, gh, or another skill.`,
+    grade: { must_include_field: "NEXT", must_include: [decision], actions: "none" },
+  })),
   {
     id: "ce-optimize/opportunity-estimates",
     skill: "ce-optimize",
