@@ -1,6 +1,6 @@
 # Plan Handoff
 
-This file contains post-plan-writing instructions for the Durable path: document review, post-generation options, and issue creation. Load it after the plan file has been written and the confidence check (5.3.1-5.3.7) is complete. Direct and Chat brief results never reach it.
+This file contains post-plan-writing instructions for the Durable path: document review, the independent planner check, post-generation options, and issue creation. Load it after the plan file has been written and the confidence check (5.3.1-5.3.7) is complete. Direct and Chat brief results never reach it.
 
 ## 5.3.8 Document Review
 
@@ -31,10 +31,11 @@ When ce-doc-review returns "Review complete", proceed to Final Checks.
 
 ## 5.3.9 Final Checks and Cleanup
 
-Before proceeding to post-generation options:
-- Confirm the plan is stronger in specific ways, not merely longer
-- Confirm the planning boundary is intact
-- Confirm origin decisions were preserved when an origin document exists
+The session model that authored the Durable plan does not certify it. Before Phase 5.4, dispatch one host `task` item with `agent: planner` against the written plan path. This is a check, not authoring, not a second CLI, and not a substitute for `ce-doc-review`.
+
+The planner is read-only. It reads the plan, and the origin document when one exists, and returns PASS or named gaps an implementer would stall on: ungrounded decisions, missing units, a broken planning boundary, origin-document drift. It does not write files or author a replacement plan. Drop a return that mutates the tree or replaces the artifact.
+
+The session model applies only gaps it can close without a new product decision. Remaining gaps become Open Questions. A missing planner return is not a pass: if the planner cannot launch, record `planner_check: unreachable` with why and proceed.
 
 If artifact-backed mode was used:
 - Clean up the temporary scratch directory after the plan is safely updated
@@ -48,7 +49,7 @@ After all mutations in this run have settled (initial write, deepening synthesis
 
 ## 5.4 Post-Generation Options
 
-**Pipeline mode:** If invoked from an automated workflow such as LFG or any `disable-model-invocation` context, skip the interactive menu below and return control to the caller immediately. The plan file has been written, the confidence check has run, and either `ce-doc-review` completed or ce-plan recorded `skill_unreachable` because the review could not start. Return the resulting review envelope to the caller (e.g., LFG), which determines the next step.
+**Pipeline mode:** If invoked from an automated workflow such as LFG or any `disable-model-invocation` context, skip the interactive menu below and return control to the caller immediately. The plan file has been written, the confidence check has run, either `ce-doc-review` completed or ce-plan recorded `skill_unreachable` because the review could not start, and the planner check completed or recorded `planner_check: unreachable`. Return the resulting review envelope and planner-check state to the caller (e.g., LFG), which determines the next step.
 
 **Path format:** Use absolute paths for chat-output file references — relative paths are not auto-linked as clickable in most terminals.
 
