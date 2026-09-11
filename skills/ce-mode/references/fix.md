@@ -2,6 +2,8 @@
 
 **Entry:** broken, failing, or slow behavior with a statable symptom.
 
+**Not this playbook:** a system that already works as designed, where a named metric should move and the winning change is not known. Invoke `ce-optimize` and stay armed. A performance *regression* — it used to be faster — is still a fix.
+
 If the request no longer matches this playbook, return to the match table.
 
 1. **Diagnose (G2).** Invoke `ce-debug`. Artifact: a causal chain with file:line evidence, and a verified fix or a diagnosis-only summary.
