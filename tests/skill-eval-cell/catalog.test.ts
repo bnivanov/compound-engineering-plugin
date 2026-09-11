@@ -221,6 +221,7 @@ describe("skill-eval-cell catalog", () => {
       "ce-mode/plan-gate-before-multi-file-build",
       "ce-mode/revert-request-routes-undo",
       "ce-mode/throwaway-question-routes-prototype",
+      "ce-plan/durable-final-check-dispatches-planner",
       "ce-prototype/batch-conflict-asks",
       "ce-prototype/clear-batch-applies-in-place",
       "ce-prototype/question-stays-in-chat",

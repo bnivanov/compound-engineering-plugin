@@ -314,6 +314,41 @@ describe("ce-plan post-generation menu routing", () => {
     expect(HANDOFF_BODY).toContain('**Question:** "Plan ready at `<absolute path to plan>`. What would you like to do next?"')
   })
 
+  test("Durable final checks gate Phase 5.4 on planner PASS", () => {
+    const checksStart = HANDOFF_BODY.indexOf("## 5.3.9 Final Checks and Cleanup")
+    const checksEnd = HANDOFF_BODY.indexOf("## 5.4 Post-Generation Options")
+    const checksSection = HANDOFF_BODY.slice(checksStart, checksEnd)
+
+    expect(checksStart).toBeGreaterThan(-1)
+    expect(checksEnd).toBeGreaterThan(checksStart)
+    expect(checksSection).toContain("`agent: planner`")
+    expect(checksSection).toMatch(/does not certify/i)
+    expect(checksSection).toMatch(/5\.4 is unreachable until/i)
+    expect(checksSection).toContain("PASS")
+    expect(checksSection).toContain("planner_check: unreachable")
+    expect(checksSection).toContain("status: blocked")
+    expect(checksSection).not.toMatch(/unreachable[\s\S]{0,80}proceed/)
+    expect(checksSection).not.toContain("reasoning-elevation")
+    expect(SKILL_BODY).toMatch(/session model that authored the plan does not certify/i)
+    expect(SKILL_BODY).toMatch(/5\.4 is unreachable until the planner returns PASS/)
+    expect(topContractForPlanner()).toMatch(/planner returns PASS/)
+    expect(topContractForPlanner()).not.toMatch(/planner_check: unreachable/)
+
+    const menuPipeline = HANDOFF_BODY.match(
+      /## 5\.4 Post-Generation Options[\s\S]*?\*\*Pipeline mode:\*\*[^\n]+/,
+    )?.[0]
+    expect(menuPipeline).toBeDefined()
+    expect(menuPipeline!).toMatch(/planner returned PASS/)
+    expect(menuPipeline!).toMatch(/status: blocked/)
+    expect(menuPipeline!).not.toMatch(/planner check completed or recorded/)
+
+    function topContractForPlanner(): string {
+      const contractStart = SKILL_BODY.indexOf("## Mandatory Completion Contract")
+      const interactionStart = SKILL_BODY.indexOf("## Interaction Method")
+      return SKILL_BODY.slice(contractStart, interactionStart)
+    }
+  })
+
   test("inline-routing regex rejects empty-action bullets even when followed by another bullet", () => {
     // Regression guard for Codex P2 finding on PR #715: the previous
     // `\s*(?:...)\s*` shape allowed newline consumption, so a bullet with no

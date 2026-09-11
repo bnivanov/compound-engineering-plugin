@@ -96,7 +96,7 @@ Not every planning request deserves a plan file. At intake, `ce-plan` grounds it
 
 - **Direct.** The work can be stated, done, and verified in one pass with no decision you would weigh. The skill says what changes in a few sentences and hands off to `ce-work` or to you.
 - **Chat brief.** Bounded work with at most one decision and no risk surface. You get a summary, implementation units with files and test expectations, and a one-line offer to save it or hand it to `ce-work`, all in chat.
-- **Durable.** Everything else: the full unified plan file with confidence check, document review, and handoff menu.
+- **Durable.** Everything else: the full unified plan file with confidence check, document review, an independent planner PASS, and handoff menu.
 
 When the tier is uncertain, the heavier one wins. Pipeline and headless runs, goal-driven runs, requests that ask for a plan file by name, and risk surfaces (authentication, payments, migrations, external contracts) are always Durable. A saved chat brief is plain markdown without the unified-plan contract; re-invoke `ce-plan` on it when you want the full treatment.
 
@@ -141,7 +141,7 @@ It dispatches research in parallel (repo analyst, learnings researcher). Local p
 
 The plan is written. The confidence check finds `Risks & Dependencies` thin on a mute-leak risk and one unit's tests missing permission edge cases, dispatches reviewers, and folds the findings back. The plan gets stamped with a `deepened:` date.
 
-Document review then runs non-interactively. Safe auto-fixes apply silently; remaining findings surface as one line above the menu (`Doc review applied 2 fixes. 3 decisions, 1 FYI remain.`). The menu offers: start `ce-work` (recommended), run it as a `/goal` when the host supports that, decide on remaining review items or prototype a remaining feel-question, create a tracked issue, or open the file if it is HTML. There is no Proof option on the software menu and no pause option. The file is already saved.
+Document review then runs non-interactively. Safe auto-fixes apply silently; remaining findings surface as one line above the menu (`Doc review applied 2 fixes. 3 decisions, 1 FYI remain.`). An independent `planner` agent then checks the written plan. The menu is not offered until that check returns PASS; a missing return blocks the run. The menu offers: start `ce-work` (recommended), run it as a `/goal` when the host supports that, decide on remaining review items or prototype a remaining feel-question, create a tracked issue, or open the file if it is HTML. There is no Proof option on the software menu and no pause option. The file is already saved.
 
 ---
 
@@ -188,7 +188,7 @@ Two phrases carry the weight. "Invoke the `ce-plan` skill", because the slash-co
    |  guardrails: U-IDs traced to R/A/F/AE-IDs
    |  test scenarios with AE-link convention (Covers AE<N>)
    |  scope boundaries preserved (including "Outside this product's identity")
-   |  confidence-checked and auto-deepened
+   |  confidence-checked, auto-deepened, and planner-checked
    v
 /ce-work            (execute against the guardrails)
    |  reads U-IDs as the unit of execution
@@ -250,7 +250,7 @@ Plenty of work never goes through a brainstorm. Direct invocations that work wel
 ## FAQ
 
 **Which model does it use?**
-It runs on the session model. For stronger reasoning, run the session on a stronger model or dispatch a `planner` agent natively.
+Authoring stays on the session model. After a Durable plan is written, a `planner` agent must return PASS before the handoff menu. If the planner cannot launch, the run is blocked. For stronger authoring, run the session on a stronger model.
 
 **Doesn't a plan tell you HOW to build something?**
 Not in `ce-plan`'s framing. The plan tells you what must be honored: decisions, scope, units, files, tests, risks. The implementing agent figures out HOW with code in front of them. That same frame is what lets one engine plan a software refactor, a tank-maintenance job, and a 6-week study plan.
