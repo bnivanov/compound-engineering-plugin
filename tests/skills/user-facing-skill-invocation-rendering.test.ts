@@ -21,11 +21,6 @@ const modelVisibleRendererCases = [
     singleForm: true,
   },
   {
-    file: "skills/ce-babysit-pr/SKILL.md",
-    skill: ["/skill:ce-babysit-pr <url>"],
-    singleForm: false,
-  },
-  {
     file: "skills/ce-babysit-pr/references/setup.md",
     skill: ["/skill:ce-babysit-pr <url>"],
     singleForm: false,
@@ -89,13 +84,6 @@ const modelVisibleRendererCases = [
 ] as const
 
 const explicitOnlyRendererCases = [
-  {
-    // The rendering rule travels with the seam that prints the invocation: the
-    // ce-polish handoff now lives in the Phase 6 required-read reference.
-    file: "skills/ce-explain/references/destinations.md",
-    skill: ["/skill:ce-polish"],
-    targets: ["ce-polish"],
-  },
   {
     file: "skills/ce-dogfood/SKILL.md",
     skill: ["/skill:ce-setup", "/skill:ce-dogfood <original arguments>"],

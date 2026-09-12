@@ -7,6 +7,17 @@ async function readRepoFile(relativePath: string): Promise<string> {
 }
 
 describe("ce-commit-push-pr contract", () => {
+  test("protects ignored user data when switching to a fresh base", async () => {
+    const branchCreation = await readRepoFile(
+      "skills/ce-commit-push-pr/references/branch-creation.md",
+    )
+
+    expect(branchCreation).toContain(
+      'git checkout --no-overwrite-ignore -b <branch-name> "$BASE_REF"',
+    )
+    expect(branchCreation).not.toMatch(/^git stash push -u/m)
+    expect(branchCreation).toMatch(/ignored files.+stop and ask the user/is)
+  })
   test("gates every commit publication on project-defined requirements", async () => {
     const publishSurfaceSpecs = [
       ["skills/ce-commit-push-pr/references/commit-and-push.md", "git push -u origin HEAD"],
@@ -470,7 +481,7 @@ describe("PR concept teaching contract", () => {
     // Completion gate: PR URL alone is not done; ce-babysit-pr must own follow-on.
     expect(handoff).toMatch(/not done.+until `ce-babysit-pr` owns/is)
     expect(handoff).toMatch(/Reporting the PR URL alone is not success/)
-    expect(handoff).toMatch(/\*\*Success\*\*.+`ce-babysit-pr` has started/is)
+    expect(handoff).toMatch(/\*\*Success\*\*.+`ce-babysit-pr` owns the monitoring lifecycle/is)
     // Harness-agnostic load: use the host's normal skill mechanism without a platform matrix.
     expect(handoff).toMatch(/host's normal skill-invocation mechanism/)
     expect(handoff).not.toContain("Claude Code `Skill` tool")
@@ -562,9 +573,11 @@ describe("PR concept teaching contract", () => {
     // The pipeline exception is part of the do-not-fire list in the apply reference.
     expect(applyRef).toMatch(/mode:pipeline` \*\*except\*\* when this run completed a stack-mode submit/i)
     expect(applyRef).toMatch(/outer orchestrator[\s\S]{0,80}second bare babysit/i)
-    expect(applyRef).toMatch(/mode:pipeline[\s\S]{0,160}started-only is not enough/i)
+    expect(applyRef).toMatch(/mode:pipeline[\s\S]{0,160}wait for its pipeline stop/i)
     expect(submit).toMatch(/authoritative parent tip/i)
-    expect(submit).toContain('git checkout -b -- "<branch-name>" "<parent-tip>"')
+    expect(submit).toContain('git checkout --no-overwrite-ignore -b "<branch-name>" "<parent-tip>"')
+    expect(submit).toMatch(/If checkout fails because uncommitted or ignored files would be overwritten/)
+    expect(submit).not.toMatch(/worktree-safety|Worktree preservation/)
     expect(submit).toMatch(/Do not hard-code `origin\/<parent>`/i)
     expect(submit).toMatch(/starts on the resolved default branch.+follow `references\/branch-creation\.md`/is)
     expect(submit).toMatch(/starts on an existing feature branch.+do not follow `references\/branch-creation\.md`/is)

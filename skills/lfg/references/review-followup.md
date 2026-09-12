@@ -22,7 +22,7 @@ ce-code-review mode:agent plan:<plan-path-from-step-1>
 
 Read the **Actionable Findings** summary and artifact path. Do not pass `mode:autofix`.
 
-Pass the plan file path from step 1 so `ce-code-review` can verify requirements completeness. Also read any findings stamped `settled_conflict` (each names the conflicting KTD). Stamped preference-grade findings proceed (they are report-only) but must flow into step 6's residual record.
+Pass the plan file path from step 1 so `ce-code-review` can verify requirements completeness. Also read any findings stamped `settled_conflict` (each names the conflicting KTD). A stamp reaching the report is always evidence-backed — a finding that the settled approach cannot achieve the agreed outcome; synthesis discards preference-grade stamps upstream, so none arrive here. Stamped findings are report-only but must flow into step 6's residual record.
 
 `mode:agent` is report-only **by design** — it surfaces findings but never edits the tree; LFG applies the eligible ones in step 5. When narrating progress to the user, frame this as "review found X -> applied X in step 5," not as "code review did not auto-fix." A report-only review followed by an LFG-applied fix is the intended contract, not a gap.
 
@@ -59,14 +59,14 @@ Do not treat `autofix_class` as permission to auto-apply.
 
 Residuals are actionable findings **not** applied in step 5 — not leftovers from in-skill autofix. Use the Actionable Findings summary / artifact from step 4.
 
-Two further triggers also require step 6, both outside the apply path: step 4 emitted any `settled_conflict`-stamped findings, or step 2's return carried proceeded-and-flagged `settled_decision_conflicts` entries. They are the divergent class and must be made durable here.
+Two further triggers also require step 6, both outside the apply path: step 4 emitted any `settled_conflict`-stamped findings — always evidence-backed when present, since preference-grade stamps are discarded upstream before the report — or step 2's return carried proceeded-and-flagged `settled_decision_conflicts` entries. They are the divergent class and must be made durable here.
 
 A residual at this point is undecided, not accepted debt: step 5 declined it because it needs judgment, and the pipeline never merges, so the human reviewing the PR supplies that judgment — fix it in this branch, dismiss it, or file it to carry past merge. The record therefore goes where that reviewer already looks, the PR body, and the pipeline files no tickets on its behalf; one ticket per finding, decided by nobody, is how a run of small nits floods a tracker.
 
 **When a PR will exist (a remote is configured):** compose a `## Unapplied review findings` section, one checkbox bullet per item so a human ticks it when they close it:
 
 - For each unapplied actionable finding: `- [ ] <severity> — <file:line> — <title>`, plus the reviewer's `suggested_fix` on the next line when present.
-- For each `settled_conflict`-stamped finding from step 4: the same bullet plus the conflicting KTD the stamp names — included even though the finding is report-only.
+- For each `settled_conflict`-stamped finding from step 4: the same bullet plus the conflicting KTD the stamp names — each stamp marks a finding that the settled approach cannot achieve the agreed outcome, and the bullet stands even though the finding is report-only.
 - For each proceeded-and-flagged `settled_decision_conflicts` entry from step 2: a bullet with the KTD, the evidence, and how it was routed.
 
 Close the section with the review run context (`run_id`, `artifact_path`). Hand the section to step 8 as PR-description context; `references/shipping-tail.md` names the seam. Step 8 writes the body, so nothing here edits the PR directly, and nothing posts a PR comment for these.

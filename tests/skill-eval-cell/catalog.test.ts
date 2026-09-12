@@ -215,6 +215,7 @@ describe("skill-eval-cell catalog", () => {
       "ce-compound-refresh/plain-refresh-keeps-redundant-accurate-doc",
       "ce-compound-refresh/worth-lens-intent-confirms-before-loading",
       "ce-debug/pipeline-divergent-defer",
+      "ce-doc-review/approval-versus-judgment-summary",
       "ce-mode/fix-routes-debug-not-plan",
       "ce-mode/no-ship-without-user-goahead",
       "ce-mode/optimize-target-routes-optimize-not-debug",

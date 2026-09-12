@@ -18,6 +18,8 @@ This fork targets one host: [oh-my-pi (omp)](https://github.com/can1357/oh-my-pi
 
 Maintained by [bnivanov](https://github.com/bnivanov). Upstream Compound Engineering is by [Kieran Klaassen](https://github.com/kieranklaassen) and [Trevin Chow](https://github.com/tmchow).
 
+For understanding before a change, ask `ce-explain` how the relevant behavior works and why it exists. For a recommendation, use `ce-pov`; “oracle this” adds independent model opinions. Both can contribute to another workflow without requiring a separate human interaction.
+
 ## Install
 
 Compound Engineering installs into oh-my-pi (omp) through its marketplace flow. The repo ships a native `.omp-plugin/marketplace.json` catalog whose plugin entry carries a `version`, so omp's update checker can see each new release:

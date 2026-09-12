@@ -30,6 +30,8 @@ export const HOLDABLE_OBJECTIVE_BASE_REF = "0e758b60b35cec165470443fde5acf60db8b
 export const CE_OPTIMIZE_BASE_REF = "b159e1fa4c70efa995742269d38269bcc7524dd2"
 /** feat/adapt-reviewed-grafts base: A/B for the O35+A01 measurement graft. */
 export const PAIRED_MEASUREMENT_BASE_REF = "6220f6d592183fa1bd11e5b52b4982cb7d24de51"
+/** The sustained-handoff A/B base: upstream main before the babysit mode-selection and handoff-boundary change (#1659 port). */
+export const SUSTAINED_HANDOFF_BASE_REF = "153e605e1622154a0d7da095fceed13edcb68bf7"
 /** The working tree, not HEAD — the post arm exists to grade the edit you have not committed yet. */
 export const POST_SWEEP_REF = WORKTREE_REF
 
@@ -110,6 +112,11 @@ export type Scenario = {
   baseline_ref?: string
 }
 
+/** The calling-workflow A/B base: upstream main before explain/pov could contribute to another workflow (#1658 port). */
+export const UNDERSTANDING_BASE_REF = "8df67793b9733d2220fa9a7fc37139931471af62"
+/** The progress-reporting A/B base: upstream main before progress updates focused on useful findings (#1668 port). */
+export const PROGRESS_MESSAGES_BASE_REF = "b3efbd6c9f5497c9ad6808c63a1849f306644abe"
+
 const FIX = "tests/skill-eval-cell/fixtures"
 
 const SETUP_INSTRUCTIONS_TASK =
@@ -136,6 +143,100 @@ export const WAVE1 = [
 ] as const
 
 export const SCENARIOS: Scenario[] = [
+  ...[
+    {
+      id: "sustain-process-session",
+      state: "The harness can start `pr-snapshot watch` as a background process and keep this session active, waking this agent on the process's `BABYSIT_WAKE` output. There is no notification callback or scheduler to arm instead. The user has not selected a monitoring mode.",
+      decision: "continuous",
+    },
+    {
+      id: "sustain-explicit-checkpoint",
+      state: "The harness can keep the session active while waiting for the detector's output. The user requested checkpoint mode.",
+      decision: "checkpoint",
+    },
+    {
+      id: "sustain-no-wait",
+      state: "The harness can run one snapshot, but cannot retain a running process, wait for its output, or schedule another agent turn. The user has not selected a monitoring mode.",
+      decision: "checkpoint",
+    },
+  ].map(({ id, state, decision }): Scenario => ({
+    id: `ce-babysit-pr/${id}`,
+    skill: "ce-babysit-pr",
+    cohort: "resized",
+    key_behavior: "judgment",
+    baseline_ref: SUSTAINED_HANDOFF_BASE_REF,
+    read_only: true,
+    why: "Jaeger PR #1658 selected checkpoint because it lacked automatic background wake. Grade mode selection separately from actual detector execution.",
+    pre_contract: "Default to the self-sustaining in-session watch: keep the session active while waiting for the detector; checkpoint only when the user requests it or the harness cannot keep the session active while waiting for detector output.",
+    task: `Use ce-babysit-pr to select the monitoring mode for this harness. PR #21 is open, non-draft, pushable, and has CI running with no actionable feedback. ${state}
+
+This is a mode-selection question only. Do not access GitHub or start monitoring. Report your choice as MODE: continuous or MODE: checkpoint, then explain it.`,
+    grade: { must_include_field: "MODE", must_include: [decision], actions: "none" },
+  })),
+  ...[
+    { id: "handoff-declined-rewrite", state: "This interactive full workflow pushed new commits to an existing open PR. The user declined the description rewrite.", decision: "handoff" },
+    { id: "handoff-active-callee", state: "This interactive full workflow created a PR. ce-babysit-pr has loaded and started in this same agent session. Its first tick found CI still running and no actionable feedback. It selected continuous mode; no stop condition has been met.", decision: "continue" },
+    { id: "handoff-opt-out", state: "This interactive full workflow created a PR with babysit:off on the invocation.", decision: "stop" },
+    { id: "handoff-draft", state: "This interactive full workflow created a draft PR. No babysit mode was explicitly requested.", decision: "stop" },
+    { id: "handoff-description-update", state: "This description-update workflow applied a revised PR body. It did not commit or push.", decision: "stop" },
+    { id: "handoff-pipeline", state: "This mode:pipeline full workflow created one PR. It did not submit a stack.", decision: "stop" },
+  ].map(({ id, state, decision }): Scenario => ({
+    id: `ce-commit-push-pr/${id}`,
+    skill: "ce-commit-push-pr",
+    cohort: "resized",
+    key_behavior: "judgment",
+    baseline_ref: SUSTAINED_HANDOFF_BASE_REF,
+    read_only: true,
+    why: "Grade the completion boundary and its existing exclusions without claiming that a routing answer proves live skill handoff.",
+    pre_contract: "Full-workflow PR publication hands off by default, subject to explicit skips; the apply reference also says a declined rewrite continues to the handoff gate and interactive success means ce-babysit-pr owns the monitoring lifecycle.",
+    task: `Use ce-commit-push-pr to resolve the next action at the completion boundary. ${state}
+
+The PR is on GitHub and its head is pushable. Unless stated otherwise above, it is non-draft, neither CE config file exists, and the invocation has no babysit token. All publishing steps have succeeded. Do not repeat them.
+
+Report NEXT: handoff if babysit should be invoked, NEXT: continue if the active babysit run should keep executing, or NEXT: stop if this run can return its final report now. Explain the decision without running git, gh, or another skill.`,
+    grade: { must_include_field: "NEXT", must_include: [decision], actions: "none" },
+  })),
+  {
+    id: "ce-optimize/progress-messages",
+    skill: "ce-optimize",
+    cohort: "untouched",
+    key_behavior: "judgment",
+    read_only: true,
+    baseline_ref: PROGRESS_MESSAGES_BASE_REF,
+    why: "Homepage optimization repeatedly announced preparation and exposed experiment bookkeeping before producing findings. Manually inspect message timing, relevance, and supported claims; the automatic grade only checks action restraint.",
+    pre_contract: "Report findings, decisions, blockers, and results; routine preparation and phase or batch transitions need no separate announcement; persist results before presenting them.",
+    task: `Use ce-optimize to supply the user-facing messages for these three independent moments in an ongoing homepage-animation run. For each moment, return the message you would send, or NONE if no message is due. Do not execute work or write files.
+A: The user approved the scope and baseline. Your last update was 15 seconds ago. Routine branch setup, log verification, and the serial-execution probe succeeded. No new finding or decision exists; next is hypothesis generation.
+B: The user approved experiments. Two candidates finished 20 seconds after your last update. Results are persisted and verified. Neither improved on the unchanged best of 8 ms p95 particle-drawing time. No blocker or strategy change; a third candidate is already running.
+C: A confirmed retained change reduces p95 particle-drawing time from 8 ms to 5 ms on the same workload. Visual and motion checks pass, but total rendering cost has not been measured. The evidence is persisted and verified. Next is checking ongoing CSS animation.`,
+    grade: { must_include: ["5 ms"], actions: "none", delegates: "none" },
+  },
+  {
+    id: "ce-doc-review/approval-versus-judgment-summary",
+    skill: "ce-doc-review",
+    cohort: "untouched",
+    key_behavior: "judgment",
+    read_only: true,
+    post_only: true,
+    why: "A determined fix may still require approval. The summary must distinguish that permission from a choice requiring user judgment.",
+    pre_contract: "Report completed changes separately from grouped proposals and decisions. A selected fix does not establish permission to apply it.",
+    task: "Use ce-doc-review at the presentation checkpoint. Read references/rendering-floor.md and references/review-output-template.md. Return only a user-facing summary of these already-verified results, not a full table or a new review. One broken guide link was fixed and verified. Two plan corrections have selected fixes: update the obsolete setup command and add the missing dependency so the guide can copy the completed asset. Both corrections await one grouped approval; neither has been applied. No question requiring user judgment remains. Do not ask for approval in this test, dispatch, inspect a project, or edit anything.",
+    grade: { must_include: ["approval"], actions: "none" },
+  },
+  {
+    id: "ce-optimize/approval-message",
+    skill: "ce-optimize",
+    cohort: "untouched",
+    key_behavior: "judgment",
+    read_only: true,
+    baseline_ref: PROGRESS_MESSAGES_BASE_REF,
+    why: "Plan review should expose scope, evidence, and limits without presenting the time cap as expected duration. Manually inspect plain language and approval preservation.",
+    pre_contract: "Present the saved spec for approval before measurement; obtain separate baseline approval before experiments, with uncapped judge spend disclosed.",
+    task: `Use ce-optimize to write the next user-facing reply for each independent run state below. Do not execute work or write files.
+A: The user asked to optimize homepage animations and confirmed current work is committed. You saved and verified spec.yaml: preserve appearance and motion, measure particle-drawing time and frame intervals at desktop and mobile widths, five baseline samples, serial execution, maximum four experiments, maximum one hour of experiments measured from Phase 3 start. No reliable duration estimate exists. No new dependencies, push, PR, or deployment. The spec has not been approved; measurement has not started.
+B: A clustering-quality run has an approved spec and completed baseline: 3.0 on a 1-5 relevance rubric; coverage and degenerate-output checks pass. Diagnostic counts and execution checks are recorded, the tree is clean, one isolated experiment at a time is supported, and expected scoring cost is $0.40 per experiment. Total scoring spend has no configured cap. The log is experiment-log.yaml. Baseline approval is still pending.`,
+    grade: { must_include: ["3.0", "0.40"], actions: "none", delegates: "none" },
+  },
   {
     id: "ce-optimize/opportunity-estimates",
     skill: "ce-optimize",
@@ -518,6 +619,76 @@ The same decision owns open review thread PRRT_ci_contract_7 at https://github.c
       // asking would otherwise leave a clean tree and pass.
       committed_must_not: ["seat-cap.js"],
     },
+  },
+  {
+    id: "ce-explain/planning-understanding",
+    skill: "ce-explain",
+    cohort: "resized",
+    key_behavior: "judgment",
+    read_only: false,
+    fixture: `${FIX}/understanding-queue`,
+    baseline_ref: UNDERSTANDING_BASE_REF,
+    timeout_secs: 180,
+    why: "The old path created HTML for a planning input. The answer must preserve undocumented rationale and return without artifact work; inspect prose for unsupported concurrency guarantees.",
+    pre_contract: "Delivery follows the intended use; a planning input returns an answer with evidence and constraints, not a teaching artifact.",
+    task: "I am planning an event-driven queue worker. Explain how claim works and why polling and the 30-second lease exist. I need the explanation as input to my next planning step.",
+    grade: { workspace_read: ["queue.js", "DECISION.md"], must_include: ["polling", "30"], actions: "none" },
+  },
+  {
+    id: "ce-explain/embedded-pr-explanation",
+    skill: "ce-explain",
+    cohort: "resized",
+    key_behavior: "judgment",
+    read_only: false,
+    fixture: `${FIX}/understanding-queue`,
+    baseline_ref: UNDERSTANDING_BASE_REF,
+    timeout_secs: 180,
+    why: "An explanation for PR readers must be incorporable content, not an obligatory full-depth standalone lesson or a publication action.",
+    pre_contract: "Audience adaptation retains teaching depth and refuses a status-update form.",
+    task: "The PR-writing workflow needs a short explanation for reviewers of why this queue still polls despite notifications. Supply two paragraphs it can incorporate into the PR body.",
+    grade: { workspace_read: ["DECISION.md"], must_include: ["notification"], actions: "none" },
+  },
+  {
+    id: "ce-explain/teaching-artifact",
+    skill: "ce-explain",
+    cohort: "resized",
+    key_behavior: "judgment",
+    read_only: false,
+    fixture: `${FIX}/understanding-queue`,
+    baseline_ref: UNDERSTANDING_BASE_REF,
+    timeout_secs: 180,
+    why: "The PR concept handoff's deeper teaching use still creates a usable artifact and static exercises without blocking or publishing.",
+    pre_contract: "A teaching request creates an artifact; exercises are static and never block the run.",
+    task: "I followed the PR's suggestion to learn more. Teach me how this queue's polling and lease work. Make a standalone markdown explainer with exercises I can keep, and save it as queue-explainer.md here.",
+    grade: { workspace_contains: [{ path: "queue-explainer.md", needle: "Check yourself" }, { path: "queue-explainer.md", needle: "Answers" }], must_exclude: ["publish", "upload"] },
+  },
+  {
+    id: "ce-pov/caller-judgment",
+    skill: "ce-pov",
+    cohort: "resized",
+    key_behavior: "judgment",
+    read_only: false,
+    fixture: `${FIX}/understanding-queue`,
+    baseline_ref: UNDERSTANDING_BASE_REF,
+    timeout_secs: 180,
+    why: "A bounded planning decision should return a grounded judgment without redundant explanation dispatch or a continuation menu.",
+    pre_contract: "A warm invocation returns a POV as a guest, independently verifying conversation claims.",
+    task: "Our planning workflow needs your judgment: keep the current one-second recovery poll, or remove it and rely solely on notifications? Use the local queue and decision record. This decision is input to the plan I am writing.",
+    grade: { workspace_read: ["DECISION.md"], must_include: ["poll"], actions: "none", delegates: "none" },
+  },
+  {
+    id: "ce-explain/unavailable-framing",
+    skill: "ce-explain",
+    cohort: "resized",
+    key_behavior: "judgment",
+    read_only: false,
+    fixture: `${FIX}/understanding-queue`,
+    baseline_ref: UNDERSTANDING_BASE_REF,
+    timeout_secs: 180,
+    why: "An unattended caller with no recoverable subject needs the missing question returned, not an invented subject or clarification dialogue.",
+    pre_contract: "A bare invocation with no recoverable subject returns the unresolved question and its consequence instead of inventing a topic.",
+    task: "An unattended workflow delegated this task: explain why they chose that instead. The delegation contains no other context.",
+    grade: { must_include: ["subject"], actions: "none", delegates: "none" },
   },
   {
     id: "ce-pov/stay-read-only",

@@ -31,7 +31,9 @@ Dispatch three generic subagents (code-reuse, code-quality, and efficiency revie
 
 Do not paraphrase these rubrics from memory — read each file and pass it verbatim, or the reviewer loses the gating rules that keep the pass behavior-preserving.
 
-**Bounded dispatch.** Queue the three reviewers and launch only as many as the harness accepts at once; treat a concurrency/active-agent-limit error as backpressure (leave the reviewer queued and retry after a slot frees), not as reviewer failure. If a dispatch fails for a reason that survives correcting the invocation, run that reviewer's pass inline in the parent context using the same prompt asset, and disclose the substitution in one line.
+**Bounded dispatch.** Queue the three reviewers and launch only as many as the harness accepts at once; treat a concurrency/active-agent-limit error as backpressure (leave the reviewer queued and retry after a slot frees), not as reviewer failure. When a dispatch cannot recover through active work, a supported release, or a corrected invocation, run that pass inline using the same prompt asset and disclose the substitution.
+
+**Agent lifecycle.** Collect terminal outcomes, including failures, before cleanup. Close or release review-owned agents when the harness provides caller-owned cleanup, before refilling slots, advancing stages, or returning. Do not message completed agents with no remaining work. Do not infer released capacity from completion or interruption, or invent cleanup operations.
 
 **Model selection.** Dispatch these reviewers as `task` agents and inherit the parent model: the OMP task tool selects the model by agent name and exposes no per-agent override; a working pass on the parent model beats a broken dispatch.
 

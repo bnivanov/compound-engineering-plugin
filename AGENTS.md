@@ -301,6 +301,8 @@ So: a skill's *core* behavior **can** live in a bundled script across hosts — 
 - **Brainstorm evidence / legacy requirements** may live in `docs/brainstorms/` — historical requirements docs and specialized analysis artifacts such as `docs/brainstorms/riffrec-feedback/`. Do not treat this as the canonical output path for new `ce-brainstorm` artifacts.
 - **Solutions** live in `docs/solutions/` — documented solutions to past problems (bugs, best practices, workflow patterns), organized by category with YAML frontmatter (`module`, `tags`, `problem_type`). Relevant when implementing or debugging in documented areas.
 - **Specs** live in `docs/specs/` — target platform format specifications.
+- **Upstream sync state** lives in `docs/upstream-sync.md` — the pinned merge-base, fetch-by-URL procedure, and per-commit disposition table. Check it before any upstream sync; update it after one.
+
 
 ### Solution categories (`docs/solutions/`)
 

@@ -247,3 +247,7 @@ Not from the Phase 4 menu. Software next steps are `ce-plan` or `lfg` (which pla
 - [`ce-strategy`](./ce-strategy.md): anchor brainstorms to a documented product strategy
 - [`lfg`](./lfg.md): autonomous plan-then-ship from a requirements-only artifact
 - [`ce-proof`](./ce-proof.md): publish a non-software summary (or any markdown file you ask to share)
+
+## Understanding existing behavior and rationale
+
+When an unanswered question about behavior or rationale would materially change the work, this skill can use `ce-explain`. It passes the question, its scope, and its intended use, then uses the resulting evidence, constraints, and unknowns. The calling skill remains responsible for the plan or requirements. It reuses sufficient existing research and follows the same source restrictions. Explanation is not a mandatory extra stage.
