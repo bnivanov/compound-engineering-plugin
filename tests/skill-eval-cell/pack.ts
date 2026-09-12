@@ -132,6 +132,35 @@ function main() {
     process.exit(2)
   }
 
+  // Baseline refs are upstream-main SHAs, not fork commits: they resolve only
+  // after a one-time `git fetch` of the upstream repo into this clone. Check
+  // every ref the selected scenarios will need before any cell runs, so a
+  // missing object fails here with the remedy instead of mid-pack in git
+  // archive.
+  const neededRefs = new Set<string>()
+  for (const scenario of selected) {
+    for (const arm of armsFor(scenario, requested)) {
+      const ref = resolveArmRef(scenario, arm)
+      if (ref && ref !== POST_SWEEP_REF) neededRefs.add(ref)
+    }
+  }
+  const missingRefs = [...neededRefs].filter(
+    (ref) =>
+      spawnSync("git", ["cat-file", "-e", `${ref}^{commit}`], {
+        cwd: REPO_ROOT,
+        stdio: "ignore",
+      }).status !== 0,
+  )
+  if (missingRefs.length > 0) {
+    console.error(
+      `baseline refs not in this clone: ${missingRefs.join(", ")}\n` +
+        "They are upstream-main commits; fetch them once:\n" +
+        "  git fetch https://github.com/EveryInc/compound-engineering-plugin",
+    )
+    process.exit(2)
+  }
+
+
   const stamp = new Date().toISOString().replace(/[:.]/g, "-")
   const explicitOut = arg("--out")
   const root = prepareOutput(explicitOut ?? fs.mkdtempSync(path.join(os.tmpdir(), `ce-skill-eval-pack-${stamp}-`)))

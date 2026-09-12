@@ -42,3 +42,5 @@ bun run test:skill-eval-pack -- --id lfg/plan-first --arm ab
 ```
 
 `--arm ab` is pre+post for every catalog skill (the 8KB sweep is fully merged). `--wave1` is the cheap read-only decision set, not every scenario. Live mutation and oracle dispatch are separate ids. The pack exits non-zero when any arm failed, after writing `pack.json`, so it can be used as a check. `ok` is the only verdict: a listed `files_read_post` miss fails the cell; unlisted references are not graded. Not in default `bun test`.
+
+Baseline refs (`PRE_SWEEP_REF`, per-scenario `baseline_ref`) are upstream-main commits, not fork commits — they resolve only after a one-time `git fetch https://github.com/EveryInc/compound-engineering-plugin` into this clone. `pack.ts` checks every needed ref before running and prints that command when one is missing.
