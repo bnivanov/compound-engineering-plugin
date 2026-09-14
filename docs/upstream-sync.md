@@ -28,6 +28,12 @@ Running log of syncs between this fork (`bnivanov/compound-engineering-plugin`, 
 | `pending-decision` | Feature-level adoption question the user has not decided |
 | `n/a-fork` | Targets a surface the fork does not carry (docs site, deleted scripts, multi-host machinery) |
 
+## Program baseline (Slice 0, 2026-09-14)
+
+- **Program baseline SHA (upstream HEAD at program start):** `fd8abda7f64ead2f410da2cfd86c0c8e7cbf8187` (2026-09-13, `feat(lfg): route each request to the skill that owns it before shipping (#1702)`) — fetched per the documented no-persistent-remote procedure, verified resolving via `git cat-file -t` (commit). 17 commits ahead of the 2026-09-11 sync's `c4a643b1` check point; per-commit dispositions land with their Tier-1 slices, not here.
+- **Evidence base persisted (R18):** research report at `docs/brainstorms/2026-09-14-plugin-ecosystem-research.md` (session artifact `$TMPDIR/deep-research-20260914a-kq223ilo/report.md`, 66 verified claims / 44 sources); claim ledger at `docs/claims-20260914a.jsonl` (same source dir). Every program disposition cites these.
+- **Capability audit:** `docs/omp-capability-audit.md` (Slice-0 findings record; mechanism × hook × fallback table for R9/R11/R12/R13/R15). No blocked-with-reason entries; one negative finding — no wire-level per-spawn model field on task dispatch (omp v18.1.21).
+
 ## Sync 2026-09-11
 
 - **Base (merge-base):** `8df67793b9733d2220fa9a7fc37139931471af62` (upstream 3.24.0, 2026-09-08)
