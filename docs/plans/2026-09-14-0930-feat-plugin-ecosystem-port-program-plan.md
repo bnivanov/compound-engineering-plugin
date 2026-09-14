@@ -181,6 +181,7 @@ flowchart TB
     U10[U10 plan-verify nudge<br/>audit-gated]
     U11[U11 name-shadowing rule<br/>audit-gated]
     U8 --> U10
+  end
   T2 --> T3
   subgraph T3[Tier 3 — cross-harness mechanisms]
     U12[U12 converge gate → ce-work]
@@ -236,7 +237,7 @@ Tier order is sequential per R1 and is encoded in the dependency table: every Ti
 
 **Dependencies:** none.
 
-**Files:** `docs/omp-capability-audit.md` (create); `docs/upstream-sync.md` (program baseline row); `docs/brainstorms/2026-09-14-plugin-ecosystem-research.md` (commit the research report); claim ledger under `docs/` or folded into the sync record.
+**Files:** `docs/omp-capability-audit.md` (create); `docs/upstream-sync.md` (program baseline row); `docs/brainstorms/2026-09-14-plugin-ecosystem-research.md` (commit the research report — on disk at `$TMPDIR/deep-research-20260914a-kq223ilo/report.md`, claims at `claims-20260914a.jsonl` in the same dir); claim ledger under `docs/` or folded into the sync record.
 
 **Approach:**
 1. Fetch upstream per the documented procedure; record upstream HEAD as the program baseline SHA in `docs/upstream-sync.md`.
@@ -292,7 +293,7 @@ Tier order is sequential per R1 and is encoded in the dependency table: every Ti
 **Files:** `skills/ce-brainstorm/scripts/packs-resolve.py` (canonical), `skills/ce-code-review/scripts/packs-resolve.py` (parity copy), plus every further resolver copy the pinned upstream implementation places; `.compound-engineering/config.example.yaml`, `skills/ce-setup/references/config-template.yaml`, `docs/guides/configuration.md`; wiring in `skills/ce-brainstorm/`, `skills/ce-code-review/`, `skills/ce-compound/`, `skills/ce-doc-review/`, `skills/ce-dogfood/`, `skills/ce-plan/`, `skills/ce-setup/`; `docs/guides/packs.md` (create); `tests/skills/ce-setup-check-health.test.ts`; a new parity test; `docs/upstream-sync.md`.
 
 **Approach:**
-1. Resolve the `pending-decision` row first — a recorded deferral ends the slice as `pending-decision` retained, no-op otherwise.
+1. Resolve the `pending-decision` row first: this plan's R5 adoption (user-settled via the brainstorm) resolves the existing row — the port proceeds. The guard applies only to a deferral-with-reason recorded after this plan's date; such a deferral ends the slice as `pending-decision` retained.
 2. Pin baseline; port `packs-resolve.py` at the pinned SHA's actual shape — resolver-copy layout, config layering, source kinds, and failure semantics as upstream implements them; add the byte-parity test covering every copy upstream places.
 3. Add the `packs:` block to both config files and the `configuration.md` table row; ce-setup repo-fixes gains the rollout step; check-health validates the key.
 4. Wire the seven consumers — five have empty or missing `scripts/` dirs, so wiring is a read-time reference or anchored call per the tier rules, not a third script copy.
@@ -316,7 +317,7 @@ Tier order is sequential per R1 and is encoded in the dependency table: every Ti
 
 **Dependencies:** U2, U3 (the `skills/*/SKILL.md` sweep runs after their SKILL.md edits land).
 
-**Files:** `skills/*/SKILL.md` descriptions; `skills/ce-debug/SKILL.md`; `tests/skills/astra-description-triggers.test.ts` (create); `tests/skill-eval-cell/grade.ts`, `tests/skill-eval-cell/catalog.ts`; `.github/workflows/ci.yml`; `AGENTS.md` (pattern port: policy → `docs/solutions/developer-experience/`); `skills/ce-work/scripts/__pycache__/` (delete — orphaned build output); `docs/upstream-sync.md`.
+**Files:** `skills/*/SKILL.md` descriptions; `skills/ce-debug/SKILL.md`; `tests/skills/astra-description-triggers.test.ts` (create); `tests/skill-eval-cell/grade.ts`, `tests/skill-eval-cell/catalog.ts`; `.github/workflows/ci.yml`; `AGENTS.md` (pattern port: policy → `docs/solutions/developer-experience/`); `skills/ce-work/scripts/__pycache__/` (local-workspace cleanup — untracked, produces no diff); `docs/upstream-sync.md`.
 
 **Approach:**
 1. Pin baseline; read each upstream commit at that SHA.
@@ -370,12 +371,12 @@ Tier order is sequential per R1 and is encoded in the dependency table: every Ti
 **Approach:**
 1. Fresh fork-side inventory at slice time — do not trust the ~37 count.
 2. Define the derived detector once: Product Contract, Planning Contract, Implementation Units, Verification Contract, and Definition of Done present with no launch-blocking open question ⇒ executable; otherwise requirements-only. One shared predicate, identical behavior at all three gate call sites (lfg plan-brief, ce-work intake, ce-plan pipeline).
-3. Migrate in order: readers accept both forms → writers stop emitting the field → readers drop the field → docs. Green at every commit; each affected contract test and fixture update lands in the same commit as the writer or reader change it pins.
+3. Migrate in order: readers accept both forms → writers stop emitting the field → readers drop the field → docs. Green at every commit; each affected contract test and fixture update lands in the same commit as the writer or reader change it pins. "Drop the field" means ignore, never reject: a legacy `artifact_readiness` key on an older plan (including this one, re-read by Tiers 2–3 after U6 lands) is tolerated by all three gates.
 4. Readiness stays two-valued document completeness — no third value, no progress state. Legacy `origin:` resolution keeps working.
 
 **Test scenarios:**
 - Contract tests: a plan carrying the full contract (Product Contract, Planning Contract, Implementation Units, Verification Contract, Definition of Done, no launch-blocking question) but no `artifact_readiness` field classifies executable at all three gates; one missing a contract component classifies requirements-only. Fixtures omit each required component in turn.
-- A `status:` field or progress-like value is still rejected.
+- A `status:` field or progress-like value is still rejected; a legacy `artifact_readiness` key is ignored, never rejected.
 - Eval fixtures migrated; `catalog.ts` readiness-graded scenario updated.
 
 **Verification:** `bun run test` green; zero `artifact_readiness` references remain outside historical docs; the three gates behave identically on the same fixture.
