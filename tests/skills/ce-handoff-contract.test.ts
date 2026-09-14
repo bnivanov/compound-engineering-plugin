@@ -6,6 +6,10 @@ const SKILL_DIR = path.join(process.cwd(), "skills/ce-handoff")
 const SKILL_PATH = path.join(SKILL_DIR, "SKILL.md")
 const REFERENCE_NAMES = ["create.md", "resume.md"]
 const INSTRUCTIONS_PATH = path.join(process.cwd(), "AGENTS.md")
+const SCRATCH_NOTES_PATH = path.join(
+  process.cwd(),
+  "docs/solutions/developer-experience/always-on-agents-md.md",
+)
 /**
  * `skill` is the always-loaded body: rules that must control behavior from the prompt window
  * without any reference read. `corpus` is body + references: invariants that were relocated to
@@ -17,7 +21,12 @@ const corpus = [
   skill,
   ...REFERENCE_NAMES.map((name) => readFileSync(path.join(SKILL_DIR, "references", name), "utf8")),
 ].join("\n")
-const instructions = readFileSync(INSTRUCTIONS_PATH, "utf8")
+const instructionsFile = readFileSync(INSTRUCTIONS_PATH, "utf8")
+// The scratch-root collision rule moved out of AGENTS.md into the solutions
+// note the AGENTS.md pointer loads later. Pin the rule where it now lives, on
+// the note alone: a joined corpus would let the regex fragments scatter across
+// the two files and match without the rule being intact anywhere.
+const scratchNotes = readFileSync(SCRATCH_NOTES_PATH, "utf8")
 const frontmatter = skill.match(/^---\n([\s\S]*?)\n---/)
 const managedFrontmatterExample = corpus.match(
   /For Markdown handoffs in the managed store[\s\S]*?```yaml\n([\s\S]*?)\n```/,
@@ -57,7 +66,11 @@ describe("ce-handoff portable runtime contract", () => {
     expect(corpus).toMatch(/Do not put a timestamp or unique ID in the path.*created_at.*chronology/i)
     expect(corpus).toMatch(/Reserve the final candidate filename atomically and exclusively.*collision.*numeric suffix.*overwrite/i)
     expect(corpus).toMatch(/Never check availability and then write/i)
-    expect(instructions).toMatch(/Discoverable collection exception[\s\S]*atomically reserves the final filename.*retries with the next suffix.*never check availability and then write/i)
+    // The rule body lives in the solutions note, not in AGENTS.md: the essay
+    // alone satisfies the scratchNotes match above, and the pointer is what
+    // loads it. Pin each in its own file so a deletion in either fails.
+    expect(instructionsFile).toContain("always-on-agents-md.md")
+    expect(scratchNotes).toMatch(/Discoverable collection exception[\s\S]*atomically reserves the final filename.*retries with the next suffix.*never check availability and then write/i)
     expect(corpus).toMatch(/For Markdown handoffs in the managed store.*flat YAML frontmatter/i)
   })
 

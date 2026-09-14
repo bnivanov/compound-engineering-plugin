@@ -4,7 +4,7 @@ End-user-facing documentation for compound-engineering plugin skills. Each page 
 
 For runtime behavior and contributor reference, the `SKILL.md` in each skill's source folder under `skills/` is authoritative.
 
-Checkout-local defaults shared across skills are documented in [Compound Engineering configuration](./configuration.md).
+Checkout-local defaults shared across skills are documented in [Compound Engineering configuration](./configuration.md). Prescriptive rule packs the pipeline grounds in are documented in [Compound Packs](./packs.md).
 
 Artifact paths shown throughout these pages (`docs/plans/`, `docs/solutions/`, `docs/ideation/`, and the rest) are the **defaults**. A project can relocate every CE artifact folder under one repo-relative root with `docs_root`; when it is set, read the shown paths as `<your-docs_root>/plans/`, `<your-docs_root>/solutions/`, and so on. See [Artifact root](./configuration.md#artifact-root).
 
@@ -65,6 +65,7 @@ Invoked when a specific need arises, not part of any chain.
 
 | Skill | Description |
 |-------|-------------|
+| [`/ce-bakeoff`](./ce-bakeoff.md) | Independently develop and select competing approaches to improve brainstorming and planning decisions. Explicitly requested from those workflows, or used standalone. |
 | [`/ce-pov`](./ce-pov.md) | A project-grounded judgment on adoption, documents, or supplied approaches. Optional two-voice `oracle` council; this chat aggregates. |
 | [`/ce-explain`](./ce-explain.md) | An evidence-backed explanation of how something works and why, delivered for learning or further work; standalone teaching artifacts when useful. |
 | [`/ce-prototype`](./ce-prototype.md) | Build a throwaway prototype so someone can experience how the product should work, feel, or read, then write those decisions into an existing plan or continue into brainstorm or plan |
@@ -124,13 +125,14 @@ Invoked when a specific need arises, not part of any chain.
 
 | Skill | Description |
 |-------|-------------|
+| [`/ce-noslop`](./ce-noslop.md) | Rewrite, check, or draft prose with no AI tells that reads on the first read; every fact preserved. Sibling skills invoke it where they write. |
 | [`/ce-promote`](./ce-promote.md) | Draft announcement copy for a shipped feature (X, changelog, LinkedIn, email, blog, demo). Drafts only; never posts. |
 | [`/ce-resolve-pr-feedback`](./ce-resolve-pr-feedback.md) | One pass to evaluate, fix, and reply to PR review comments, including nitpicks. Babysit is the watch that calls this. |
 | [`/ce-dogfood`](./ce-dogfood.md) | Hands-off browser QA of the branch: map flows, fix small breakages, write a report. Manual invoke only. |
 | [`/ce-test-browser`](./ce-test-browser.md) | End-to-end browser tests of the current diff using OMP `browser`. Does not check out a PR or branch. |
 | [`/ce-test-xcode`](./ce-test-xcode.md) | Build and test an iOS app on the simulator (screenshots, logs, human verification). Not XCUITest. |
 | [`/ce-verify`](./ce-verify.md) | Generate or refresh a repo-local drive-and-verify skill plus a durable feature map for CLI, TUI, service, desktop, or web. |
-| [`/ce-setup`](./ce-setup.md) | Diagnose optional tool capabilities and create or repair repo `config.yaml` |
+| [`/ce-setup`](./ce-setup.md) | Diagnose optional tool capabilities, create or repair repo `config.yaml`, and scaffold a Compound Pack |
 | [`/ce-start`](./ce-start.md) | Front door: one question, then a route to the right skill |
 | [`/ce-mode`](./ce-mode.md) | Opt-in armed session mode: every request routed through a gated CE playbook (build / fix / decide / ship) until disarmed |
 | [`/ce-undo`](./ce-undo.md) | Graded revert of the last agent change set (commits, tree, or branch) |

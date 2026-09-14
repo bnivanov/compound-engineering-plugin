@@ -141,7 +141,9 @@ describe("skill-eval-cell catalog", () => {
         "ce-brainstorm/lookup-not-ask:references/interaction-rules.md",
         "ce-brainstorm/standard-scope-routes-to-file:references/phase-0.md",
         "ce-brainstorm/verdict-routes-to-pov:references/phase-0.md",
+        "ce-brainstorm/verdict-routes-to-pov:references/verdict-routing.md",
         "ce-brainstorm/write-plan-reads-plan-write:references/plan-write.md",
+        "ce-code-review/artifact-quote-before-filter:references/finish-review.md",
         "ce-commit-push-pr/description-only-no-commit:references/pr-description-writing.md",
         "ce-compound-refresh/confirmed-worth-lens-deletes-only-with-quoted-artifact:references/worth-audit.md",
         "ce-commit-push-pr/babysit-off-preserves-human-decision:references/apply-and-handoff.md",
@@ -208,6 +210,16 @@ describe("skill-eval-cell catalog", () => {
       "ce-babysit-pr/silent-reviewer-of-an-earlier-head-still-waits",
       "ce-babysit-pr/timed-out-review-is-finished-not-approved",
       "ce-babysit-pr/unrelated-terminal-work-is-not-the-review",
+      "ce-bakeoff/default-pov-judge",
+      "ce-bakeoff/final-synthesis-correctness",
+      "ce-bakeoff/nondecisive-unknown-allows-selection",
+      "ce-bakeoff/progress-communication",
+      "ce-bakeoff/settled-decision-restraint",
+      "ce-bakeoff/shared-brief-preserves-unknowns",
+      "ce-bakeoff/timing-evidence",
+      "ce-bakeoff/unavailable-independence",
+      "ce-bakeoff/unverified-guarantee-blocks-selection",
+      "ce-code-review/validator-veto-routes-protected-rejections",
       "ce-commit-push-pr/babysit-off-preserves-human-decision",
       "ce-commit-push-pr/project-publishing-gate",
       "ce-compound-refresh/confirmed-worth-lens-deletes-only-with-quoted-artifact",
@@ -222,6 +234,13 @@ describe("skill-eval-cell catalog", () => {
       "ce-mode/plan-gate-before-multi-file-build",
       "ce-mode/revert-request-routes-undo",
       "ce-mode/throwaway-question-routes-prototype",
+      "ce-noslop/dense-paragraph-keeps-every-claim",
+      "ce-noslop/detect-names-patterns-without-rewrite",
+      "ce-noslop/facts-survive-the-edit",
+      "ce-noslop/non-english-runs-tests-only",
+      "ce-noslop/protected-spans-stay-byte-identical",
+      "ce-noslop/two-devices-stay-unchanged",
+      "ce-noslop/workflow-jargon-keeps-technical-detail",
       "ce-plan/durable-final-check-dispatches-planner",
       "ce-prototype/batch-conflict-asks",
       "ce-prototype/clear-batch-applies-in-place",
@@ -245,6 +264,7 @@ describe("skill-eval-cell catalog", () => {
       if (!s.read_only || !s.grade.must_exclude?.length) return false
       return (
         !s.grade.must_include?.length &&
+        !Object.keys(s.grade.declared ?? {}).length &&
         !s.grade.files_read_post?.length &&
         !s.grade.workspace_read?.length
       )
@@ -276,16 +296,16 @@ describe("skill-eval-cell catalog", () => {
     expect(accounting?.task.toLowerCase().includes("50 ms")).toBe(false)
     expect(accounting?.task.toLowerCase().includes("integrated")).toBe(false)
 
+    // The single NEXT line is graded exactly, so a run that declares the other option
+    // and later names the expected one as the rejected path cannot pass; the task
+    // states both options and must not open with the answer.
     const attribution = SCENARIOS.find((s) => s.id === "ce-optimize/cost-attribution-before-search")
-    const skipLocating = "No locating measurement is necessary; proceed with batching."
-    for (const needle of attribution?.grade.must_include ?? []) {
-      expect(skipLocating.toLowerCase().includes(needle.toLowerCase())).toBe(false)
-    }
+    expect(attribution?.grade.declared).toEqual({ NEXT: "measure" })
+    expect(attribution?.task.startsWith("NEXT:")).toBe(false)
 
     const variants = SCENARIOS.find((s) => s.id === "ce-optimize/variant-search-without-profile")
-    const blocked = "Without a profile, HDBSCAN and boilerplate stripping are blocked"
-    expect(
-      variants?.grade.must_include?.some((needle) => !blocked.toLowerCase().includes(needle.toLowerCase())),
-    ).toBe(true)
+    expect(variants?.grade.declared).toEqual({ NEXT: "implement" })
+    expect(variants?.task.startsWith("NEXT:")).toBe(false)
+    expect(variants?.grade.must_include).toEqual(["HDBSCAN", "boilerplate"])
   })
 })

@@ -21,7 +21,7 @@ Sections earn their place by serving one of these audiences. Omit padding.
 
 ## In plain terms (required)
 
-Every plan opens with four short lines, before U-IDs and readiness fields:
+Every plan opens with four short lines, before U-IDs and contract fields:
 
 - **What you're getting** — the outcome in one sentence a non-engineer can check.
 - **What I assumed** — the defaults that will stand unless the user objects.
@@ -36,24 +36,11 @@ Do not rename downstream machinery those later sections parse. This block is add
 `ce-plan` writes the canonical compound-engineering plan artifact. The same
 artifact may begin as a requirements-only skeleton from `ce-brainstorm` and
 later be enriched by `ce-plan`; it is still one plan file moving through
-readiness states, not a requirements doc plus a separate implementation doc.
+planning stages, not a requirements doc plus a separate implementation doc.
 
 When the artifact is meant to be consumed by implementation agents, use:
 
 - **`artifact_contract: ce-unified-plan/v1`** — declares this contract.
-- **`artifact_readiness`** — document completeness, not work progress. Valid
-  values are:
-  - `requirements-only` — Product Contract exists; planning sections are not
-    complete and the artifact is not executable.
-  - `implementation-ready` — Product Contract, Planning Contract,
-    Implementation Units, Verification Contract, and Definition of Done are
-    complete enough for `ce-work`, `/goal`, or an equivalent executor, **and no
-    launch-blocking open question remains**. A plan that is otherwise complete
-    but still has a blocking product/architecture question stays
-    `requirements-only`, so the next step it routes to is blocker resolution /
-    planning, not implementation. Deferred (non-blocking) questions
-    do not hold readiness back — mark each open question as blocking or deferred
-    so this distinction is explicit.
 - **`product_contract_source`** — where the Product Contract came from:
   `ce-brainstorm`, `ce-plan-bootstrap`, `legacy-requirements`, or another
   explicit source string when a repo has a specialized producer.
@@ -61,18 +48,11 @@ When the artifact is meant to be consumed by implementation agents, use:
   non-code deliverables. Absence remains legacy-compatible and means `code`
   only for older plans without `artifact_contract`.
 
-Do **not** use progress-like readiness values such as `active`,
-`in_progress`, `completed`, or `done`. Readiness answers "can the artifact be
-executed?", not "has execution happened?" Plans still carry no `status` field
-and no mutable execution lifecycle.
+Determine whether a plan can be executed from its contents. The Product Contract, Planning Contract, Implementation Units, Verification Contract, and Definition of Done must give the executor enough direction, with no launch-blocking question remaining. Mark open questions as blocking or deferred; deferred implementation details do not prevent work. A Product Contract without sufficient planning needs enrichment.
 
-Do **not** use `artifact_readiness: approach-plan`. Approach-plans,
-answer-seeking outputs, and universal-planning outputs are outside this
-software implementation artifact contract unless they include the full Product
-Contract, Planning Contract, Implementation Units, Verification Contract, and
-Definition of Done required for software execution. Route those artifacts by
-their own shape or by `execution: knowledge-work`, not by adding a third
-unified readiness value.
+Do not write a readiness or execution-status field. When updating an older artifact, remove `artifact_readiness` from its frontmatter or visible HTML metadata. An old readiness label does not establish completeness or override a blocker. Plans carry no `status` field and no mutable execution lifecycle.
+
+Approach-plans, answer-seeking outputs, and universal-planning outputs remain outside this software implementation contract unless they contain the full contract above. Route non-code deliverables by their contents and `execution: knowledge-work`.
 
 ## Section ID Registry
 
@@ -315,6 +295,14 @@ them fire.
   not enumerated). Process exhaust (reading the user's prompt, glancing at
   obvious entry points, restating prose) → omit. Surface inline next to the
   KTD or unit it justifies, or as a dedicated section — both shapes work.
+  A constraint adopted from a Compound Pack file is cited inline as
+  `(pack: <id>, <path within the pack>)` after the requirement, KTD, constraint,
+  or risk it shaped. The path is relative to the pack's own directory, so it
+  is stable for path- and git-sourced packs alike. Cite the pack text; do not
+  restate it. That marker is reserved for pack files; `<root>/solutions/`
+  learnings keep the ordinary path citation, so a reader can tell a
+  prescriptive pack rule from a retrospective learning.
+
 
 ## Agent agency
 
@@ -425,7 +413,7 @@ plan.
 - **`title`** — the plan's descriptive name with a ` - Plan` suffix
   (e.g., `Highlighter Tool - Plan`), matching the H1 (markdown) or document
   `<h1>` (HTML) so file metadata and visible heading don't drift. Stable
-  across readiness states (it is a plan at every stage). Do not put a
+  across planning stages (it is a plan at every stage). Do not put a
   conventional-commit prefix (`feat:`/`fix:`) in the title — the `type` field
   carries that classification.
 - **`type`** — conventional-commit-prefix-aligned classification (`feat`,

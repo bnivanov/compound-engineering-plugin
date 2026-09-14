@@ -61,6 +61,51 @@ describe("ce-work review contract", () => {
     expect(shipping).toContain("Ship-handoff gate")
   })
 
+  test("final validation runs a milestone audit that judges artifacts, never product code", async () => {
+    const shipping = await readRepoFile("skills/ce-work/references/shipping-workflow.md")
+    const audit = await readRepoFile("skills/ce-work/references/milestone-audit.md")
+
+    // Grafted as a Final Validation step that consumes the plan artifact + sync record
+    const finalValidation = sliceSection(
+      shipping,
+      "5. **Final Validation**",
+      "6. **Prepare Operational Validation Plan**",
+    )
+    expect(finalValidation).toContain("**Milestone Audit**")
+    expect(finalValidation).toContain("references/milestone-audit.md")
+    expect(finalValidation).toContain("docs/upstream-sync.md")
+
+    // Read-only over product code: judges and reports, never edits
+    expect(finalValidation).toContain("read-only over product code")
+    expect(finalValidation).toContain("never edits product code, the plan, or the sync record")
+    expect(audit).toContain("read-only over product code")
+    expect(audit).toContain("never edits product code, never edits the plan artifact or the sync record")
+    expect(audit).toContain("never drives the capability-audit matrix")
+
+    // The three checklist axes: outstanding verification, intent conformance, residuals
+    expect(audit).toContain("1. Outstanding verification items")
+    expect(audit).toContain("2. Milestone completion vs stated intent")
+    expect(audit).toContain("3. Residual accounting")
+    // Grounded in what the artifacts carry — no invented fields
+    expect(audit).toContain("Do not invent fields, verification states, or dispositions")
+
+    // Scenario: an unverified unit fails the audit with the item named
+    expect(audit).toContain("`<U-ID>: <item>`")
+    expect(shipping).toContain("every finding named (`<U-ID>: <item>`)")
+    // Scenario: divergence from stated intent is flagged, not passed
+    expect(audit).toContain("flagged `not passed`")
+    expect(audit).toContain("disposed divergence")
+    expect(shipping).toContain("flagged, not passed")
+    // Scenario: it is a checklist over artifacts — never an editor of product code
+    expect(audit).toContain("The audit itself does not create the record")
+    // A gap report fails Final Validation, matching the bullet-failure behavior
+    expect(audit).toContain("**Gap report**")
+    expect(shipping).toContain("A gap report fails Final Validation")
+    // No-plan runs skip with an exact recorded phrase, never silently
+    expect(shipping).toContain("Milestone audit: skipped (no plan artifact)")
+    expect(audit).toContain("Milestone audit: skipped (no plan artifact)")
+  })
+
   // Hosts such as Grok register a bundled skill named `review`. Headings like
   // "invoke review" and slash examples like `/review` caused sibling-path reads of
   // this plugin's skills/review/SKILL.md, which does not exist.
@@ -291,8 +336,10 @@ describe("verification_evidence seam parity (ce-work <-> lfg)", () => {
     { fact: "existing tests inspected", ceWork: "existing_tests_inspected", lfg: "existing tests inspected" },
     { fact: "tests added/changed", ceWork: "tests_added_or_changed", lfg: "tests added/changed" },
     { fact: "red/characterization evidence", ceWork: "red failure or characterization", lfg: "red failure or characterization" },
-    { fact: "verification run", ceWork: "verification commands/results", lfg: "verification run" },
-    { fact: "deliberate exception", ceWork: "exception reason", lfg: "deliberate test exception" },
+    // R11 structured entries: the return contract names these facts as gate-parsed
+    // field tokens, so the ce-work surface form is the field, not a prose phrase.
+    { fact: "verification run", ceWork: "commands/results", lfg: "verification run" },
+    { fact: "deliberate exception", ceWork: "exception_reason", lfg: "deliberate test exception" },
   ]
 
   test("ce-work return contract owns the verification_evidence field and gates completion on it", async () => {
@@ -352,7 +399,7 @@ describe("missing-owner blocked seam parity (ce-plan/ce-work -> lfg)", () => {
     const lfgEnvelope = sliceSection(
       planBrief,
       "An explicit `status: blocked` return is terminal",
-      "Read the plan metadata before continuing",
+      "Inspect the returned plan",
     )
     for (const field of ["`status: blocked`", "`phase`", "`blocker`", "`recovery_path`"]) {
       expect(cePlanEnvelope).toContain(field)
@@ -514,8 +561,15 @@ describe("ce-debug regression test selection", () => {
     )
     // The gate must be anchored at the question site, not stated only in an early section.
     const gateIdx = content.indexOf("Same-turn presentation before the gate")
-    const askIdx = content.indexOf("Then ask (per **Blocking questions**)")
-    expect(gateIdx).toBeGreaterThan(-1)
+    const askIdx = content.indexOf("ask (per **Blocking questions**) which path to take")
+    expect(
+      gateIdx,
+      `gate anchor not found: "Same-turn presentation before the gate"`,
+    ).toBeGreaterThanOrEqual(0)
+    expect(
+      askIdx,
+      `ask anchor not found: "ask (per **Blocking questions**) which path to take"`,
+    ).toBeGreaterThanOrEqual(0)
     expect(askIdx).toBeGreaterThan(gateIdx)
   })
 
@@ -1308,5 +1362,200 @@ describe("learnings-researcher local prompt domain-agnostic contract", () => {
     // Integration Points list no longer includes ce-doc-review (agent is ce-plan-owned)
     const integration = agent.substring(agent.indexOf("Integration Points"))
     expect(integration).not.toContain("ce-doc-review")
+  })
+})
+
+describe("lfg fresh-verifier acceptance gate (R9)", () => {
+  // KTD3: the gate fires after step 5's review fixes land and before shipping. The
+  // receipt's definition lives in review-followup.md (after the step-5 section, in the
+  // flow that certifies the post-fix tree); work-return.md is consumed at step 2, too
+  // early to certify the post-fix tree, and stays unchanged.
+  const GATE_START = "## The fresh-verifier acceptance gate"
+  const GATE_END = "## Step 6 — residual handoff"
+
+  async function readVerifierGate(): Promise<string> {
+    const followup = await readRepoFile("skills/lfg/references/review-followup.md")
+    const gate = sliceSection(followup, GATE_START, GATE_END)
+    // The definition sits after step 5 of the review-followup flow, not at the top.
+    expect(followup.indexOf(GATE_START)).toBeGreaterThan(
+      followup.indexOf("## Step 5 — apply and persist review fixes"),
+    )
+    return gate
+  }
+
+  test("verifier receipt extends work-return's field inventory; work-return stays unchanged", async () => {
+    const gate = await readVerifierGate()
+
+    // Envelope schema: exactly two verdicts and the five fields KTD3 names.
+    expect(gate).toMatch(/`verdict` — `PASS` or `BLOCK`; nothing else is valid/)
+    expect(gate).toContain("`u_ids_scoped`")
+    expect(gate).toContain("`evidence_pointers`")
+    expect(gate).toMatch(/`serving_mode` — `session-model`/)
+    expect(gate).toMatch(/`independence` — `structural-only`/)
+    // A BLOCK receipt is actionable: one entry per failed check plus the named recovery.
+    expect(gate).toMatch(/also carries `blockers`/)
+    expect(gate).toMatch(/`recovery_path`/)
+    // The receipt extends work-return.md's field inventory rather than amending it:
+    // the step-2 gate is consumed too early to certify the post-fix tree. The pin is
+    // two-sided: the extension sentence lives here, and work-return.md carries neither
+    // the gate nor the extended field (asserted below), so neither file can drift
+    // into owning the other's contract.
+    expect(gate).toMatch(/stays unchanged[^.]{0,240}verifier receipt extends its field inventory/)
+    const workReturn = await readRepoFile("skills/lfg/references/work-return.md")
+    expect(workReturn).not.toContain("fresh-verifier")
+    expect(workReturn).not.toContain("u_ids_scoped")
+  })
+
+  test("verifier dispatch carries no implementation history and serves the session model with the structural-only label", async () => {
+    const gate = await readVerifierGate()
+
+    // Structural separation is the only independence: fresh context, no history.
+    expect(gate).toMatch(/[Ff]resh context and no implementation history/)
+    expect(gate).toMatch(/never receives the implementation transcript/)
+    // Audit R3b: omp's task wire schema has no per-spawn model field, so there is no
+    // tiered routing — the verifier runs on the session model.
+    expect(gate).toMatch(/no per-spawn model field/)
+    // The honesty requirement R9 turns on: a same-family re-read is never presented
+    // as cross-model or independent-model assurance.
+    expect(gate).toMatch(/same-family re-read/)
+    // Pinned as the unambiguous negative: an alternation on a positive form
+    // ("may present it as ...") also matches a polarity-flipped rewrite, which
+    // would reverse the mechanism's meaning while this test stayed green.
+    expect(gate).toContain("No consumer may present it as cross-model or independent-model assurance")
+  })
+
+  test("a BLOCK verdict stops the pipeline or triggers exactly one bounded rework with a named recovery path", async () => {
+    const gate = await readVerifierGate()
+    const shippingTail = await readRepoFile("skills/lfg/references/shipping-tail.md")
+
+    // The one-recovery-invocation precedent (work-return.md) names the rework path;
+    // a second BLOCK stops. Never an infinite hold, environmental or otherwise.
+    expect(gate).toContain("**The one bounded rework.**")
+    expect(gate).toMatch(/invoke `ce-work` one more time in recovery mode with the same plan path/)
+    expect(gate).toMatch(/A second BLOCK verdict[^.]{0,120}stops the pipeline as blocked/)
+    expect(gate).toMatch(/no second rework and no hold/)
+    expect(gate).toMatch(/blocked-with-recovery naming the environmental gap/)
+
+    // Consumption seam: shipping-tail opens step 8 by reading the held receipt; only
+    // PASS ships, and the independence label survives into the PR body path.
+    const consumption = sliceSection(
+      shippingTail,
+      "## Step 8 — consume the fresh-verifier receipt before anything ships",
+      "## Step 8 — a project-defined process may own the handoff",
+    )
+    expect(consumption).toMatch(/Only `verdict: PASS` advances/)
+    expect(consumption).toMatch(/`verdict: BLOCK`[^.]{0,240}stops the pipeline as \*\*blocked\*\*/)
+    expect(consumption).toMatch(/no second rework and no hold/)
+    expect(consumption).toMatch(/`independence: structural-only`/)
+    expect(consumption).toMatch(/PR-description context/)
+    expect(consumption).toMatch(/DONE report/)
+  })
+
+  test("SKILL.md shows the gate in the documented stage order between the fixes and the shipping tail", async () => {
+    const lfg = await readRepoFile("skills/lfg/SKILL.md")
+
+    // The gate fires at the end of step 5's block, before the residual handoff.
+    const step5 = sliceSection(
+      lfg,
+      "5. **Apply and persist review fixes**",
+      "6. **Autonomous residual handoff**",
+    )
+    expect(step5).toMatch(/the fresh-verifier acceptance gate/i)
+    expect(step5).toMatch(/GATE: STOP/)
+    expect(step5).toMatch(/no implementation history/)
+    expect(step5).toMatch(/Hold only a `verdict: PASS` receipt for step 8's consumption/)
+
+    // Step 8 consumes the held receipt before any shipping action.
+    const step8 = sliceSection(lfg, "8. Ship:", "9. **Watch the PR")
+    expect(step8).toMatch(/opens by consuming the PASS verifier receipt/)
+    expect(step8).toMatch(/stops before anything ships/)
+  })
+})
+
+describe("ce-work plan-verify nudge (R12)", () => {
+  // R12: pstack's plan-verify nudge, ported as a completion-surface step in the
+  // standalone shipping tail. The enforcement seam is the tail's own mode gate:
+  // SKILL.md routes only standalone runs into Phase 3-4 (Return-to-Caller Mode
+  // must not enter it; Phase 0 recovery never enters either shipping tail), so
+  // the step fires exactly where a synchronous user exists and nowhere else.
+  // The non-code knowledge-work branch reaches the same standalone completion at
+  // its step 4, so the same nudge is owed there — pinned in the last test below.
+  const NUDGE_START = "3. **Notify User**"
+  const NUDGE_END = "## Quality Checklist"
+
+  async function readNotifyUser(): Promise<string> {
+    const workflow = await readRepoFile("skills/ce-work/references/shipping-workflow.md")
+    return sliceSection(workflow, NUDGE_START, NUDGE_END)
+  }
+
+  test("standalone completion of an approved plan emits exactly one report-only nudge", async () => {
+    const notify = await readNotifyUser()
+
+    expect(notify).toMatch(/Plan-verify nudge \(standalone completion only\)/)
+    expect(notify).toMatch(/approved plan artifact/)
+    expect(notify).toMatch(/exactly one report-only nudge/)
+    // Fires at this single step — never per task, never on recovery re-entry.
+    expect(notify).toMatch(/never reaches this step[^.]{0,160}Phase 0 recovery never enters the shipping tail/)
+    // Report-only: informs, never gates, never alters completion state.
+    expect(notify).toMatch(/never gates, never blocks/)
+    expect(notify).toMatch(/never alters the completion state/)
+    expect(notify).toMatch(/requires no skill invocation/)
+  })
+
+  test("pipeline-internal and userless completions emit nothing", async () => {
+    const notify = await readNotifyUser()
+
+    expect(notify).toMatch(
+      /Return-to-Caller Mode, pipeline orchestration, or a disable-model-invocation context/,
+    )
+    expect(notify).toMatch(/emit nothing when the run had no plan artifact/i)
+
+    // Structural backstop: the nudge is reachable only through the standalone
+    // tail's own mode gate, so a pipeline-internal return cannot emit it.
+    const skill = await readRepoFile("skills/ce-work/SKILL.md")
+    expect(skill).toMatch(/Return-to-Caller Mode performs implementation and local verification only\. It must not enter Phase 3-4/)
+    expect(skill).toMatch(/standalone mode must read `references\/shipping-workflow\.md`/)
+  })
+
+  test("the nudge is not part of any gate and cannot block or re-fire", async () => {
+    const workflow = await readRepoFile("skills/ce-work/references/shipping-workflow.md")
+
+    // The completion gate and ship-handoff gate stay nudge-free: the nudge must
+    // never become a condition of shipping or of completion.
+    const completionGate = sliceSection(
+      workflow,
+      "**Completion gate (standalone shipping).**",
+      "**Skip dedicated review",
+    )
+    const shipGate = sliceSection(
+      workflow,
+      "**Ship-handoff gate.**",
+      "**Do not publish what the user did not offer",
+    )
+    expect(completionGate).not.toMatch(/nudge/i)
+    expect(shipGate).not.toMatch(/nudge/i)
+
+    // The Quality Checklist gains no nudge checkbox either.
+    const checklist = sliceSection(workflow, "## Quality Checklist", "## Code Review")
+    expect(checklist).not.toMatch(/nudge/i)
+  })
+
+  test("the non-code standalone completion carries the same nudge", async () => {
+    // A knowledge-work plan that finishes standalone reaches the same completion
+    // surface as the code path's shipping tail, so it owes the same nudge — same
+    // firing condition, same suppression vocabulary. The carve-out's exclusion
+    // list (no PR/CI/branch machinery) must survive the addition.
+    const nonCode = await readRepoFile("skills/ce-work/references/non-code-execution.md")
+    const saveAndReport = sliceSection(nonCode, "4. **Save and report.**", "## Stay scoped")
+
+    expect(saveAndReport).toMatch(/Plan-verify nudge \(standalone completion only\)/)
+    expect(saveAndReport).toMatch(/exactly one report-only nudge/)
+    expect(saveAndReport).toMatch(
+      /Return-to-Caller Mode, pipeline orchestration, or a disable-model-invocation context/,
+    )
+    expect(saveAndReport).toMatch(/emit nothing when the run had no plan artifact/i)
+    expect(nonCode).toContain(
+      "No incremental code commits, and none of `references/shipping-workflow.md` (no PR, no CI)",
+    )
   })
 })

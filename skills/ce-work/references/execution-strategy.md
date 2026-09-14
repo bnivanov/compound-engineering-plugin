@@ -67,6 +67,8 @@ Give each native worker:
 5. Update the task list (progress lives in the commits).
 6. Dispatch the next dependency layer only after every unit in the batch has been integrated and its worker retired. Any remaining isolated-workspace cleanup follows the active harness's ownership and lifecycle contract.
 
+**Envelope emission gate (Return-to-Caller Mode).** Worker returns feed evidence; they never discharge the run. Before emitting a Return-to-Caller envelope, the orchestrator runs the bundled `scripts/envelope-gate.py` against the assembled envelope and plan (see `references/return-to-caller.md`) — enforcement evaluates at orchestrator-envelope emission, never at worker return. As part of integration, capture each worker's returned verification evidence into structured `verification_evidence` entries; an envelope whose evidence cannot be assembled from actual worker reports fails the gate rather than being reconstructed from the diff.
+
 **Per-harness integration (examples — the universal flow above is the contract):**
 - **Harness-owned worktree/branch:** integrate one branch in dependency order, verify, and commit before the next; on conflict abort and re-run or explicitly resolve that unit against the advanced tree.
 - **Harness-owned uploaded change set:** accept one isolated result, inspect and verify it, commit it canonically, then release the worker before the next result.

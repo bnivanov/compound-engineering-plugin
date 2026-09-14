@@ -60,6 +60,7 @@ This file contains the shipping workflow (Phase 3-4). It is loaded when all Phas
    - If the plan has a `Requirements` section (or legacy `Requirements Trace`), verify each requirement is satisfied by the completed work
    - If any `Deferred to Implementation` questions were noted, confirm they were resolved during execution
 
+   **Milestone Audit** (REQUIRED when the run executed from a plan artifact). After the bullets above resolve, read `references/milestone-audit.md` and run its checklist against the plan artifact and the sync record (`docs/upstream-sync.md`): outstanding verification items across the plan's implementation units, milestone completion vs the plan's stated intent, and residual accounting. The audit is read-only over product code — it judges and reports; it never edits product code, the plan, or the sync record. A gap report fails Final Validation with every finding named (`<U-ID>: <item>`); a run whose delivered state diverges from the plan's stated intent is flagged, not passed — even when the substitute looked reasonable — unless the plan or sync record already disposes it. Record the pass/gap report in the shipping summary. When the run had no plan artifact, note `Milestone audit: skipped (no plan artifact)` instead.
 6. **Prepare Operational Validation Plan** (REQUIRED)
 
    The PR description's `## Post-Deploy Monitoring & Validation` section must let a maintainer distinguish the intended behavior change from a regression. Base its log queries, metrics, expected signals, failure/mitigation triggers, validation window, and owner on the available project evidence. State material unknowns rather than inventing operational facts. A rollback trigger needs evidence of unintended harm; a change in behavior the task explicitly requires is not that evidence.
@@ -102,6 +103,7 @@ This file contains the shipping workflow (Phase 3-4). It is loaded when all Phas
    - Link to PR (if one was created)
    - Note any follow-up work needed
    - Suggest next steps if applicable
+   **Plan-verify nudge (standalone completion only).** When this run executed from an approved plan artifact, this step's completion summary carries exactly one report-only nudge: the plan's implementation has finished — name the plan path and invite the user to verify the delivered work against the plan before moving on. The nudge informs only: it never gates, never blocks, and never alters the completion state, the review receipt, or the ship handoff, and it requires no skill invocation — the orchestrator emits it as part of this step's summary. Emit nothing when the run had no plan artifact, and emit nothing in Return-to-Caller Mode, pipeline orchestration, or a disable-model-invocation context — anywhere the completion reaches a caller or no synchronous user exists rather than the user who approved the plan. Recovery re-entry never reaches this step (Phase 0 recovery never enters the shipping tail), so one approved plan is nudged at most once per run.
 
 ## Quality Checklist
 

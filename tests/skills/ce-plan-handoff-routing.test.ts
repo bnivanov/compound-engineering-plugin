@@ -303,7 +303,8 @@ describe("ce-plan post-generation menu routing", () => {
     ).toBeLessThan(interactionStart)
 
     const topContract = SKILL_BODY.slice(contractStart, interactionStart)
-    expect(/Every normal interactive branch[\s\S]{0,160}incomplete until its owning handoff question is presented/i.test(topContract)).toBe(true)
+    // Wording restated in plain language (2026-09); the pin guards the condition, not the old phrasing.
+    expect(/Every normal interactive branch[\s\S]{0,160}incomplete until the user has been asked what to do next/i.test(topContract)).toBe(true)
     expect(/software implementation-plan run[\s\S]{0,160}Phase 5\.4 menu[\s\S]{0,100}selected action has actually fired/i.test(topContract)).toBe(true)
     expect(/Non-software and approach-altitude routes use their reference workflow's terminal handoff/i.test(topContract)).toBe(true)
     expect(/Answer-seeking may end after the answer unless its owner requires save\/share/i.test(topContract)).toBe(true)
@@ -519,7 +520,7 @@ describe("ce-plan output-contract gate", () => {
   })
 
   test("a saved Chat brief never claims the unified-plan contract", () => {
-    expect(OUTPUT_CONTRACTS_BODY).toMatch(/Do not set `artifact_contract` or `artifact_readiness`/)
+    expect(OUTPUT_CONTRACTS_BODY).toMatch(/Do not set `artifact_contract`/)
     expect(OUTPUT_CONTRACTS_BODY).toMatch(/never implements/)
     expect(OUTPUT_CONTRACTS_BODY).toMatch(/a planning invocation is not execution authority/)
     expect(OUTPUT_CONTRACTS_BODY).toMatch(/Reserve the path with exclusive creation/)
@@ -536,5 +537,71 @@ describe("ce-plan output-contract gate", () => {
   test("Lightweight Durable grounds inline instead of dispatching research agents", () => {
     expect(RESEARCH_BODY).toMatch(/\*\*Lightweight\*\* Durable plan does not dispatch the research agents/)
     expect(RESEARCH_BODY).not.toContain("Local Research (Always Runs)")
+  })
+})
+// 2026-09-14 U15 (spec-kit taskstoissues port): the per-unit issue fan-out bridge
+// lives in references/issue-fanout.md, loaded only on explicit selection or
+// explicit standing authority. These pins hold the load gate, the dedup
+// identity, and the write-approval posture — the parts that keep a rerun from
+// duplicating issues and keep an unapproved agent-path write from firing.
+describe("ce-plan issue fan-out bridge (U15)", () => {
+  const FANOUT_BODY = readFileSync(
+    path.join(process.cwd(), "skills/ce-plan/references/issue-fanout.md"),
+    "utf8",
+  )
+
+  test("kernel names the fan-out reference with its opt-in condition", () => {
+    // The always-loaded body must name the reference at the point the handoff
+    // runs, and state that it loads only on explicit selection or standing
+    // authority — a plain Create Issue selection must not trigger fan-out.
+    expect(SKILL_BODY).toContain("`references/issue-fanout.md`")
+    expect(SKILL_BODY).toMatch(
+      /issue-fanout\.md`?[^\n]*only on explicit selection or explicit standing authority/i,
+    )
+  })
+
+  test("fan-out is additive and never replaces the one-plan-issue default", () => {
+    expect(FANOUT_BODY).toMatch(/never loaded for a plain "Create Issue" selection/i)
+    expect(FANOUT_BODY).toMatch(/one-plan-issue default is unchanged/i)
+    expect(FANOUT_BODY).toMatch(/does not recreate it/i)
+  })
+
+  test("interface existence alone does not unlock the write path", () => {
+    // The gate requires a reachable tracker AND a write-approval posture; a
+    // reachable API is not authorization.
+    expect(FANOUT_BODY).toMatch(/reachable tracker interface/i)
+    expect(FANOUT_BODY).toMatch(/write-approval posture/i)
+    expect(FANOUT_BODY).toMatch(/reachable API is not authorization|API existence alone/i)
+    // Declining names the missing capability and the flip condition.
+    expect(FANOUT_BODY).toMatch(/flip condition/i)
+    expect(FANOUT_BODY).toMatch(/deferred/i)
+  })
+
+  test("non-interactive fan-out requires explicit standing authority", () => {
+    expect(FANOUT_BODY).toMatch(/non-interactive[\s\S]{0,400}standing authority/i)
+    expect(FANOUT_BODY).toMatch(/generic "create issues"[\s\S]{0,80}is not standing authority/i)
+  })
+
+  test("dedup identity is plan path + U-ID with an explicit skip/update decision", () => {
+    expect(FANOUT_BODY).toMatch(/plan path \+ U-ID is the dedup identity/i)
+    expect(FANOUT_BODY).toContain("Source plan: <plan path> · Unit: <U-ID>")
+    // The three-way decision: create / update-in-place / skip-closed.
+    expect(FANOUT_BODY).toMatch(/No match[\s\S]{0,80}create/i)
+    expect(FANOUT_BODY).toMatch(/Open match[\s\S]{0,120}update the existing issue's body in place/i)
+    expect(FANOUT_BODY).toMatch(/Closed match[\s\S]{0,80}skip/i)
+    expect(FANOUT_BODY).toMatch(/rerun over the same plan[\s\S]{0,80}zero new issues/i)
+  })
+
+  test("issues carry stable titles and a link back to the plan", () => {
+    expect(FANOUT_BODY).toContain("`<U-ID>: <unit title>`")
+    expect(FANOUT_BODY).toMatch(/link back to the plan/i)
+    expect(FANOUT_BODY).toMatch(/absolute path/i)
+  })
+
+  test("the bridge stays a handoff step, not a tracker client", () => {
+    expect(FANOUT_BODY).toMatch(/handoff step, not a tracker client/i)
+    expect(FANOUT_BODY).toMatch(/No scripts, no config keys/i)
+    // Failure reporting is per-unit and never silently blocks the handoff.
+    expect(FANOUT_BODY).toMatch(/`created`, `updated`, `skipped`, `failed` per unit/i)
   })
 })

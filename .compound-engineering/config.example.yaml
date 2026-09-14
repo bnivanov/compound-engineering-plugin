@@ -62,6 +62,18 @@
 # lfg_supervised: true          # two gates: after plan, after review (default: false)
 # max_run_budget: 0             # stop LFG before step 1 when remaining host budget is below this (0 = off)
 
+# --- Post-compaction skill re-injection (omp extension) ---
+# OMP loads skill bodies on demand, so a compaction can summarize the active
+# skill's instructions out of context while the session is still following
+# that skill. With this key on, the plugin's omp extension remembers which
+# skill the session read last (read skill://<name>) and, when compaction
+# runs, re-injects one line naming that skill and how to reload it. Off by
+# default; with the key off the extension never appends session state and
+# never injects compaction context. Ordinary cascade: local, then this file,
+# then the default.
+
+# skill_reinject: true            # true | false (default: false)
+
 
 # --- PR concept teaching (ce-commit-push-pr) ---
 # When a PR introduces a concept new to the codebase, the generated PR
@@ -131,3 +143,23 @@ cross_model_review_mode: auto   # auto | off (default: auto). <!-- OMP --> fork 
 # sweep_ack_cap: 25                                 # max acks per source per run before the circuit breaker
 # sweep_lease_ttl_minutes: 60                       # single-writer lease staleness threshold
 # sweep_shared_branch: false                        # true: push-gated lease for shared-docs-branch topology
+
+# --- Compound Packs ---
+
+# Prescriptive domain knowledge folders that planning reads and cites.
+# Declared, never scanned: an entry names a source (repo-relative path,
+# ~/absolute path, or git URL) and what to install from it. Lists from this
+# file and config.local.yaml concatenate -- local adds packs, never replaces
+# the team's. Git sources require ref (tag or sha reproduce exactly; a branch
+# freezes at its cached resolution and can drift across machines). path: and
+# pasted GitHub /tree/<ref>/<sub> URLs scope a source to a subfolder.
+# pack: picks one id or a list; omit it to install everything the source
+# publishes. id: renames a single-pack entry.
+# Rules are top-level .md files with title + applies_when; subfolders are storage.
+
+# packs:
+#   - source: compound-packs/local-rules                       # repo-relative, read live
+#   - source: ~/compound-packs/kk-style                        # machine-local, read live
+#   - source: https://github.com/org/rails-ce-pack    # git, cached at ref
+#     ref: v1.2.0
+#     pack: [rails, inertia]

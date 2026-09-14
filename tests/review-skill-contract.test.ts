@@ -490,8 +490,11 @@ describe("ce-code-review contract", () => {
     expect(content).toMatch(/Task tier.*every other persona/s)
     // skills/ce-code-review/references/dispatch-reviewers.md:47 (OMP agent name is model selection)
     expect(content).toMatch(/On OMP the agent name is the model selection/i)
-    // skills/ce-code-review/references/dispatch-reviewers.md:51 (foreground batch, cap-sized, serial floor)
-    expect(content).toMatch(/foreground concurrent batch/i)
+    // skills/ce-code-review/references/dispatch-reviewers.md (bounded in-turn batch, cap-sized, serial floor)
+    expect(content).toMatch(/Bounded in-turn dispatch/)
+    expect(content).toMatch(/concurrent batch collected in this turn/i)
+    expect(content).toMatch(/background execution off only where/)
+    expect(content).toMatch(/launch with background execution and collect with the host's bounded in-turn wait/)
     expect(content).toMatch(/never hard-code a number/i)
     expect(content).toMatch(/degrades to serial/i)
     expect(content).not.toMatch(/exactly one reviewer|one reviewer at a time|one at a time/i)
@@ -555,10 +558,19 @@ describe("ce-code-review contract", () => {
     expect(skill).toContain("blocking collection capability for asynchronous receipts")
     expect(skill).toMatch(/do not synthesize until every successful launch is collected/i)
     // skills/ce-code-review/references/dispatch-reviewers.md:51-53 (same collection contract at point of action)
-    expect(content).toMatch(/foreground concurrent batch/i)
+    expect(content).toMatch(/concurrent batch collected in this turn/i)
     expect(content).toMatch(/classify a terminal tool error or malformed output as a failed reviewer/i)
-    expect(content).toMatch(/launch receipt is uncollected/i)
-    expect(content).toMatch(/blocking collection capability until every successful launch reaches a terminal outcome/i)
+    expect(content).toMatch(/launch receipt.*is uncollected/i)
+    expect(content).toMatch(/blocking collection capability, repeating the host's wait back to back.*until every successful launch reaches a terminal outcome/i)
+    // #1689/#1691: the reviewer wait has an end like the validator's, the artifact is the fact,
+    // and the collection bound is aggregate wall clock since that reviewer's own launch.
+    expect(content).toMatch(/with a wait that has an end/i)
+    expect(content).toMatch(/\{run_dir\}\/\{reviewer_name\}\.json`, is the fact/i)
+    expect(content).toMatch(/or 20 minutes have passed since that reviewer's own successful launch/i)
+    expect(content).toMatch(/artifact lands while the launch is still live, stop that launch/i)
+    expect(content).toMatch(/neither a terminal outcome nor an artifact when the limit passes.*failed reviewer/i)
+    expect(content).toMatch(/\*\*Agent lifecycle\.\*\* Collect each reviewer's final result/)
+    expect(skill).toMatch(/within the bound `references\/dispatch-reviewers\.md` states/)
     // #1654: a host may deliver a subagent's final answer as a terminal message tagged with the
     // launch's name. The collector rule must state the condition (an attributable terminal
     // result reached in-turn), accept that channel, and still refuse a progress update as a
@@ -614,13 +626,31 @@ describe("ce-code-review contract", () => {
     // Cross-model corroboration is the only validator shortcut.
     expect(content).toMatch(/ordinary reviewer plus an `adversarial-omp` reviewer/i)
     expect(content).toMatch(/Same-model or unverified corroboration never licenses this shortcut/i)
+    expect(content).toMatch(/in-process reviewers share one serving model, so their agreement is recorded in `reviewers` but never raises confidence/i)
+    expect(content).toMatch(/incidence was not measured, the finding carries `validation_status: "confirmed"` and that reason as `validation_reason`/)
+    expect(validatorTemplate).toMatch(/state in `reason` that incidence was not measured/)
 
     // Remaining findings use one bounded foreground batch.
     expect(content).toMatch(/deterministic validator batch/i)
     expect(content).toMatch(/Eight findings is the normal cap/i)
     expect(content).toMatch(/expand that same batch.*include every surviving P0\/P1/i)
     expect(content).toMatch(/never split the work into another batch/i)
-    expect(content).toMatch(/Run the validator batch foreground/i)
+    // Fork adaptation: the validator batch still launches foreground, but the contract that
+    // matters is the bounded wait on the verdicts file (#1688), not the launch mode.
+    expect(content).toMatch(/Run the validator batch foreground with background execution off/)
+    expect(content).toMatch(/wait that has an end/i)
+    expect(content).toMatch(/validator-verdicts\.json/)
+    // Codex's wait_agent caps a single wait at ~30s (PR #1688 review): the bound is aggregate, not per wait.
+    expect(content).toMatch(/repeated back to back.*aggregate wall-clock limit/i)
+    expect(content).toMatch(/no bounded wait exists.*do not launch the validator/i)
+    expect(content).toMatch(/bound passes.*validator infrastructure failure/i)
+    expect(content).toMatch(/uninspected.*validator infrastructure failure for that finding/i)
+    // #1693: a conservative validator must not silently drop a protected-subject finding.
+    expect(content).toMatch(/classify every selected finding yourself/i)
+    expect(content).toMatch(/adds protection, never removes it/i)
+    expect(content).toMatch(/reroute it through the unresolved rule/i)
+    expect(content).toMatch(/`validation_status: "unresolved"`/)
+    expect(content).toMatch(/Do not re-apply Stage 5's P0\/P1 `downstream-resolver` normalization/)
     expect(content).toMatch(/Cost, elapsed time, confidence.*never licenses an additional skip/i)
 
     // Foreground is a request, not proof that the host returned a verdict in-band.
@@ -639,11 +669,45 @@ describe("ce-code-review contract", () => {
     expect(validatorTemplate).toMatch(/Eight findings is the normal cap/i)
     expect(validatorTemplate).toMatch(/expand that same batch.*every surviving P0\/P1/i)
     expect(validatorTemplate).toMatch(/read-only tools|Do not edit, commit, push, or mutate files/i)
-    expect(validatorTemplate).toContain('"validated": true | false')
+    expect(validatorTemplate).toContain('"status": "confirmed" | "rejected" | "unresolved"')
     expect(validatorTemplate).toMatch(/predates and is unaffected by this diff/i)
     expect(validatorTemplate).toMatch(/surrounding code handles it/i)
     expect(validatorTemplate).toMatch(/one verdict for every input # exactly once/i)
     expect(validatorTemplate).toMatch(/Do not invent new findings/i)
+    // #1679: the validator states its own budget and writes verdicts to disk.
+    expect(validatorTemplate).toMatch(/the batch has 15 minutes of wall clock/)
+    expect(validatorTemplate).toMatch(/tool calls per finding/i)
+    expect(validatorTemplate).toMatch(/validator-verdicts\.json.*before you return/i)
+    expect(validatorTemplate).toContain('"protected_subject": "<one of the eight policy keys>" | null')
+    expect(validatorTemplate).toMatch(/budget exhausted, uninspected/i)
+    expect(validatorTemplate).not.toMatch(/"validated":/)
+    // The read-only rule must carve out the one write the bounded wait depends on.
+    expect(validatorTemplate).toMatch(/one permitted write/i)
+
+    // #1693: the validator's protected-subject policy must name all eight subjects and keep the
+    // veto rule, or the loophole reopens on the one validator path that runs.
+    const policyOpen = validatorTemplate.indexOf("<protected-subject-policy>")
+    const policyClose = validatorTemplate.indexOf("</protected-subject-policy>")
+    expect(policyOpen).toBeGreaterThan(-1)
+    expect(policyClose).toBeGreaterThan(policyOpen)
+    const batchPolicy = validatorTemplate.slice(
+      policyOpen,
+      policyClose + "</protected-subject-policy>".length,
+    )
+    for (const subject of [
+      "memory-safety",
+      "concurrency",
+      "data-loss",
+      "authorization-authentication",
+      "injection",
+      "public-contract",
+      "secrets-exposure",
+      "cryptography",
+    ]) {
+      expect(batchPolicy).toContain(`- ${subject}:`)
+    }
+    expect(batchPolicy).toMatch(/Without one of these evidence forms, return status "unresolved", not "rejected"/)
+    expect(batchPolicy).toMatch(/Never use lack of disproof as evidence of confirmation/i)
   })
 
   test("Stage 5c requires explicit local-apply authority and mode:agent is always report-only", async () => {
@@ -723,10 +787,13 @@ describe("ce-code-review contract", () => {
       /Stage 3b standards discovery completed successfully \(with applicable paths or a confirmed empty result\)/i,
     )
     expect(content).toMatch(
-      /No conditional persona other than `project-standards` was selected in Stage 3/i,
+      /No conditional persona was selected in Stage 3 from the diff's own content/i,
     )
     expect(content).toMatch(
-      /Lite roster:[\s\S]{0,200}`project-standards-reviewer` only when Stage 3b found applicable paths/i,
+      /Lite roster:[\s\S]{0,300}`project-standards-reviewer` only when Stage 3b found applicable paths/i,
+    )
+    expect(content).toMatch(
+      /`learnings-researcher` only when declared packs selected it/i,
     )
   })
 
@@ -756,6 +823,12 @@ describe("ce-code-review contract", () => {
     // Long output: the closing (verdict + actionable list) stands alone
     expect(content).toMatch(/stand alone without scrolling/i)
     expect(content).toMatch(/Actionable list are present, last, and self-sufficient/i)
+    // #1694: an unresolved P0/P1 gate leaves the actionable queue but still blocks merge readiness.
+    expect(content).toMatch(/verdict reads severity across the whole primary finding set/i)
+    expect(content).toMatch(/an open P0 forbids "Ready to merge"/)
+    expect(content).toMatch(/an open P1 caps the verdict at "Ready with fixes"/)
+    expect(content).toMatch(/unresolved verification gate/i)
+    expect(content).toMatch(/withholds apply authority; it never clears the blocker/i)
 
     // Shape serves the finding type, but consistent within a section
     expect(content).toMatch(/consistent within (a |the )?section/i)
@@ -806,7 +879,7 @@ describe("ce-code-review contract", () => {
       "skills/ce-code-review/references/diff-scope.md",
     )
     const validator = await readRepoFile(
-      "skills/ce-code-review/references/validator-template.md",
+      "skills/ce-code-review/references/validator-batch-template.md",
     )
 
     expect(skill).toContain("<pr-scope-mode>branch-remote</pr-scope-mode>")

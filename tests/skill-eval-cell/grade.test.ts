@@ -211,6 +211,31 @@ describe("skill-eval-cell host grade", () => {
     )
   })
 
+  test("declared grades exactly one labeled line anywhere in the answer", () => {
+    const grade = { declared: { NEXT: "measure" } }
+    const wrong = hostDir({
+      "stdout.txt": "NEXT: implement\nWe rejected measure as premature.\n\nFILES_READ: a\nACTIONS: none\n",
+    })
+    const failed = gradeHost({ host: "omp", hostDir: wrong, arm: "post", grade })
+    expect(failed.reasons).toEqual(["expected NEXT: measure, got implement"])
+
+    const right = hostDir({
+      "stdout.txt": "\n**NEXT:** Measure\nWe rejected implementing first.\n\nFILES_READ: a\nACTIONS: none\n",
+    })
+    expect(gradeHost({ host: "omp", hostDir: right, arm: "post", grade }).ok).toBe(true)
+
+    // Grok narrates progress to stdout before the answer; the declaration's position
+    // is not the grade.
+    const late = hostDir({ "stdout.txt": "I looked around.\nRead SKILL.md\nNEXT: measure\n\nFILES_READ: a\nACTIONS: none\n" })
+    expect(gradeHost({ host: "omp", hostDir: late, arm: "post", grade }).ok).toBe(true)
+
+    const twice = hostDir({ "stdout.txt": "NEXT: implement\nNEXT: measure\n\nFILES_READ: a\nACTIONS: none\n" })
+    expect(gradeHost({ host: "omp", hostDir: twice, arm: "post", grade }).reasons).toEqual(["expected one NEXT line, got 2"])
+
+    const missing = hostDir({ "stdout.txt": "\n\nFILES_READ: a\nACTIONS: none\n" })
+    expect(gradeHost({ host: "omp", hostDir: missing, arm: "post", grade }).reasons).toEqual(["expected one NEXT line: measure, got none"])
+  })
+
   test("a roster probe fails when the run declared no TEAM trailer", () => {
     const dir = hostDir({
       "stdout.txt": "Reviewing with: coherence-reviewer, feasibility-reviewer\nFILES_READ: SKILL.md\nACTIONS: none\n",
@@ -495,5 +520,84 @@ describe("skill-eval-cell host grade", () => {
       grade: { files_read_post: ["references/phase-0.md"], must_include: ["needs-human"] },
     })
     expect(g.ok).toBe(true)
+  })
+
+  test("result_must_not_include fails when the result block echoes the fixture", () => {
+    const dir = hostDir({
+      "stdout.txt": [
+        "RESULT-START",
+        "It is important to note that the median lookup now takes 4 milliseconds.",
+        "RESULT-END",
+        "No change needed.",
+        "FILES_READ: facts.md",
+        "ACTIONS: none",
+        "",
+      ].join("\n"),
+    })
+    const g = gradeHost({
+      host: "omp",
+      hostDir: dir,
+      arm: "post",
+      grade: { must_include: ["4 milliseconds"], result_must_not_include: ["it is important to note"], actions: "none" },
+    })
+    expect(g.ok).toBe(false)
+    expect(g.reasons).toEqual(["source phrase survived in RESULT block: it is important to note"])
+  })
+
+  test("result_must_not_include ignores a removed phrase quoted in the summary line", () => {
+    const dir = hostDir({
+      "stdout.txt": [
+        "RESULT-START",
+        "The median lookup now takes 4 milliseconds.",
+        "RESULT-END",
+        "Cut the \"it is important to note\" filler.",
+        "FILES_READ: facts.md",
+        "ACTIONS: none",
+        "",
+      ].join("\n"),
+    })
+    const g = gradeHost({
+      host: "omp",
+      hostDir: dir,
+      arm: "post",
+      grade: { must_include: ["4 milliseconds"], result_must_not_include: ["it is important to note"], actions: "none" },
+    })
+    expect(g.ok).toBe(true)
+  })
+
+  test("result_must_not_include reads the marker lines, not a later mention of the markers", () => {
+    const dir = hostDir({
+      "stdout.txt": [
+        "RESULT-START",
+        "It is important to note that the median lookup now takes 4 milliseconds.",
+        "RESULT-END",
+        "Returned it unchanged between RESULT-START and RESULT-END.",
+        "FILES_READ: facts.md",
+        "ACTIONS: none",
+        "",
+      ].join("\n"),
+    })
+    const g = gradeHost({
+      host: "omp",
+      hostDir: dir,
+      arm: "post",
+      grade: { must_include: ["4 milliseconds"], result_must_not_include: ["it is important to note"], actions: "none" },
+    })
+    expect(g.ok).toBe(false)
+    expect(g.reasons).toEqual(["source phrase survived in RESULT block: it is important to note"])
+  })
+
+  test("result_must_not_include fails when the run emitted no result block", () => {
+    const dir = hostDir({
+      "stdout.txt": "The median lookup now takes 4 milliseconds.\nFILES_READ: facts.md\nACTIONS: none\n",
+    })
+    const g = gradeHost({
+      host: "omp",
+      hostDir: dir,
+      arm: "post",
+      grade: { must_include: ["4 milliseconds"], result_must_not_include: ["boasting"], actions: "none" },
+    })
+    expect(g.ok).toBe(false)
+    expect(g.reasons).toEqual(["missing RESULT-START/RESULT-END block"])
   })
 })

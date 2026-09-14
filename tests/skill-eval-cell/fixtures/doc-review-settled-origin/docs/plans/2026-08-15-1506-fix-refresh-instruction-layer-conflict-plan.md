@@ -4,7 +4,6 @@ type: fix
 date: 2026-08-15
 topic: refresh-instruction-layer-conflict
 artifact_contract: ce-unified-plan/v1
-artifact_readiness: implementation-ready
 product_contract_source: ce-brainstorm
 execution: code
 ---

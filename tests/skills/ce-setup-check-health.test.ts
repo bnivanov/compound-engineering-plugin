@@ -680,3 +680,67 @@ describe("ce-setup check-health docs_root resolution", () => {
     expect(result.stdout).not.toContain("Invalid docs_root")
   })
 })
+
+describe("ce-setup check-health Compound Packs", () => {
+  async function runWithPacks(
+    config: string,
+    fixture?: (root: string) => Promise<void>,
+  ): Promise<RunResult> {
+    const root = await mkdtemp(path.join(os.tmpdir(), "ce-setup-health-packs-"))
+    try {
+      await initGitRepo(root)
+      await mkdir(path.join(root, ".compound-engineering"), { recursive: true })
+      await copyFile(configTemplate, path.join(root, ".compound-engineering", "config.example.yaml"))
+      await writeFile(path.join(root, ".compound-engineering", "config.yaml"), config)
+      await writeFile(path.join(root, ".gitignore"), ".compound-engineering/*.local.yaml\n")
+      if (fixture) await fixture(root)
+      return await runCheckHealth(root, "/usr/bin:/bin")
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  }
+
+  async function writeRule(root: string, packId: string): Promise<void> {
+    const pack = path.join(root, "compound-packs", packId)
+    await mkdir(pack, { recursive: true })
+    await writeFile(path.join(pack, "README.md"), "# " + packId + " rules\n\nWhat this pack is for.\n")
+    await writeFile(
+      path.join(pack, packId + "-rule.md"),
+      "---\ntitle: " + packId + " rule\napplies_when: docs mention pricing\ntags: [pricing]\n---\n\nRule body.\n",
+    )
+  }
+
+  test("a live pack resolves to an OK line and a healthy report", async () => {
+    const result = await runWithPacks("packs:\n  - source: compound-packs/demo\n", (root) =>
+      writeRule(root, "demo"),
+    )
+    expect(result.stdout).toContain("pack demo")
+    expect(result.stdout).not.toContain("Pack config error")
+    expect(result.stdout).toContain("Project config healthy")
+  })
+
+  test("a malformed packs entry reports a Pack config error and a project issue", async () => {
+    const result = await runWithPacks("packs:\n  - ref: v1\n")
+    expect(result.stdout).toContain("Pack config error")
+    expect(result.stdout).toContain("no `source:`")
+    expect(result.stdout).toContain("project issue(s) found")
+  })
+
+  test("a declared pack that publishes nothing warns without failing the report", async () => {
+    const result = await runWithPacks("packs:\n  - source: compound-packs/empty-pack\n", async (root) => {
+      await mkdir(path.join(root, "compound-packs", "empty-pack"), { recursive: true })
+      await writeFile(
+        path.join(root, "compound-packs", "empty-pack", "README.md"),
+        "# Empty pack\n\nJust a README.\n",
+      )
+    })
+    expect(result.stdout).toContain("publishes no packs")
+    expect(result.stdout).toContain("Project config healthy")
+  })
+
+  test("no packs key reports the skip line", async () => {
+    const result = await runWithPacks("docs_root: docs\n")
+    expect(result.stdout).toContain("No packs configured")
+    expect(result.stdout).not.toContain("Pack config error")
+  })
+})

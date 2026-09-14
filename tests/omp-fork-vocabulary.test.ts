@@ -191,6 +191,18 @@ const ALLOWLIST: Record<string, AllowEntry> = {
     tokens: ["cursor"],
     why: "GraphQL pagination vocabulary (endCursor/pageInfo review threads)",
   },
+  "docs/omp-capability-audit.md": {
+    tokens: ["claude", "codex", "opencode"],
+    why: "host-capability audit must name omp provider identifiers verbatim (provider-priority list, agent-discovery roots, observed provider name in probe evidence)",
+  },
+  "docs/guides/packs.md": {
+    tokens: ["claude"],
+    why: "upstream-verbatim pack-layout diagram names .claude-plugin/plugin.json — the harness manifest a pack repo carries",
+  },
+  "docs/upstream-sync.md": {
+    tokens: ["claude", "codex"],
+    why: "upstream sync ledger records per-commit dispositions of a multi-harness upstream plugin; it must name upstream-host provenance and fork test filenames (e.g. tests/codex-skill-prompt-budget.test.ts)",
+  },
 }
 
 function isDotPath(rel: string): boolean {
@@ -299,6 +311,70 @@ describe("shipped surface carries zero non-OMP literals", () => {
       offenders,
       `Non-OMP literals must not ship (file:line [token]):\n${offenders.join("\n")}`,
     ).toEqual([])
+  })
+})
+
+// Positive control: the clean-tree walk above proves nothing on its own — a
+// scanner that never fires would pass it, which would make every ALLOWLIST
+// exemption indistinguishable from silently disabling the rule. This block
+// feeds the same scanText a fixture with real violations and asserts they are
+// flagged, and that an exemption suppresses only its own token. Fixture lines
+// are located by content, not hand-maintained index, so editing the fixture
+// header cannot desync the assertions.
+describe("scanner positive control", () => {
+  const controlRel = "tests/fixtures/omp-fork-vocabulary/positive-control.md"
+
+  function controlLines(): string[] {
+    const text = readText(path.join(REPO_ROOT, controlRel))
+    expect(text, "positive-control fixture is present").not.toBeNull()
+    return text!.split("\n")
+  }
+
+  /** Offender-row prefixes (`rel:line [tokens]`) the scan must produce. */
+  function expectedRowPrefixes(tokensByNeedle: Array<[string, string]>): string[] {
+    const lines = controlLines()
+    return tokensByNeedle
+      .map(([needle, tokens]) => {
+        const lineNo = lines.findIndex((line) => line.includes(needle)) + 1
+        expect(lineNo, `fixture still carries "${needle}"`).toBeGreaterThan(0)
+        return `${controlRel}:${lineNo} [${tokens}]`
+      })
+      .sort()
+  }
+
+  function offenderPrefixes(allowed: string[] = []): string[] {
+    const offenders = scanText(controlRel, controlLines().join("\n"), allowed)
+    return offenders.map((row) => `${row.slice(0, row.indexOf("] "))}]`).sort()
+  }
+
+  test("a fixture carrying genuine violations is flagged with file, line, and token", () => {
+    expect(offenderPrefixes()).toEqual(
+      expectedRowPrefixes([
+        ["names codex in prose", "codex"],
+        ["names claude and opencode", "claude, opencode"],
+        ["word-boundary matched", "fable, opus"],
+      ]),
+    )
+  })
+
+  test("boundary matching flags standalone words but keeps a mid-word occurrence clean", () => {
+    const lines = controlLines()
+    const cleanNo = lines.findIndex((line) => line.includes("must stay clean")) + 1
+    expect(cleanNo).toBeGreaterThan(0)
+    const prefixes = offenderPrefixes()
+    expect(prefixes).toEqual(
+      expect.arrayContaining(expectedRowPrefixes([["word-boundary matched", "fable, opus"]])),
+    )
+    expect(prefixes.join("\n")).not.toContain(`${controlRel}:${cleanNo} `)
+  })
+
+  test("an allowlist exemption suppresses only its own token, not the rest of the scan", () => {
+    expect(offenderPrefixes(["codex"])).toEqual(
+      expectedRowPrefixes([
+        ["names claude and opencode", "claude, opencode"],
+        ["word-boundary matched", "fable, opus"],
+      ]),
+    )
   })
 })
 

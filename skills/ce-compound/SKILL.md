@@ -57,13 +57,13 @@ Resolve `<root>` when you first compose a `<root>/solutions/` path, and pass a s
 
 **Only the orchestrator writes product files.** Phase 1 subagents write to per-run scratch only, and never touch `<root>/`, project instruction files, or any other tracked path.
 
-The orchestrator writes the one learning under `<root>/solutions/`, plus two maintenance side effects its own step governs: `CONCEPTS.md` during vocabulary capture, and — **only in interactive Full mode after consent** — a small discoverability line in a project instruction file. Creating `CONCEPTS.md` when it is absent is expected rather than a violation. An instruction file is only ever edited, never created. Nothing else in the tree is written: edits to *other* docs belong to `ce-compound-refresh`, which this skill recommends or invokes with a narrow scope but never stands in for.
+The orchestrator writes the one learning under `<root>/solutions/`, plus two maintenance side effects its step governs: `CONCEPTS.md` during vocabulary capture, and — **only in interactive Full mode after consent** — a small discoverability line in a project instruction file. Two further writes exist **only in interactive Full mode when the user selects them at the assembly destination step**: a rule file inside a writable declared Compound Pack, and the `packs:` entry appended to `.compound-engineering/config.yaml`. Creating `CONCEPTS.md` when absent is expected, not a violation. An instruction file is only ever edited, never created. Nothing else in the tree is written: edits to *other* docs belong to `ce-compound-refresh`, which this skill may invoke but never stands in for.
 
 ## Choosing the path
 
-**Read `references/modes.md` before step 1.** An interactive run picks its own depth rather than asking the user, and that reference says why neither the depth choice nor session history is a question. Default to **Full**. Choose **Lightweight** only when the session is near its context limit. In non-interactive mode, skip the choice and run the depth from Mode Detection.
+**Read `references/modes.md` before step 1.** An interactive run picks its own depth rather than asking the user; that reference says why neither is a question. Default to **Full**. Choose **Lightweight** only when the session is near its context limit.
 
-Lightweight mode skips session history entirely; non-interactive Full runs the same automatic probe, which asks nothing and so preserves the non-interactive contract.
+Lightweight mode skips session history entirely; non-interactive Full runs the same automatic probe, which asks nothing.
 
 ## Full Mode
 
@@ -72,7 +72,7 @@ Run these in order. Each reference is a required read at the step that names it.
 1. **Research** — read `references/research.md`.
 2. **Session history** — read `references/session-history.md`, and start it *after* launching the parallel block so the two overlap rather than serialize. Session history is the final Phase 1 input, not a workflow stop. When it returns, including with "no relevant prior sessions", go straight to assembly without pausing or summarizing.
 3. **Assembly and write** — wait for every Phase 1 input, then read `references/assembly.md`.
-   After the learning is written, `retain` one self-contained line: what was learned, when, why it would recur. If `xd://retain` is unavailable, skip silently — the file under `<root>/solutions/` remains the durable store.
+   After the learning is written, `retain` one self-contained line (what, when, why it would recur); if `xd://retain` is unavailable, skip silently — the `<root>/solutions/` file stays the durable store.
 
 4. **Refresh check and discoverability** — read `references/refresh-and-discoverability.md`.
 5. **Optional enhancement** — read `references/enhancement.md`. Interactive only.

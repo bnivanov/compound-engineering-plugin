@@ -6,17 +6,17 @@ argument-hint: "[optional: feature description, requirements doc path, plan path
 
 # Create Technical Plan
 
-**Note: The current year is 2026.**
+**The current year is 2026.**
 
-**Outcome:** a plan for carrying out and checking the agreed work while preserving its outcome and constraints. Resolve technical choices from evidence; leave adequate instructions unchanged. Use the selected output form and handoff. `ce-brainstorm` defines **WHAT**, `ce-plan` plans **HOW**, and `ce-work` executes. A prior brainstorm is optional.
+**Outcome:** a plan for carrying out and checking the agreed work while preserving its outcome and constraints. `ce-brainstorm` defines **WHAT**, `ce-plan` plans **HOW**, and `ce-work` executes. A prior brainstorm is optional.
 
 **An explicit invocation always produces a plan.** Never classify a direct invocation as "not a planning task" and route out. It may select any output contract below, and the smallest valid plan is a few sentences in chat.
 
-**Research, decide, and write the plan — never implement.** Do not write production code, run tests, or learn from execution-time results. Directional pseudo-code and grammar sketches may communicate design; changing code to see what happens belongs in `ce-work`.
+**Research, decide, and write the plan — never implement.** Do not write production code, run tests, or learn from execution-time results. Directional pseudo-code may communicate design; changing code to see what happens belongs in `ce-work`.
 
 ## Mandatory Completion Contract
 
-A run is complete when its output contract's done condition is met. Every normal interactive branch that produces a plan artifact or checkpoint is incomplete until its owning handoff question is presented: for a Durable software implementation-plan run that continues past Phase 0.1b, the Phase 5.4 menu presented and any selected action has actually fired. For Direct, the change stated and the handoff offered; for a Chat brief, the brief and its one-line save-or-`ce-work` offer in chat. Neither presents the Phase 5.4 menu. Non-software and approach-altitude routes use their reference workflow's terminal handoff. Answer-seeking may end after the answer unless its owner requires save/share.
+A run is complete when its output contract's done condition is met. Every normal interactive branch that produces a plan artifact or checkpoint is incomplete until the user has been asked what to do next. A request that already authorizes the next action is that answer. For a Durable software implementation-plan run that continues past Phase 0.1b, the Phase 5.4 menu presented and any selected action has actually fired. For Direct, the change stated and the handoff offered; for a Chat brief, the brief and its one-line save-or-`ce-work` offer in chat. Neither presents the Phase 5.4 menu. Non-software and approach-altitude routes use their reference workflow's terminal handoff. Answer-seeking may end after the answer unless its owner requires save/share.
 
 Writing the file, checking confidence, and running or explicitly skipping `ce-doc-review` are intermediate milestones. Durable is incomplete until the planner returns PASS. Pipeline mode is complete only when the plan, confidence check, non-interactive document-review state, and planner PASS are returned to its caller; without PASS the caller receives `status: blocked`.
 
@@ -57,4 +57,4 @@ Phases run in order unless an owner routes out or short-circuits. Read a phase's
 9. In pipeline mode, invalidating evidence against a session-settled decision stops the write. Return the exact token `settled-decision-invalidated`, the decision, and the reason; do not resolve it silently.
 10. Write the plan before presenting options, then complete the confidence path owned by `final-review.md`.
 
-**STOP. Read `references/plan-handoff.md` immediately before Phase 5.3.8 and 5.4.** Document review is mandatory for a Durable plan and the default is non-interactive (`mode:non-interactive`). The reference owns the planner check, menu, routes, and issue creation. The session model that authored the plan does not certify it. Phase 5.4 is unreachable until the planner returns PASS. In interactive software runs, present the owner-defined menu and wait. If the selection arrives after a user turn, reload `references/plan-handoff.md` before acting. Rendering the menu, receiving a selection, or announcing a route is not completion; execute the selected action.
+**STOP. Read `references/plan-handoff.md` immediately before Phase 5.3.8 and 5.4.** Document review is mandatory for a Durable plan and the default is non-interactive (`mode:non-interactive`). The reference owns the planner check, menu, routes, and issue creation; per-unit issue fan-out loads `references/issue-fanout.md` only on explicit selection or explicit standing authority. The session model that authored the plan does not certify it. Phase 5.4 is unreachable until the planner returns PASS. In interactive software runs, present the owner-defined menu and wait. If the selection arrives after a user turn, reload `references/plan-handoff.md` before acting. Rendering the menu, receiving a selection, or announcing a route is not completion; execute the selected action.

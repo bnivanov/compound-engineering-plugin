@@ -3,7 +3,6 @@ title: Plugin Architecture For Greeting Formats - Plan
 type: feat
 date: 2026-08-20
 artifact_contract: ce-unified-plan/v1
-artifact_readiness: implementation-ready
 product_contract_source: ce-brainstorm
 execution: code
 ---
