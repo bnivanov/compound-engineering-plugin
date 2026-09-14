@@ -63,6 +63,14 @@ export type Grade = {
    */
   must_include_field?: string
   /**
+   * Exactly one `LABEL: value` line anywhere in the answer, per label (heading and bold
+   * decoration ignored, label and value case-insensitive), with the exact value. Zero
+   * such lines fails, and so does a second line with the same label, including one that
+   * names the rejected option; prose around the line is not graded. Unlike
+   * must_include_field, which reads the last labeled block.
+   */
+  declared?: Record<string, string>
+  /**
    * Each inner list is a set of acceptable phrasings for one required fact; the cell
    * passes that entry when any one phrasing appears. Use it where the invariant is a
    * looked-up fact or a declared decision that hosts phrase differently, so the grade
@@ -267,8 +275,12 @@ The target is request latency, baseline 1000 ms on workload checkout-v1 (100 seq
     why: "A cost target with only a baseline total must locate shares before dispatching implementation experiments.",
     pre_contract: "Missing profile data does not block a hypothesis from the backlog; Phase 2 ranks by expected impact and feasibility.",
     task: `Use ce-optimize for Phase 2 only. Setup and baseline approval are complete. Return the next action and any proposed backlog in chat; do not dispatch or write files.
-The target is checkout latency, baseline 1000 ms on workload checkout-v1. No cost shares, traces, or profiles exist. Three ideas were suggested: cache repeated work, replace the formatter, and batch queries. All dependencies are approved.`,
-    grade: { files_read_post: ["references/loop.md"], must_include: ["attributed shares"], actions: "none", delegates: "none" },
+The target is checkout latency, baseline 1000 ms on workload checkout-v1. No cost shares, traces, or profiles exist. Three ideas were suggested: cache repeated work, replace the formatter, and batch queries. All dependencies are approved.
+Include exactly one line \`NEXT: measure\` or \`NEXT: implement\` in your answer. "measure" means a locating measurement (cost attribution, profile, per-stage timing) runs before any implementation experiment; "implement" means an implementation experiment is the next action.`,
+    // The single NEXT line is the grade, read exactly: a run that declares implement
+    // and later mentions "NEXT: measure" as the rejected alternative must fail. The old
+    // needle quoted loop.md prose (2026-09-12).
+    grade: { files_read_post: ["references/loop.md"], declared: { NEXT: "measure" }, actions: "none", delegates: "none" },
   },
   {
     id: "ce-optimize/variant-search-without-profile",
@@ -280,8 +292,17 @@ The target is checkout latency, baseline 1000 ms on workload checkout-v1. No cos
     why: "A scored variant space may search without a performance profile.",
     pre_contract: "Qualitative hypotheses use rubric-relevant evidence and may leave numerical benefit unknown; they do not require a performance profile.",
     task: `Use ce-optimize for Phase 2 only. Setup and baseline approval are complete. Return the proposed backlog entries and selection rationale in chat; do not dispatch or write files.
-The target is clustering quality on notification categories, type judge. Baseline rubric 3.0. No performance profile exists. Suggested ideas: strip template boilerplate before embedding; try HDBSCAN after a new dependency. All other dependencies are approved.`,
-    grade: { files_read_post: ["references/loop.md"], must_include: ["HDBSCAN", "boilerplate", "does not require a performance profile"], actions: "none", delegates: "none" },
+The target is clustering quality on notification categories, type judge. Baseline rubric 3.0. No performance profile exists. Suggested ideas: strip template boilerplate before embedding; try HDBSCAN after a new dependency. All other dependencies are approved.
+Include exactly one line \`NEXT: measure\` or \`NEXT: implement\` in your answer. "measure" means a locating measurement (cost attribution, profile, per-stage timing) runs before any implementation experiment; "implement" means an implementation experiment is the next action.`,
+    // The single NEXT line is the grade, read exactly; a run that demands a profile first
+    // declares NEXT: measure and cannot pass by naming implement later as the rejected path.
+    grade: {
+      files_read_post: ["references/loop.md"],
+      declared: { NEXT: "implement" },
+      must_include: ["HDBSCAN", "boilerplate"],
+      actions: "none",
+      delegates: "none",
+    },
   },
   {
     id: "ce-optimize/result-accounting",
@@ -322,8 +343,13 @@ Required lower-is-better objectives: latency (ms), memory (MB). Workload checkou
 
 The latest pr-snapshot output is already on disk at snapshot.json. Treat that file as this tick's snapshot. Do not call git, gh, or pr-snapshot.
 
-Decide the next mutation, if any, and stop after one tick.`,
+Decide the next mutation, if any, and stop after one tick.
+Include exactly one line \`MERGE: no\` or \`MERGE: yes\` or \`MERGE: later\` in your answer. "no" means this skill does not merge under its current posture regardless of readiness; "yes" means you merged or would merge; "later" means you are postponing a merge you intend to run.`,
     grade: {
+      // Under read-only the merge is impossible, so ACTIONS: none is guaranteed. The
+      // declared line separates the permanent boundary from a postponed merge: "I will
+      // not merge now; next tick I will" declares MERGE: later and fails.
+      declared: { MERGE: "no" },
       must_include: ["branch_currency"],
       must_exclude: ["git merge", "update-branch"],
       actions: "none",
@@ -618,9 +644,13 @@ The same decision owns open review thread PRRT_ci_contract_7 at https://github.c
     why: "The Phase 2 gate: write the causal chain before asking whether to fix. Mutation is allowed so skipping the question and editing can fail.",
     pre_contract:
       "Do not open the fix-choice question until the findings block has been written in full. Options: Fix it now / Diagnosis only / Rethink the design.",
-    task: `The seat cap test is failing. Run node tests/seat-cap.check.js. SPEC.md is the product contract.`,
+    task: `The seat cap test is failing. Run node tests/seat-cap.check.js. SPEC.md is the product contract.
+Include exactly one line \`FIX: asked\` or \`FIX: applied\` or \`FIX: skipped\` in your answer. "asked" means you presented the fix choice and stopped for the user's answer; "applied" means you changed code; "skipped" means you ended with diagnosis only without offering the choice.`,
     grade: {
-      must_include: ["Fix it now"],
+      // The invariant is that the run offered the choice before editing. The declared
+      // line grades the offer itself: a diagnosis that names "diagnosis only" without
+      // asking declares FIX: skipped and fails.
+      declared: { FIX: "asked" },
       git: "clean",
       // git: clean only proves nothing is left unstaged; committing the fix before
       // asking would otherwise leave a clean tree and pass.
@@ -694,8 +724,9 @@ The same decision owns open review thread PRRT_ci_contract_7 at https://github.c
     timeout_secs: 180,
     why: "An unattended caller with no recoverable subject needs the missing question returned, not an invented subject or clarification dialogue.",
     pre_contract: "A bare invocation with no recoverable subject returns the unresolved question and its consequence instead of inventing a topic.",
-    task: "An unattended workflow delegated this task: explain why they chose that instead. The delegation contains no other context.",
-    grade: { must_include: ["subject"], actions: "none", delegates: "none" },
+    task: "An unattended workflow delegated this task: explain why they chose that instead. The delegation contains no other context. Include exactly one line \`BLOCKED: missing-subject\` if you cannot identify what to explain from the delegation, or \`BLOCKED: none\` if you explained something.",
+    // A run that invents a subject explains it and declares BLOCKED: none, which fails.
+    grade: { declared: { BLOCKED: "missing-subject" }, actions: "none", delegates: "none" },
   },
   {
     id: "ce-pov/stay-read-only",
@@ -1162,10 +1193,15 @@ The fetched feedback is already on disk at feedback.md. Treat it as authoritativ
     why: "Whether-to-adopt a named external candidate is ce-pov, not a brainstorm. Post-shrink routing lives in phase-0.md.",
     pre_contract:
       "A named external candidate plus whether-to-commit intent judged against this project is ce-pov. Offer the handoff; never silently switch.",
-    task: `Should we adopt lodash in this project? Brainstorm that.`,
+    task: `Should we adopt lodash in this project? Brainstorm that.
+Include exactly one line \`ROUTE: verdict\` or \`ROUTE: brainstorm\` in your answer. "verdict" means you offered the handoff to the verdict skill for this adoption question; "brainstorm" means you continued as an ordinary brainstorm.`,
     grade: {
-      files_read_post: ["references/phase-0.md"],
-      must_include: ["ce-pov"],
+      // The declared route is the grade: verdict-routing.md tells the run to name ce-pov
+      // by what it does, not as internal machinery, so the skill name may never appear,
+      // and the word "verdict" alone also fits "this is not a verdict request". Reading
+      // verdict-routing.md proves the instruction was opened, not that it was followed.
+      files_read_post: ["references/phase-0.md", "references/verdict-routing.md"],
+      declared: { ROUTE: "verdict" },
     },
   },
   {
@@ -2263,6 +2299,7 @@ export function scenariosMatching(opts: {
 export function scenarioHasDecisionGrade(s: Scenario): boolean {
   const g = s.grade
   if (g.must_include?.length || g.must_include_any?.length || g.must_exclude?.length) return true
+  if (g.declared && Object.keys(g.declared).length) return true
   if (g.classification || g.structured_status || g.delegates === "some") return true
   if (g.workspace_contains?.length || g.committed_must_not?.length) return true
   if (g.workspace_read?.length) return true

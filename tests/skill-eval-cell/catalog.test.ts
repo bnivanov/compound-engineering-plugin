@@ -141,6 +141,7 @@ describe("skill-eval-cell catalog", () => {
         "ce-brainstorm/lookup-not-ask:references/interaction-rules.md",
         "ce-brainstorm/standard-scope-routes-to-file:references/phase-0.md",
         "ce-brainstorm/verdict-routes-to-pov:references/phase-0.md",
+        "ce-brainstorm/verdict-routes-to-pov:references/verdict-routing.md",
         "ce-brainstorm/write-plan-reads-plan-write:references/plan-write.md",
         "ce-code-review/artifact-quote-before-filter:references/finish-review.md",
         "ce-commit-push-pr/description-only-no-commit:references/pr-description-writing.md",
@@ -247,6 +248,7 @@ describe("skill-eval-cell catalog", () => {
       if (!s.read_only || !s.grade.must_exclude?.length) return false
       return (
         !s.grade.must_include?.length &&
+        !Object.keys(s.grade.declared ?? {}).length &&
         !s.grade.files_read_post?.length &&
         !s.grade.workspace_read?.length
       )
@@ -278,16 +280,16 @@ describe("skill-eval-cell catalog", () => {
     expect(accounting?.task.toLowerCase().includes("50 ms")).toBe(false)
     expect(accounting?.task.toLowerCase().includes("integrated")).toBe(false)
 
+    // The single NEXT line is graded exactly, so a run that declares the other option
+    // and later names the expected one as the rejected path cannot pass; the task
+    // states both options and must not open with the answer.
     const attribution = SCENARIOS.find((s) => s.id === "ce-optimize/cost-attribution-before-search")
-    const skipLocating = "No locating measurement is necessary; proceed with batching."
-    for (const needle of attribution?.grade.must_include ?? []) {
-      expect(skipLocating.toLowerCase().includes(needle.toLowerCase())).toBe(false)
-    }
+    expect(attribution?.grade.declared).toEqual({ NEXT: "measure" })
+    expect(attribution?.task.startsWith("NEXT:")).toBe(false)
 
     const variants = SCENARIOS.find((s) => s.id === "ce-optimize/variant-search-without-profile")
-    const blocked = "Without a profile, HDBSCAN and boilerplate stripping are blocked"
-    expect(
-      variants?.grade.must_include?.some((needle) => !blocked.toLowerCase().includes(needle.toLowerCase())),
-    ).toBe(true)
+    expect(variants?.grade.declared).toEqual({ NEXT: "implement" })
+    expect(variants?.task.startsWith("NEXT:")).toBe(false)
+    expect(variants?.grade.must_include).toEqual(["HDBSCAN", "boilerplate"])
   })
 })

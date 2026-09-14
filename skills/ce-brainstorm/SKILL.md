@@ -1,6 +1,6 @@
 ---
 name: ce-brainstorm
-description: "Turn a vague or ambitious idea into a right-sized, requirements-only unified plan through one-decision-at-a-time dialogue. Use when what to build is still open, when scoping work in territory you do not know, or when asking for a blindspot pass. Use ce-plan once the WHAT is settled and only the HOW is left; use ce-pov for a verdict on adopting a named external technology."
+description: "Explore vague or ambitious ideas into a right-sized requirements-only unified plan. Use when the user wants to brainstorm or scope what to build. Not for executing already-specified work. Use ce-pov for a verdict on adopting a named external technology."
 argument-hint: "[feature idea or problem to explore] [output:html]"
 ---
 

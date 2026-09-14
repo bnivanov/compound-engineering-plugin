@@ -52,15 +52,15 @@ Verified 2026-09-10:
 
 Nothing was tried and failed in-session. The miss is in the pre-existing notes, not in a failed workaround.
 
-`AGENTS.md` **Validating Agent and Skill Changes** already says plugin skills "cache at session start" (line 155) and "Plugin agent and skill definitions both cache at session start" (line 157). That, plus "A version-matched cache is not automatically stale — confirm by content, not by version" (line 161), covers *content* staleness: a still-present, version-matched cache directory is not automatically the wrong bytes. It does not cover the directory being deleted under a live session.
+`AGENTS.md` **Validating Agent and Skill Changes** already says plugin skills "cache at session start" and "Plugin agent and skill definitions both cache at session start". That, plus "A version-matched cache is not automatically stale — confirm by content, not by version", covers *content* staleness: a still-present, version-matched cache directory is not automatically the wrong bytes. It does not cover the directory being deleted under a live session.
 
 (OMP memory) An earlier ship-time note recorded that already-running sessions keep the prior plugin version while new sessions and hermes-launched jobs pick up the newly installed version immediately. That predicts stale *content*, not `ENOENT`. The pruned-directory failure is the delta those notes did not predict.
 
-Editing the cache to force a reload was never an option: `AGENTS.md` **Validating Agent and Skill Changes** (line 159) says "Do NOT edit `~/.omp/plugins/cache/` or `~/.omp/plugins/marketplaces/` to try to force a reload." The observed store is the profile-scoped equivalent (`~/.omp/profiles/<profile>/plugins/cache/`); same class of user machine state.
+Editing the cache to force a reload was never an option: `AGENTS.md` **Validating Agent and Skill Changes** says "Do NOT edit `~/.omp/plugins/cache/` or `~/.omp/plugins/marketplaces/` to try to force a reload." The observed store is the profile-scoped equivalent (`~/.omp/profiles/<profile>/plugins/cache/`); same class of user machine state.
 
 ## Solution
 
-1. In the running session, `/reload-plugins`, or restart the session. `AGENTS.md` **Quick Start** → **Local OMP Development** (line 20): "skills reload on the next session or `/reload-plugins`". The loader re-resolves to the installed version. Verified: the omp.9 tree holds `skills/ce-compound/SKILL.md`.
+1. In the running session, `/reload-plugins`, or restart the session. `AGENTS.md` **Quick Start** → **Local OMP Development**: "skills reload on the next session or `/reload-plugins`". The loader re-resolves to the installed version. Verified: the omp.9 tree holds `skills/ce-compound/SKILL.md`.
 2. For authoring sessions inside this plugin source checkout: do not wait on `skill://`. Read `skills/<name>/SKILL.md` and `skills/<name>/references/...` from the repo. That is how the interrupted `ce-compound` run continued.
 3. After cutting or installing a plugin release, treat every still-open session as holding dangling `skill://` paths. Reload or restart them as part of the release checklist — not only sessions that "look stale."
 

@@ -52,6 +52,8 @@ After all mutations in this run have settled (initial write, deepening synthesis
 
 ## 5.4 Post-Generation Options
 
+**Already-authorized next action:** If the request already authorizes what happens after the plan (implement, open a goal, create an issue, stop), fire that action. Do not present the menu to re-ask. Pipeline mode still returns to the caller.
+
 **Pipeline mode:** Return control to the caller without an interactive menu. If document review started but did not complete, return the skill's `status: blocked` result with `phase`, `blocker`, `recovery_path`, and the preserved `artifact_path`. Without a planner PASS, return `status: blocked` with the planner-check state — the planner returned PASS only after the durable final checks held. Otherwise return the resolved review envelope and planner-check state from completion or the pre-entry `skill_unreachable` fallback, and the caller (e.g., LFG) determines the next step.
 
 **Path format:** Use absolute paths for chat-output file references — relative paths are not auto-linked as clickable in most terminals.

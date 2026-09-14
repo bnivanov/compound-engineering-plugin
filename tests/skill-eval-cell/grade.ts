@@ -51,6 +51,21 @@ function lastTrailer(text: string, name: string): string {
   return ""
 }
 
+/**
+ * Every line of the answer that is `LABEL: value`, decoration ignored, wherever it sits.
+ * Position is not the signal: Grok narrates to stdout before the answer, so line one
+ * is often not the answer at all. The task asks for exactly one such line, so the
+ * caller fails on zero or several and grades the value of the single one.
+ */
+function declaredLines(text: string, name: string): string[] {
+  const prefix = `${name.toUpperCase()}:`
+  return text
+    .split("\n")
+    .map((line) => line.trim().replace(/^#{1,6}\s+/, "").replaceAll("**", "").trim())
+    .filter((plain) => plain.toUpperCase().startsWith(prefix))
+    .map((plain) => plain.slice(prefix.length).trim())
+}
+
 /** Read a standalone labeled field while ignoring Markdown heading/bold decoration. */
 function lastField(text: string, name: string): string {
   const prefix = `${name}:`
@@ -199,6 +214,14 @@ export function gradeHost(opts: {
   if (opts.grade.must_not_include?.length && !team) reasons.push("missing TEAM trailer")
   for (const needle of team ? opts.grade.must_not_include ?? [] : []) {
     if (team.includes(needle.toLowerCase())) reasons.push(`forbidden text in TEAM trailer: ${needle}`)
+  }
+  for (const [label, want] of Object.entries(opts.grade.declared ?? {})) {
+    const values = declaredLines(stdout, label)
+    if (values.length === 0) reasons.push(`expected one ${label} line: ${want}, got none`)
+    else if (values.length > 1) reasons.push(`expected one ${label} line, got ${values.length}`)
+    else if (values[0].toLowerCase() !== want.toLowerCase()) {
+      reasons.push(`expected ${label}: ${want}, got ${values[0]}`)
+    }
   }
   if (opts.grade.classification) {
     const actual = lastField(stdout, "CLASSIFICATION")
