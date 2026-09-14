@@ -7,12 +7,18 @@ a block preserves all state by construction.
 
 Mechanisms enforced at this single point:
 
-1. UNVERIFIED-never-PASS: ``status: complete`` requires a structured
-   verification-evidence entry per attempted unit, each showing tests added
-   or changed, tests used unchanged, or an explicit exception reason.
+1. UNVERIFIED-never-PASS: ``status: complete`` requires a non-empty
+   ``u_ids_attempted`` list and a structured verification-evidence entry per
+   attempted unit, each showing tests added or changed, tests used
+   unchanged, or an explicit exception reason. A completion claim that
+   omits either list — or attempts a unit absent from the re-read plan —
+   is vacuous and blocked.
 2. Plan re-injection: the plan is re-read from disk at emission and the
    verdict is rendered against that fresh read, so a compacted or drifted
    context cannot emit an envelope grounded in remembered plan content.
+   Every attempted unit id must appear among the fresh read's ``U<n>``
+   unit markers; a plan using no unit markers is recorded as not
+   checkable instead of false-blocked.
 3. SHA-256 tamper attestation: the on-disk plan digest is compared to the
    envelope's recorded ``source_digest``. A mismatch emits
    blocked-with-recovery with state preserved — never a silent re-baseline
@@ -20,10 +26,11 @@ Mechanisms enforced at this single point:
 4. Deterministic stop gate: environmental failures emit blocked-with-recovery
    immediately; work-failure blocks carry an incrementing continuation count
    bounded at 8 (matching the host ``session_stop`` cap) instead of an
-   infinite hold.
+   infinite hold. An out-of-range ``--continuations`` value is environmental.
 
 Verdict JSON on stdout; exit code owns emission: 0 pass, 2 block
-(continuation warranted), 3 blocked-with-recovery.
+(continuation warranted), 3 blocked-with-recovery. Usage errors exit 64;
+an unexpected exception emits a blocked-with-recovery verdict and exits 3.
 """
 
 from __future__ import annotations
@@ -31,8 +38,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
+import re
 import sys
-from typing import Any
+from typing import Any, NoReturn
 
 CONTINUATION_CAP = 8
 
@@ -69,6 +78,78 @@ def nonempty_str(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
 
+def truthy_behavior_change(value: Any) -> bool:
+    """Model-authored envelopes spell booleans loosely; accept the JSON
+    boolean and the plausible string spellings of true."""
+    if value is True:
+        return True
+    return isinstance(value, str) and value.strip().lower() in ("true", "yes")
+
+
+PLAN_UNIT_ID_RE = re.compile(r"\bU\d+\b")
+
+
+def plan_unit_ids(plan_text: str) -> set[str] | None:
+    """Conservative scan for the plan's ``U<n>`` unit markers. ``None`` when
+    the plan contains no unit ids at all — an arbitrary plan format the gate
+    must not false-block."""
+    ids = set(PLAN_UNIT_ID_RE.findall(plan_text))
+    return ids or None
+
+
+def plan_membership_check(
+    envelope: dict[str, Any], plan_text: str, plan_path: str
+) -> dict[str, Any]:
+    """Mechanism 2's comparison step: every attempted unit must exist in the
+    plan that was re-read from disk. Fails safe — a plan with no ``U<n>``
+    markers is recorded environmental (not checkable), never blocked."""
+    ids = plan_unit_ids(plan_text)
+    if ids is None:
+        return {
+            "status": "environmental",
+            "detail": (
+                f"plan {plan_path} contains no U<n> unit ids; "
+                "attempted-unit membership was not checkable"
+            ),
+        }
+    attempted_raw = envelope.get("u_ids_attempted")
+    if not isinstance(attempted_raw, list):
+        # unverified_problems already names the malformed field; never
+        # iterate a non-list as if it were unit ids.
+        return {
+            "status": "environmental",
+            "detail": (
+                "u_ids_attempted is not a list; attempted-unit membership "
+                "was not checkable"
+            ),
+        }
+    fabricated = sorted({str(u_id).strip() for u_id in attempted_raw} - ids)
+    if fabricated:
+        return {
+            "status": "blocked",
+            "detail": [
+                f"attempted unit {u_id!r} does not appear in the re-read "
+                f"plan {plan_path} — an attempt claim must name a unit the "
+                "gated plan defines"
+                for u_id in fabricated
+            ],
+        }
+    if not attempted_raw:
+        return {
+            "status": "pass",
+            "detail": (
+                "u_ids_attempted names no units; nothing to check against "
+                "the plan (the empty attempt list is flagged elsewhere)"
+            ),
+        }
+    return {
+        "status": "pass",
+        "detail": (
+            f"every attempted unit id appears in the re-read plan {plan_path}"
+        ),
+    }
+
+
 def entry_discharges_evidence(entry: dict[str, Any]) -> bool:
     """An entry discharges UNVERIFIED-never-PASS when it shows real
     verification (tests added/changed, tests used unchanged) or a deliberate
@@ -82,10 +163,41 @@ def entry_discharges_evidence(entry: dict[str, Any]) -> bool:
 
 def unverified_problems(envelope: dict[str, Any]) -> list[str]:
     problems: list[str] = []
-    attempted = envelope.get("u_ids_attempted") or []
-    evidence = envelope.get("verification_evidence") or []
+    # A non-list value would keep its truthy self through `or []` and then be
+    # iterated as characters (str) or keys (dict), turning one malformed field
+    # into a garbage problem per element. Fail closed, and say what is wrong.
+    attempted_raw = envelope.get("u_ids_attempted")
+    evidence_raw = envelope.get("verification_evidence")
+    # A completion claim that names no attempted unit is vacuous: absence,
+    # non-list garbage, and the empty list all fail closed by name.
+    if attempted_raw is None:
+        problems.append(
+            "u_ids_attempted is missing — a completion claim that names "
+            "no attempted unit is vacuous"
+        )
+    elif not isinstance(attempted_raw, list):
+        problems.append("u_ids_attempted is not a list")
+    elif not attempted_raw:
+        problems.append(
+            "u_ids_attempted is empty — a completion claim that names "
+            "no attempted unit is vacuous"
+        )
+    if evidence_raw is None:
+        problems.append(
+            "verification_evidence is missing — a completion claim with "
+            "no verification evidence is vacuous"
+        )
+    elif not isinstance(evidence_raw, list):
+        problems.append("verification_evidence is not a list")
+    elif not evidence_raw:
+        problems.append(
+            "verification_evidence is empty — UNVERIFIED work cannot "
+            "emit a PASS envelope"
+        )
+    attempted = attempted_raw if isinstance(attempted_raw, list) else []
+    evidence = evidence_raw if isinstance(evidence_raw, list) else []
 
-    if envelope.get("behavior_change") is True and not evidence:
+    if truthy_behavior_change(envelope.get("behavior_change")) and not evidence:
         problems.append(
             "behavior_change is true but verification_evidence is empty — "
             "UNVERIFIED work cannot emit a PASS envelope"
@@ -126,8 +238,19 @@ def unverified_problems(envelope: dict[str, Any]) -> list[str]:
     return problems
 
 
+class _UsageErrorParser(argparse.ArgumentParser):
+    """Usage errors exit 64 (EX_USAGE): a malformed invocation must be
+    distinguishable from the gate's own BLOCK verdict (exit 2). Usage goes
+    to stderr; stdout stays verdict-only."""
+
+    def error(self, message: str) -> NoReturn:
+        self.print_usage(sys.stderr)
+        sys.stderr.write(f"envelope-gate: {message}\n")
+        raise SystemExit(64)
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(
+    parser = _UsageErrorParser(
         description="Gate a ce-work Return-to-Caller envelope at emission."
     )
     parser.add_argument("--plan", required=True, help="plan file path")
@@ -144,22 +267,68 @@ def main() -> int:
 
     checks: dict[str, Any] = {}
 
+    def emit(
+        decision: str,
+        reason: str,
+        checks: dict[str, Any],
+        plan_path: str | None,
+        plan_digest: str | None,
+        continuations: int,
+        plan_checkpoint: Any = None,
+    ) -> int:
+        """Print the final verdict JSON and return the decision's exit code."""
+        print(
+            json.dumps(
+                verdict(
+                    decision,
+                    reason,
+                    checks,
+                    plan_path,
+                    plan_digest,
+                    continuations,
+                    plan_checkpoint,
+                ),
+                sort_keys=True,
+            )
+        )
+        return EXIT_CODES[decision]
+    if not 0 <= args.continuations <= CONTINUATION_CAP:
+        checks["stop_gate"] = {
+            "status": "environmental",
+            "detail": (
+                f"--continuations {args.continuations} is outside the valid "
+                f"range [0, {CONTINUATION_CAP}]"
+            ),
+        }
+        return emit(
+            BLOCKED_WITH_RECOVERY,
+            f"stop gate: --continuations {args.continuations} is outside "
+            f"the valid range [0, {CONTINUATION_CAP}] — refusing to compute "
+            "a hold from an invalid continuation count; re-run the gate "
+            "with --continuations within the range",
+            checks,
+            None,
+            None,
+            args.continuations,
+        )
+
     try:
-        raw = sys.stdin.read() if args.envelope is None else open(args.envelope, encoding="utf-8").read()
+        if args.envelope is None:
+            raw = sys.stdin.read()
+        else:
+            with open(args.envelope, encoding="utf-8") as handle:
+                raw = handle.read()
     except OSError as error:
         checks["envelope"] = {"status": "environmental", "detail": str(error)}
-        print(json.dumps(verdict(BLOCKED_WITH_RECOVERY, f"envelope unreadable: {error}", checks, None, None, args.continuations), sort_keys=True))
-        return EXIT_CODES[BLOCKED_WITH_RECOVERY]
+        return emit(BLOCKED_WITH_RECOVERY, f"envelope unreadable: {error}", checks, None, None, args.continuations)
     try:
         envelope = json.loads(raw)
     except json.JSONDecodeError as error:
         checks["envelope"] = {"status": "environmental", "detail": str(error)}
-        print(json.dumps(verdict(BLOCKED_WITH_RECOVERY, f"envelope is not valid JSON: {error}", checks, None, None, args.continuations), sort_keys=True))
-        return EXIT_CODES[BLOCKED_WITH_RECOVERY]
+        return emit(BLOCKED_WITH_RECOVERY, f"envelope is not valid JSON: {error}", checks, None, None, args.continuations)
     if not isinstance(envelope, dict):
         checks["envelope"] = {"status": "environmental", "detail": "not a JSON object"}
-        print(json.dumps(verdict(BLOCKED_WITH_RECOVERY, "envelope is not a JSON object", checks, None, None, args.continuations), sort_keys=True))
-        return EXIT_CODES[BLOCKED_WITH_RECOVERY]
+        return emit(BLOCKED_WITH_RECOVERY, "envelope is not a JSON object", checks, None, None, args.continuations)
 
     plan_checkpoint = envelope.get("plan_checkpoint")
 
@@ -169,22 +338,17 @@ def main() -> int:
             plan_bytes = handle.read()
     except OSError as error:
         checks["plan_reinjection"] = {"status": "environmental", "detail": str(error)}
-        print(
-            json.dumps(
-                verdict(
-                    BLOCKED_WITH_RECOVERY,
-                    f"plan file unavailable for re-injection at envelope emission: {error}",
-                    checks,
-                    args.plan,
-                    None,
-                    args.continuations,
-                    plan_checkpoint,
-                ),
-                sort_keys=True,
-            )
+        return emit(
+            BLOCKED_WITH_RECOVERY,
+            f"plan file unavailable for re-injection at envelope emission: {error}",
+            checks,
+            args.plan,
+            None,
+            args.continuations,
+            plan_checkpoint,
         )
-        return EXIT_CODES[BLOCKED_WITH_RECOVERY]
     plan_digest = hashlib.sha256(plan_bytes).hexdigest()
+    plan_text = plan_bytes.decode("utf-8", errors="replace")
     checks["plan_reinjection"] = {
         "status": "pass",
         "detail": f"re-read {args.plan} from disk ({len(plan_bytes)} bytes); verdict rendered against the fresh read",
@@ -192,42 +356,62 @@ def main() -> int:
 
     if envelope.get("source_kind") != "plan":
         checks["tamper_attestation"] = {"status": "environmental", "detail": "source_kind is not plan"}
-        print(
-            json.dumps(
-                verdict(
-                    BLOCKED_WITH_RECOVERY,
-                    "emission gate applies to Return-to-Caller plan mode; "
-                    f"source_kind is {envelope.get('source_kind')!r}",
-                    checks,
-                    args.plan,
-                    plan_digest,
-                    args.continuations,
-                    plan_checkpoint,
-                ),
-                sort_keys=True,
-            )
+        return emit(
+            BLOCKED_WITH_RECOVERY,
+            "emission gate applies to Return-to-Caller plan mode; "
+            f"source_kind is {envelope.get('source_kind')!r}",
+            checks,
+            args.plan,
+            plan_digest,
+            args.continuations,
+            plan_checkpoint,
         )
-        return EXIT_CODES[BLOCKED_WITH_RECOVERY]
+    # Mechanism 2's identity half: an envelope attested against another
+    # plan must not ride through this gate's re-read of a different file.
+    # realpath on both sides folds symlink and tmpdir aliasing (a symlinked
+    # tmp root vs its real path) into one name, so the same file reached
+    # through a different path still matches.
+    identity_mismatch = False
+    recorded_plan_path = envelope.get("plan_path")
+    if nonempty_str(recorded_plan_path):
+        recorded_real = os.path.realpath(str(recorded_plan_path).strip())
+        gated_real = os.path.realpath(args.plan)
+        if recorded_real != gated_real:
+            identity_mismatch = True
+            checks["plan_identity"] = {
+                "status": "blocked",
+                "detail": (
+                    f"envelope plan_path {str(recorded_plan_path).strip()!r} "
+                    f"(resolved {recorded_real}) does not match the gated "
+                    f"plan {args.plan} (resolved {gated_real})"
+                ),
+            }
+        else:
+            checks["plan_identity"] = {
+                "status": "pass",
+                "detail": (
+                    f"envelope plan_path matches the gated plan ({gated_real})"
+                ),
+            }
+    else:
+        checks["plan_identity"] = {
+            "status": "pass",
+            "detail": "envelope carries no plan_path; identity not compared",
+        }
 
     recorded_digest = envelope.get("source_digest")
     if not nonempty_str(recorded_digest):
         checks["tamper_attestation"] = {"status": "environmental", "detail": "no source_digest recorded"}
-        print(
-            json.dumps(
-                verdict(
-                    BLOCKED_WITH_RECOVERY,
-                    "no source_digest recorded for the plan; re-disclose the "
-                    "plan digest to the caller — never re-baseline",
-                    checks,
-                    args.plan,
-                    plan_digest,
-                    args.continuations,
-                    plan_checkpoint,
-                ),
-                sort_keys=True,
-            )
+        return emit(
+            BLOCKED_WITH_RECOVERY,
+            "no source_digest recorded for the plan; re-disclose the "
+            "plan digest to the caller — never re-baseline",
+            checks,
+            args.plan,
+            plan_digest,
+            args.continuations,
+            plan_checkpoint,
         )
-        return EXIT_CODES[BLOCKED_WITH_RECOVERY]
 
     # Mechanism 3 — SHA-256 tamper attestation: detect-and-block, state
     # preserved, never a silent re-baseline.
@@ -236,30 +420,32 @@ def main() -> int:
             "status": "blocked",
             "detail": f"recorded {recorded_digest.strip().lower()} != on-disk {plan_digest}",
         }
-        print(
-            json.dumps(
-                verdict(
-                    BLOCKED_WITH_RECOVERY,
-                    "tamper attestation failed: plan digest mismatch (recorded "
-                    f"{recorded_digest.strip().lower()}, on-disk {plan_digest}). "
-                    "State is preserved; do not re-baseline the digest and do "
-                    "not edit the plan to match. Recover by restoring the plan "
-                    "file (e.g. from git) or obtaining a re-disclosed "
-                    "checkpoint from the caller.",
-                    checks,
-                    args.plan,
-                    plan_digest,
-                    args.continuations,
-                    plan_checkpoint,
-                ),
-                sort_keys=True,
-            )
+        return emit(
+            BLOCKED_WITH_RECOVERY,
+            "tamper attestation failed: plan digest mismatch (recorded "
+            f"{recorded_digest.strip().lower()}, on-disk {plan_digest}). "
+            "State is preserved; do not re-baseline the digest and do "
+            "not edit the plan to match. Recover by restoring the plan "
+            "file (e.g. from git) or obtaining a re-disclosed "
+            "checkpoint from the caller.",
+            checks,
+            args.plan,
+            plan_digest,
+            args.continuations,
+            plan_checkpoint,
         )
-        return EXIT_CODES[BLOCKED_WITH_RECOVERY]
     checks["tamper_attestation"] = {"status": "pass", "detail": f"on-disk digest matches recorded source_digest ({plan_digest})"}
 
     status = envelope.get("status")
-    if status not in ("complete", "blocked", "failed"):
+    if identity_mismatch:
+        decision = BLOCK
+        reason = (
+            "plan identity mismatch: the envelope attests "
+            f"{str(recorded_plan_path).strip()!r} but the gate re-read "
+            f"{args.plan}; re-assemble the envelope against the plan "
+            "being gated"
+        )
+    elif status not in ("complete", "blocked", "failed"):
         checks["unverified_never_pass"] = {"status": "blocked", "detail": f"invalid status {status!r}"}
         decision = BLOCK
         reason = (
@@ -267,8 +453,13 @@ def main() -> int:
             "emit one of the contract statuses"
         )
     elif status == "complete":
-        # Mechanism 1 — UNVERIFIED-never-PASS.
+        # Mechanism 1 — UNVERIFIED-never-PASS, plus mechanism 2's
+        # membership comparison against the fresh on-disk read.
         problems = unverified_problems(envelope)
+        membership = plan_membership_check(envelope, plan_text, args.plan)
+        checks["plan_unit_membership"] = membership
+        if membership["status"] == "blocked":
+            problems.extend(membership["detail"])
         if problems:
             checks["unverified_never_pass"] = {"status": "blocked", "detail": problems}
             decision = BLOCK
@@ -295,54 +486,65 @@ def main() -> int:
                 "status": "environmental",
                 "detail": f"continuation cap {CONTINUATION_CAP} reached",
             }
-            print(
-                json.dumps(
-                    verdict(
-                        BLOCKED_WITH_RECOVERY,
-                        "stop gate: continuation cap "
-                        f"{CONTINUATION_CAP} reached without a pass — emitting "
-                        "blocked-with-recovery instead of an infinite hold. "
-                        "Recover via the caller: resolve the named defects "
-                        "outside this run or re-dispatch with a corrected plan.",
-                        checks,
-                        args.plan,
-                        plan_digest,
-                        args.continuations,
-                        plan_checkpoint,
-                    ),
-                    sort_keys=True,
-                )
+            return emit(
+                BLOCKED_WITH_RECOVERY,
+                "stop gate: continuation cap "
+                f"{CONTINUATION_CAP} reached without a pass — emitting "
+                "blocked-with-recovery instead of an infinite hold. "
+                "Recover via the caller: resolve the named defects "
+                "outside this run or re-dispatch with a corrected plan.",
+                checks,
+                args.plan,
+                plan_digest,
+                args.continuations,
+                plan_checkpoint,
             )
-            return EXIT_CODES[BLOCKED_WITH_RECOVERY]
         checks["stop_gate"] = {
             "status": "holding",
             "detail": f"block {args.continuations + 1} of {CONTINUATION_CAP}",
         }
+        return emit(
+            BLOCK,
+            reason,
+            checks,
+            args.plan,
+            plan_digest,
+            args.continuations + 1,
+            plan_checkpoint,
+        )
+
+    checks["stop_gate"] = {"status": "pass", "detail": "no hold required"}
+    return emit(decision, reason, checks, args.plan, plan_digest, args.continuations, plan_checkpoint)
+
+
+if __name__ == "__main__":
+    try:
+        code = main()
+    except SystemExit:
+        # Usage errors (64) own their exit code; never convert one to a verdict.
+        raise
+    except Exception as error:  # noqa: BLE001 — fail closed on anything else
         print(
             json.dumps(
                 verdict(
-                    BLOCK,
-                    reason,
-                    checks,
-                    args.plan,
-                    plan_digest,
-                    args.continuations + 1,
-                    plan_checkpoint,
+                    BLOCKED_WITH_RECOVERY,
+                    f"unexpected {type(error).__name__}: {error} — the gate "
+                    "failed closed; recover via the caller",
+                    {
+                        "gate": {
+                            "status": "environmental",
+                            "detail": (
+                                f"unexpected {type(error).__name__} escaped "
+                                f"the gate: {error}"
+                            ),
+                        }
+                    },
+                    None,
+                    None,
+                    None,
                 ),
                 sort_keys=True,
             )
         )
-        return EXIT_CODES[BLOCK]
-
-    checks["stop_gate"] = {"status": "pass", "detail": "no hold required"}
-    print(
-        json.dumps(
-            verdict(decision, reason, checks, args.plan, plan_digest, args.continuations, plan_checkpoint),
-            sort_keys=True,
-        )
-    )
-    return EXIT_CODES[decision]
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+        code = EXIT_CODES[BLOCKED_WITH_RECOVERY]
+    raise SystemExit(code)

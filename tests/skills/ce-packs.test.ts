@@ -55,8 +55,14 @@ const AUTHORITY_PINS: Array<[string, string]> = [
   ],
 ]
 
-// A working python3 is required to exercise the resolver; parity and prose pins
-// do not need it, so only resolver runs are skipped without one.
+// Coverage note: there is no python-free fallback for the resolver — the
+// resolver is a python script, and exercising its behavior from a test-local
+// reimplementation would defend a copy, not the shipped artifact. On a host
+// with neither python3 nor python the five resolverTest cases below skip
+// silently: the resolver's declared-only tri-state, malformed-declaration
+// error, no-fetch laziness, path-pack install, and fail-closed behavior are
+// knowingly unverified there. What still runs everywhere: the byte-identity
+// digest and the citation/authority prose pins.
 const hasPython =
   ["python3", "python"].find((name) => spawnSync(name, ["-c", ""], { encoding: "utf8" }).status === 0) ?? null
 const resolverTest = test.skipIf(hasPython === null)

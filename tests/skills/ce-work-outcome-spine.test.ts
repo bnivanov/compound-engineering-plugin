@@ -1,5 +1,6 @@
-import { readFile } from "fs/promises"
 import path from "path"
+import { readFile } from "fs/promises"
+import { readFileSync } from "fs"
 import { describe, expect, test } from "bun:test"
 
 async function readRepoFile(relativePath: string): Promise<string> {
@@ -354,17 +355,21 @@ describe("ce-work out-of-repo unit completion (#1574)", () => {
   })
 })
 
+// Read once at module load, matching the file's other single-read conventions;
+// the underlying reference is immutable during a test run.
+const convergeGate = sliceSection(
+  readFileSync(path.join(process.cwd(), "skills/ce-work/references/implementation-loop.md"), "utf8"),
+  "9. **Convergence Gate**",
+  "## Settled decisions during implementation",
+)
+
 // 2026-09-14 (R14/U12): spec-kit's converge gate ports into the implementation
 // loop — implementation cycles bounded by default at 3, judged by a fresh
 // context independent of the implementer, with scope-guarded appends.
 describe("ce-work convergence gate (R14)", () => {
-  async function readConvergeGate(): Promise<string> {
-    const loop = await readRepoFile("skills/ce-work/references/implementation-loop.md")
-    return sliceSection(loop, "9. **Convergence Gate**", "## Settled decisions during implementation")
-  }
 
-  test("a non-converging run stops at the bounded budget with blocked and a recovery path", async () => {
-    const gate = await readConvergeGate()
+  test("a non-converging run stops at the bounded budget with blocked and a recovery path", () => {
+    const gate = convergeGate
 
     expect(gate).toContain("3 cycles")
     expect(gate).toContain("blocked")
@@ -375,8 +380,8 @@ describe("ce-work convergence gate (R14)", () => {
     expect(gate).toContain("Phase 3-4")
   })
 
-  test("an appended task outside plan Scope Boundaries is refused for re-planning, never silently appended", async () => {
-    const gate = await readConvergeGate()
+  test("an appended task outside plan Scope Boundaries is refused for re-planning, never silently appended", () => {
+    const gate = convergeGate
 
     expect(gate).toContain("Scope Boundaries")
     expect(gate).toContain("no scope-creep commit")
@@ -385,8 +390,8 @@ describe("ce-work convergence gate (R14)", () => {
     expect(gate).toContain("never folded into an in-scope task")
   })
 
-  test("convergence is judged by a fresh context independent of the implementer, never through ce-verify", async () => {
-    const gate = await readConvergeGate()
+  test("convergence is judged by a fresh context independent of the implementer, never through ce-verify", () => {
+    const gate = convergeGate
 
     expect(gate).toContain("no implementation-unit transcript")
     expect(gate).toContain("actual tree")
@@ -394,8 +399,8 @@ describe("ce-work convergence gate (R14)", () => {
     expect(gate).toContain("ce-verify")
     expect(gate).toContain("never QA judgment")
   })
-  test("return-to-caller mode embeds the loop in per-unit fix-before-next and leaves outer re-dispatch to the caller", async () => {
-    const gate = await readConvergeGate()
+  test("return-to-caller mode embeds the loop in per-unit fix-before-next and leaves outer re-dispatch to the caller", () => {
+    const gate = convergeGate
 
     expect(gate).toContain("fix-before-next")
     expect(gate).toContain("re-dispatch belongs to the caller")
@@ -403,11 +408,41 @@ describe("ce-work convergence gate (R14)", () => {
     expect(gate).toContain("references/return-to-caller.md")
   })
 
-  test("the converge check consumes the per-project constitution when the project carries one", async () => {
-    const gate = await readConvergeGate()
+  test("the converge check consumes the per-project constitution when the project carries one", () => {
+    const gate = convergeGate
 
     expect(gate).toContain("constitution.md")
     expect(gate).toContain("per-project constitution")
     expect(gate).toContain("absence is normal")
+  })
+
+  // 2026-09-14 independent review of the convergence gate: (1) on a failed
+  // fresh dispatch the implementing context could still certify its own work
+  // inline, (2) a bare "converged" carried nothing and read the same as a
+  // checked verdict, (3) the cycle bound could be overridden without limit.
+  // Each pin is an exact phrase from the sentence added for that condition;
+  // deleting the sentence fails the pin.
+  test("no fresh context means no verdict: the gate hands back instead of judging inline", () => {
+    const gate = convergeGate
+
+    expect(gate).toContain("A verdict exists only when a fresh context rendered it")
+    expect(gate).toContain("the gate reaches no verdict")
+    expect(gate).toContain("the fresh convergence context still owed")
+    expect(gate).toContain("never covers the convergence check")
+  })
+
+  test("a bare converged claim does not converge: the verdict must carry what it rests on", () => {
+    const gate = convergeGate
+
+    expect(gate).toContain("carries the plan artifacts the check was made against")
+    expect(gate).toContain("without that content does not converge")
+  })
+
+  test("a bound override is itself a stated finite cycle count, never raised mid-run", () => {
+    const gate = convergeGate
+
+    expect(gate).toContain("An override is itself a stated finite cycle count")
+    expect(gate).toContain("never raised while the run's cycles continue")
+    expect(gate).toContain("A bound re-raised mid-run is the unbounded mode")
   })
 })

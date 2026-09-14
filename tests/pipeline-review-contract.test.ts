@@ -562,7 +562,14 @@ describe("ce-debug regression test selection", () => {
     // The gate must be anchored at the question site, not stated only in an early section.
     const gateIdx = content.indexOf("Same-turn presentation before the gate")
     const askIdx = content.indexOf("ask (per **Blocking questions**) which path to take")
-    expect(gateIdx).toBeGreaterThan(-1)
+    expect(
+      gateIdx,
+      `gate anchor not found: "Same-turn presentation before the gate"`,
+    ).toBeGreaterThanOrEqual(0)
+    expect(
+      askIdx,
+      `ask anchor not found: "ask (per **Blocking questions**) which path to take"`,
+    ).toBeGreaterThanOrEqual(0)
     expect(askIdx).toBeGreaterThan(gateIdx)
   })
 
@@ -1411,7 +1418,10 @@ describe("lfg fresh-verifier acceptance gate (R9)", () => {
     // The honesty requirement R9 turns on: a same-family re-read is never presented
     // as cross-model or independent-model assurance.
     expect(gate).toMatch(/same-family re-read/)
-    expect(gate).toMatch(/never presented as cross-model or independent-model assurance|may present it as cross-model or independent-model assurance/)
+    // Pinned as the unambiguous negative: an alternation on a positive form
+    // ("may present it as ...") also matches a polarity-flipped rewrite, which
+    // would reverse the mechanism's meaning while this test stayed green.
+    expect(gate).toContain("No consumer may present it as cross-model or independent-model assurance")
   })
 
   test("a BLOCK verdict stops the pipeline or triggers exactly one bounded rework with a named recovery path", async () => {
@@ -1468,6 +1478,8 @@ describe("ce-work plan-verify nudge (R12)", () => {
   // SKILL.md routes only standalone runs into Phase 3-4 (Return-to-Caller Mode
   // must not enter it; Phase 0 recovery never enters either shipping tail), so
   // the step fires exactly where a synchronous user exists and nowhere else.
+  // The non-code knowledge-work branch reaches the same standalone completion at
+  // its step 4, so the same nudge is owed there — pinned in the last test below.
   const NUDGE_START = "3. **Notify User**"
   const NUDGE_END = "## Quality Checklist"
 
@@ -1526,5 +1538,24 @@ describe("ce-work plan-verify nudge (R12)", () => {
     // The Quality Checklist gains no nudge checkbox either.
     const checklist = sliceSection(workflow, "## Quality Checklist", "## Code Review")
     expect(checklist).not.toMatch(/nudge/i)
+  })
+
+  test("the non-code standalone completion carries the same nudge", async () => {
+    // A knowledge-work plan that finishes standalone reaches the same completion
+    // surface as the code path's shipping tail, so it owes the same nudge — same
+    // firing condition, same suppression vocabulary. The carve-out's exclusion
+    // list (no PR/CI/branch machinery) must survive the addition.
+    const nonCode = await readRepoFile("skills/ce-work/references/non-code-execution.md")
+    const saveAndReport = sliceSection(nonCode, "4. **Save and report.**", "## Stay scoped")
+
+    expect(saveAndReport).toMatch(/Plan-verify nudge \(standalone completion only\)/)
+    expect(saveAndReport).toMatch(/exactly one report-only nudge/)
+    expect(saveAndReport).toMatch(
+      /Return-to-Caller Mode, pipeline orchestration, or a disable-model-invocation context/,
+    )
+    expect(saveAndReport).toMatch(/emit nothing when the run had no plan artifact/i)
+    expect(nonCode).toContain(
+      "No incremental code commits, and none of `references/shipping-workflow.md` (no PR, no CI)",
+    )
   })
 })

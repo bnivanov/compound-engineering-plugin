@@ -675,7 +675,7 @@ describe("ce-code-review contract", () => {
     expect(validatorTemplate).toMatch(/one verdict for every input # exactly once/i)
     expect(validatorTemplate).toMatch(/Do not invent new findings/i)
     // #1679: the validator states its own budget and writes verdicts to disk.
-    expect(validatorTemplate).toMatch(/\d+ minutes of wall clock/i)
+    expect(validatorTemplate).toMatch(/the batch has 15 minutes of wall clock/)
     expect(validatorTemplate).toMatch(/tool calls per finding/i)
     expect(validatorTemplate).toMatch(/validator-verdicts\.json.*before you return/i)
     expect(validatorTemplate).toContain('"protected_subject": "<one of the eight policy keys>" | null')

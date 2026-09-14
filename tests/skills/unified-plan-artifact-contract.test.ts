@@ -1132,69 +1132,48 @@ describe("right-sized brainstorm and plan outputs", () => {
 })
 
 // 2026-09-14 U6: readiness is derived from contents, not a stored field. The
-// shared predicate below models the single classification rule all three gate
-// call sites (lfg plan-brief, ce-work intake, ce-plan pipeline) must follow:
-// the five contract sections present with no launch-blocking open question
-// means executable; anything else is requirements-only. Legacy readiness keys
-// are ignored, and progress-like `status:` values remain rejected.
-describe("content-derived readiness replaces the removed field", () => {
-  const FIXTURES = "tests/skills/fixtures/derived-readiness"
-  const readFixture = (name: string) => readFileSync(path.join(process.cwd(), FIXTURES, name), "utf8")
+// classification rule is prose the three gate call sites (lfg plan-brief,
+// ce-work intake, ce-plan pipeline) execute; there is no predicate to run, so
+// each test below pins the clause of the real gate prose that decides one
+// classification case. Deleting or rewording that clause in any of the three
+// skills fails that test.
+describe("content-derived readiness: each classification clause pinned where the gate prose carries it", () => {
+  const fiveNames = "Product Contract, Planning Contract, Implementation Units, Verification Contract, and Definition of Done"
 
-  function classifyPlan(markdown: string): "implementation-ready" | "requirements-only" {
-    const frontmatter = markdown.match(/^---\n([\s\S]*?)\n---/)?.[1] ?? ""
-    // Legacy readiness keys and values are tolerated and ignored, never rejected.
-    const hasLegacyReadiness = /^artifact_readiness:/m.test(frontmatter)
-    // Two-valued document completeness: no progress state. A `status:` field is
-    // outside the contract and a plan carrying one is not executable.
-    const hasProgressStatus = /^status:\s*\S/m.test(frontmatter)
-    const fiveSections = ["Product Contract", "Planning Contract", "Implementation Units", "Verification Contract", "Definition of Done"].every(
-      (heading) => markdown.includes(`## ${heading}\n`),
-    )
-    const blockingOpenQuestion = /\(blocking\)/.test(markdown)
-    return fiveSections && !blockingOpenQuestion && !hasProgressStatus ? "implementation-ready" : "requirements-only"
-  }
-
-  test("a full-contract plan with no readiness field classifies executable", () => {
-    expect(classifyPlan(readFixture("full-contract.md"))).toBe("implementation-ready")
+  test("a full-contract plan is executable on its contents, not a stored field", () => {
+    expect(planSections).toMatch(/Determine whether a plan can be executed from its contents/)
+    expect(planSections).toContain(`${fiveNames} must give the executor enough direction`)
+    expect(lfgPlanBrief).toMatch(/It must describe code implementation with sufficient scope, direction, and verification/)
+    expect(lfgPlanBrief).toContain(`the ${fiveNames} must give the executor enough direction`)
+    expect(ceWorkTriage).toMatch(/Proceed only when the intended code work, scope, and verification are sufficiently defined/)
+    expect(ceWorkTriage).toContain(`inspect the ${fiveNames}`)
   })
 
-  test("omitting each required contract component classifies requirements-only", () => {
-    for (const fixture of [
-      "omit-product-contract.md",
-      "omit-planning-contract.md",
-      "omit-implementation-units.md",
-      "omit-verification-contract.md",
-      "omit-definition-of-done.md",
-    ]) {
-      expect(classifyPlan(readFixture(fixture)), fixture).toBe("requirements-only")
-    }
+  test("a missing contract component routes the plan to enrichment, not execution", () => {
+    expect(lfgPlanBrief).toContain("A Product Contract without implementation planning")
+    expect(lfgPlanBrief).toContain("stops the pipeline")
+    expect(ceWorkTriage).toContain("A Product Contract without enough implementation direction needs `ce-plan` enrichment")
+    expect(planSections).toContain("A Product Contract without sufficient planning needs enrichment")
+    expect(planSections).toMatch(/Approach-plans, answer-seeking outputs, and universal-planning outputs remain outside this software implementation contract/)
   })
 
   test("a launch-blocking open question keeps a full contract requirements-only", () => {
-    expect(classifyPlan(readFixture("blocking-question.md"))).toBe("requirements-only")
-  })
-
-  test("a legacy artifact_readiness key is ignored, never rejected", () => {
-    expect(classifyPlan(readFixture("legacy-readiness-key.md"))).toBe("implementation-ready")
-  })
-
-  test("a progress-like status value is still rejected", () => {
-    expect(classifyPlan(readFixture("progress-status.md"))).toBe("requirements-only")
-  })
-
-  test("all three gates share the same predicate wording", () => {
-    const fiveNames = "Product Contract, Planning Contract, Implementation Units, Verification Contract, and Definition of Done"
-    expect(lfgPlanBrief).toContain(fiveNames)
-    expect(lfgPlanBrief).toContain("An old readiness label cannot override the contents")
     expect(lfgPlanBrief).toMatch(/no launch-blocking question or finding/)
-    expect(ceWorkTriage).toContain(fiveNames)
     expect(ceWorkTriage).toMatch(/no launch-blocking question remains/)
+    expect(planSections).toMatch(/with no launch-blocking question remaining/)
+    expect(planSections).toContain("Mark open questions as blocking or deferred; deferred implementation details do not prevent work")
+  })
+
+  test("an old readiness label is ignored, never execution authority", () => {
+    expect(lfgPlanBrief).toContain("An old readiness label cannot override the contents")
+    expect(ceWorkTriage).toContain("an old readiness label is not execution authority")
     expect(ceWorkTriage).toContain("Judge legacy plans and saved briefs by the same sufficiency condition without requiring unified headings")
-    expect(planSections).toContain(fiveNames)
-    expect(planSections).toMatch(/no launch-blocking question remaining/)
+    expect(planSections).toContain("An old readiness label does not establish completeness or override a blocker")
+  })
+
+  test("a plan carries no progress-like status field", () => {
     expect(planSections).toContain("Do not write a readiness or execution-status field")
-    expect(planSections).toMatch(/no `status` field/)
+    expect(planSections).toContain("Plans carry no `status` field and no mutable execution lifecycle")
   })
 
   test("skills never produce or consume the removed readiness field", () => {
