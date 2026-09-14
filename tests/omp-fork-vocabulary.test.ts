@@ -191,6 +191,10 @@ const ALLOWLIST: Record<string, AllowEntry> = {
     tokens: ["cursor"],
     why: "GraphQL pagination vocabulary (endCursor/pageInfo review threads)",
   },
+  "docs/omp-capability-audit.md": {
+    tokens: ["claude", "codex", "opencode"],
+    why: "host-capability audit must name omp provider identifiers verbatim (provider-priority list, agent-discovery roots, observed provider name in probe evidence)",
+  },
 }
 
 function isDotPath(rel: string): boolean {
