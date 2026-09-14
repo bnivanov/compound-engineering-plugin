@@ -214,3 +214,16 @@ All dispositions verified 2026-09-11 against upstream HEAD `c4a643b1`.
 
 - **Documentation-only graft, no new test (deliberate exception):** the acceptance criterion is rule presence plus evidence citation, which is verified by reading the file; a string test would pin incidental wording, which `tests/skill-conventions.test.ts` already covers for this tree. No plausible regression distinguishes a second test here from the existing conventions scan.
 - **Checkout-local edit only:** the pointer line in `AGENTS.md` is the fork's own always-loaded file (pattern-ported in U4), not upstream text; the rule body itself lives in `docs/solutions/`, so it loads when a skill author needs it rather than on every session.
+
+## Sync 2026-09-14 (U10: plan-verify nudge)
+
+- **Program item (ecosystem graft — no upstream SHA applies):** R12. pstack's plan-verify nudge ported to the standalone shipping tail's completion surface.
+
+| Item | Disposition | Evidence |
+|---|---|---|
+| R12 plan-verify nudge (`plan-verify`-style post-implementation reminder, pstack) | ported (workflow-step enforcement) | U10; exactly one report-only nudge added to `skills/ce-work/references/shipping-workflow.md`'s Phase 4 step 3 (Notify User). Report-only by contract: it never gates, blocks, or alters completion state, and the tests pin that the completion gate, ship-handoff gate, and Quality Checklist stay nudge-free. Pins: `ce-work plan-verify nudge (R12)` in `tests/pipeline-review-contract.test.ts` (3 tests, 24 assertions; 2 failed pre-edit, 3 pass post-edit, 69 pass for the file) |
+
+### Port notes (U10)
+
+- **Enforcement is the mode gate, not a hook — recorded as such.** The audit found no interactive-completion event surface: `session_stop` is main-session-only and never fires for task/subagent sessions, and in pipeline mode the ce-work orchestrator is itself a subagent, so no hook can distinguish or reach an interactive standalone completion. Per the plan's rule ("a thing that cannot be enforced is not built"), the nudge is not presented as hook-enforced. It lands as a required conditional step in the standalone shipping tail — the same enforcement class as that file's existing completion gate and U8's Milestone Audit step, i.e. a control-flow-gated workflow step pinned by the contract suite — and its structural unreachability is what keeps it standalone-only: only standalone mode reads `shipping-workflow.md` before quality checks or delivery; Return-to-Caller Mode must not enter Phase 3-4; Phase 0 recovery never enters either tail, so re-entry cannot re-fire. The audit entry records the missing host surface and its flip condition (a host event firing synchronously on interactive standalone completion would move the nudge from a workflow step to a hook).
+- **Scope note:** "disable-model-invocation and userless contexts emit nothing" is carried by the step's own emit-nothing clause rather than by a host filter, because the host exposes no per-context suppression surface for a workflow step.

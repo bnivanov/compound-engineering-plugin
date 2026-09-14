@@ -103,6 +103,7 @@ This file contains the shipping workflow (Phase 3-4). It is loaded when all Phas
    - Link to PR (if one was created)
    - Note any follow-up work needed
    - Suggest next steps if applicable
+   **Plan-verify nudge (standalone completion only).** When this run executed from an approved plan artifact, this step's completion summary carries exactly one report-only nudge: the plan's implementation has finished — name the plan path and invite the user to verify the delivered work against the plan before moving on. The nudge informs only: it never gates, never blocks, and never alters the completion state, the review receipt, or the ship handoff, and it requires no skill invocation — the orchestrator emits it as part of this step's summary. Emit nothing when the run had no plan artifact, and emit nothing in Return-to-Caller Mode, pipeline orchestration, or a disable-model-invocation context — anywhere the completion reaches a caller or no synchronous user exists rather than the user who approved the plan. Recovery re-entry never reaches this step (Phase 0 recovery never enters the shipping tail), so one approved plan is nudged at most once per run.
 
 ## Quality Checklist
 

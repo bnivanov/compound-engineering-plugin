@@ -1461,3 +1461,70 @@ describe("lfg fresh-verifier acceptance gate (R9)", () => {
     expect(step8).toMatch(/stops before anything ships/)
   })
 })
+
+describe("ce-work plan-verify nudge (R12)", () => {
+  // R12: pstack's plan-verify nudge, ported as a completion-surface step in the
+  // standalone shipping tail. The enforcement seam is the tail's own mode gate:
+  // SKILL.md routes only standalone runs into Phase 3-4 (Return-to-Caller Mode
+  // must not enter it; Phase 0 recovery never enters either shipping tail), so
+  // the step fires exactly where a synchronous user exists and nowhere else.
+  const NUDGE_START = "3. **Notify User**"
+  const NUDGE_END = "## Quality Checklist"
+
+  async function readNotifyUser(): Promise<string> {
+    const workflow = await readRepoFile("skills/ce-work/references/shipping-workflow.md")
+    return sliceSection(workflow, NUDGE_START, NUDGE_END)
+  }
+
+  test("standalone completion of an approved plan emits exactly one report-only nudge", async () => {
+    const notify = await readNotifyUser()
+
+    expect(notify).toMatch(/Plan-verify nudge \(standalone completion only\)/)
+    expect(notify).toMatch(/approved plan artifact/)
+    expect(notify).toMatch(/exactly one report-only nudge/)
+    // Fires at this single step — never per task, never on recovery re-entry.
+    expect(notify).toMatch(/never reaches this step[^.]{0,160}Phase 0 recovery never enters the shipping tail/)
+    // Report-only: informs, never gates, never alters completion state.
+    expect(notify).toMatch(/never gates, never blocks/)
+    expect(notify).toMatch(/never alters the completion state/)
+    expect(notify).toMatch(/requires no skill invocation/)
+  })
+
+  test("pipeline-internal and userless completions emit nothing", async () => {
+    const notify = await readNotifyUser()
+
+    expect(notify).toMatch(
+      /Return-to-Caller Mode, pipeline orchestration, or a disable-model-invocation context/,
+    )
+    expect(notify).toMatch(/emit nothing when the run had no plan artifact/i)
+
+    // Structural backstop: the nudge is reachable only through the standalone
+    // tail's own mode gate, so a pipeline-internal return cannot emit it.
+    const skill = await readRepoFile("skills/ce-work/SKILL.md")
+    expect(skill).toMatch(/Return-to-Caller Mode performs implementation and local verification only\. It must not enter Phase 3-4/)
+    expect(skill).toMatch(/standalone mode must read `references\/shipping-workflow\.md`/)
+  })
+
+  test("the nudge is not part of any gate and cannot block or re-fire", async () => {
+    const workflow = await readRepoFile("skills/ce-work/references/shipping-workflow.md")
+
+    // The completion gate and ship-handoff gate stay nudge-free: the nudge must
+    // never become a condition of shipping or of completion.
+    const completionGate = sliceSection(
+      workflow,
+      "**Completion gate (standalone shipping).**",
+      "**Skip dedicated review",
+    )
+    const shipGate = sliceSection(
+      workflow,
+      "**Ship-handoff gate.**",
+      "**Do not publish what the user did not offer",
+    )
+    expect(completionGate).not.toMatch(/nudge/i)
+    expect(shipGate).not.toMatch(/nudge/i)
+
+    // The Quality Checklist gains no nudge checkbox either.
+    const checklist = sliceSection(workflow, "## Quality Checklist", "## Code Review")
+    expect(checklist).not.toMatch(/nudge/i)
+  })
+})
