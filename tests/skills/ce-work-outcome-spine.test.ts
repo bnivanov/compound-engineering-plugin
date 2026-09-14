@@ -353,3 +353,61 @@ describe("ce-work out-of-repo unit completion (#1574)", () => {
     expect(docs).toContain("no git-derived completion signal")
   })
 })
+
+// 2026-09-14 (R14/U12): spec-kit's converge gate ports into the implementation
+// loop — implementation cycles bounded by default at 3, judged by a fresh
+// context independent of the implementer, with scope-guarded appends.
+describe("ce-work convergence gate (R14)", () => {
+  async function readConvergeGate(): Promise<string> {
+    const loop = await readRepoFile("skills/ce-work/references/implementation-loop.md")
+    return sliceSection(loop, "9. **Convergence Gate**", "## Settled decisions during implementation")
+  }
+
+  test("a non-converging run stops at the bounded budget with blocked and a recovery path", async () => {
+    const gate = await readConvergeGate()
+
+    expect(gate).toContain("3 cycles")
+    expect(gate).toContain("blocked")
+    expect(gate).toContain("recovery path")
+    expect(gate).toContain("never hold indefinitely")
+    expect(gate).toContain("a converged report ends the loop")
+    // A converged report ends the loop before the shipping tail; a budget stop happens instead of shipping.
+    expect(gate).toContain("Phase 3-4")
+  })
+
+  test("an appended task outside plan Scope Boundaries is refused for re-planning, never silently appended", async () => {
+    const gate = await readConvergeGate()
+
+    expect(gate).toContain("Scope Boundaries")
+    expect(gate).toContain("no scope-creep commit")
+    expect(gate).toContain("re-planning")
+    expect(gate).toContain("never silently appended")
+    expect(gate).toContain("never folded into an in-scope task")
+  })
+
+  test("convergence is judged by a fresh context independent of the implementer, never through ce-verify", async () => {
+    const gate = await readConvergeGate()
+
+    expect(gate).toContain("no implementation-unit transcript")
+    expect(gate).toContain("actual tree")
+    expect(gate).toContain("never the verdict")
+    expect(gate).toContain("ce-verify")
+    expect(gate).toContain("never QA judgment")
+  })
+  test("return-to-caller mode embeds the loop in per-unit fix-before-next and leaves outer re-dispatch to the caller", async () => {
+    const gate = await readConvergeGate()
+
+    expect(gate).toContain("fix-before-next")
+    expect(gate).toContain("re-dispatch belongs to the caller")
+    expect(gate).toContain("`status: blocked`")
+    expect(gate).toContain("references/return-to-caller.md")
+  })
+
+  test("the converge check consumes the per-project constitution when the project carries one", async () => {
+    const gate = await readConvergeGate()
+
+    expect(gate).toContain("constitution.md")
+    expect(gate).toContain("per-project constitution")
+    expect(gate).toContain("absence is normal")
+  })
+})
