@@ -241,6 +241,9 @@ Liveness is therefore read from that party's own observable output on the curren
 ### Residual
 A review finding a run accepted or deferred rather than fixed, which must reach a durable sink before the run reports itself done — a section in the pull request body, or a ticket in the project's tracker. A finding that lives only in the session is lost when the session ends, so an accepted residual blocks a merge-ready claim until it is recorded somewhere a human will find it.
 
+### Blocked-with-reason
+A port or adoption decision a program records when an audit finds the host capability the mechanism needs does not exist — the mechanism, the missing capability, and the flip condition that would revive it are written to a durable record (a findings record, DECISIONS.md), never silently dropped and never approximated as a weaker form. Distinct from a clean skip (the work did not apply) and from a deferral (the capability exists but the work waits): the mechanism was wanted and is foreclosed by the platform.
+
 ## Retired
 
 - **Target** — a non-Claude destination platform served by a Converter/Writer pair; retired when the fork pruned to oh-my-pi only (S5, 2026-09).

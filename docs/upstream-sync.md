@@ -63,4 +63,4 @@ All dispositions verified 2026-09-11 against upstream HEAD `c4a643b1`.
 - Ports are file-granular, not cherry-picks: every commit except `f831db7c` fails `git apply --check` on at least one file because the fork drifted. Commit messages cite the upstream SHA.
 - `tests/skill-eval-cell/catalog.ts` is contended by four ported commits; it was serialized through units in the order b36047e1 → bec6b419 → 390b0138 → 16c2b972, each translating upstream's `exec_command`-shaped scenario cells to the fork's OMP scenario shape.
 - The `16c2b972` catalog hunk imports `calibration-scenarios.ts`, a module the fork lacks — the import and its scenario entries were skipped.
-- Fork version `3.24.1-omp.12` is fork-local; upstream remains at 3.24.0.
+- Fork version `3.24.1-omp.13` is fork-local; upstream remains at 3.24.0.
