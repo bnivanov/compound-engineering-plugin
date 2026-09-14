@@ -2,6 +2,12 @@
 
 LFG's body owns the shipping precondition and the two invocation strings. This file owns everything that decides *which* handoff runs, what LFG threads into it, what it does with the result, and how the run closes out.
 
+## Step 8 — consume the fresh-verifier receipt before anything ships
+
+Step 5's fresh-verifier gate (defined in `references/review-followup.md`) produced a held verifier receipt for the post-fix tree. Steps 6–7 compose records and run read-only checks, so the tree the receipt certified is the tree shipping below; if anything did change the tree after the gate ran, re-run the gate instead of shipping on a stale receipt. Read the held receipt before any shipping action. Only `verdict: PASS` advances to the handoffs. A missing or malformed receipt, or a `verdict: BLOCK` that the gate's one bounded rework could not clear, stops the pipeline as **blocked** with the receipt in hand — the recovery path is the one `ce-work` recovery invocation `references/review-followup.md` names, already spent once the rework ran; there is no second rework and no hold.
+
+Thread the receipt's independence label into the PR-description context below verbatim, so the PR body states the assurance level honestly: `independence: structural-only` — the verifier ran on the session model with fresh context and no implementation history, a same-family re-read, never presented as cross-model or independent-model assurance. When no PR will exist (no remote), state the same label in the DONE report — the report is the only record those runs get.
+
 ## Step 8 — a project-defined process may own the handoff
 
 The goal is the remaining work committed, pushed, and in an open PR whose URL you hold.
