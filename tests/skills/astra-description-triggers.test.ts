@@ -47,6 +47,22 @@ describe("Astra-shaped model-invoked descriptions", () => {
     expect(skill("ce-pov")).toContain("ce-bakeoff")
   })
 
+  test("ce-bakeoff triggers on developing alternatives before a choice", () => {
+    const d = descriptionOf("ce-bakeoff")
+    expect(d.toLowerCase()).toMatch(/^develop /)
+    expect(d).toMatch(/Use when choosing well requires developing alternatives/)
+    expect(d).toMatch(/Use ce-pov to judge developed material/)
+    expect(skill("ce-bakeoff")).toContain("Do not turn a routine choice into an automatic competition")
+  })
+
+  test("ce-noslop triggers on plain tell-free prose and keeps the edit-mode summary opt-in", () => {
+    const d = descriptionOf("ce-noslop")
+    expect(d.toLowerCase()).toMatch(/^rewrite, check, or draft /)
+    expect(d).toMatch(/Use ce-promote for channel-specific marketing copy/)
+    expect(skill("ce-noslop")).toContain("Say what changed in one line only when the caller asks for it")
+    expect(skill("ce-noslop")).not.toContain("plus one line saying what changed")
+  })
+
   test("ce-strategy does not pull planning siblings into its trigger", () => {
     const d = descriptionOf("ce-strategy")
     expect(d.toLowerCase()).toMatch(/^create or update/)

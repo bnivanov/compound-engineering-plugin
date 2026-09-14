@@ -57,6 +57,24 @@ function lastTrailer(text: string, name: string): string {
  * is often not the answer at all. The task asks for exactly one such line, so the
  * caller fails on zero or several and grades the value of the single one.
  */
+// A marker opens the block only at the end of a line and closes it only at the start
+// of one: the summary after the block may mention RESULT-START and RESULT-END by name
+// mid-sentence, and a substring search would select that mention instead of the
+// result. Grok narrates on the same line as the opening marker, so the line need not
+// be the marker alone. The first complete pair wins.
+function resultBlock(text: string): string | null {
+  const lines = text.split("\n")
+  const opens = (line: string) => line.trim().endsWith("RESULT-START")
+  const closes = (line: string) => line.trim().startsWith("RESULT-END")
+  for (let i = 0; i < lines.length; i++) {
+    if (!opens(lines[i])) continue
+    const end = lines.findIndex((line, j) => j > i && closes(line))
+    if (end < 0) return null
+    return lines.slice(i + 1, end).join("\n")
+  }
+  return null
+}
+
 function declaredLines(text: string, name: string): string[] {
   const prefix = `${name.toUpperCase()}:`
   return text
@@ -209,6 +227,15 @@ export function gradeHost(opts: {
   for (const options of scopeField && !scopedText ? [] : opts.grade.must_include_any ?? []) {
     if (!options.some((needle) => textScope.includes(needle.toLowerCase()))) {
       reasons.push(`missing required text (any of): ${options.join(" | ")}`)
+    }
+  }
+  if (opts.grade.result_must_not_include?.length) {
+    const block = resultBlock(stdout)
+    if (block === null) reasons.push("missing RESULT-START/RESULT-END block")
+    for (const needle of block === null ? [] : opts.grade.result_must_not_include) {
+      if (block.toLowerCase().includes(needle.toLowerCase())) {
+        reasons.push(`source phrase survived in RESULT block: ${needle}`)
+      }
     }
   }
   if (opts.grade.must_not_include?.length && !team) reasons.push("missing TEAM trailer")

@@ -199,6 +199,10 @@ const ALLOWLIST: Record<string, AllowEntry> = {
     tokens: ["claude"],
     why: "upstream-verbatim pack-layout diagram names .claude-plugin/plugin.json — the harness manifest a pack repo carries",
   },
+  "docs/upstream-sync.md": {
+    tokens: ["claude", "codex"],
+    why: "upstream sync ledger records per-commit dispositions of a multi-harness upstream plugin; it must name upstream-host provenance and fork test filenames (e.g. tests/codex-skill-prompt-budget.test.ts)",
+  },
 }
 
 function isDotPath(rel: string): boolean {
