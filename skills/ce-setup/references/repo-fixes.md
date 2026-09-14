@@ -31,6 +31,8 @@ If leftover `<repo-root>/.compound-engineering/config.local.example.yaml` remain
 
 If the bundled template cannot be located by the current platform, print the source template path that failed and tell the user the example config could not be refreshed automatically.
 
+**Rollout disclosure.** When the refresh adds a top-level key the previous example did not carry, surface it to the user in one line: what the key does, that it ships commented out, and where the full guide is. This rollout adds `packs:` (Compound Packs — prescriptive domain-knowledge folders planning reads and cites; declared, never scanned). Point at `docs/guides/packs.md` and name `/skill:ce-setup pack:<id>` as the way to scaffold a first pack. A repo that declares no packs changes nothing.
+
 ### Step 6: Create Repo Config If Missing
 
 If `.compound-engineering/config.yaml` does not exist, ask — even when health is otherwise green:

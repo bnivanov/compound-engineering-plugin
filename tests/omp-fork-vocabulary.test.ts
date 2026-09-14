@@ -195,6 +195,10 @@ const ALLOWLIST: Record<string, AllowEntry> = {
     tokens: ["claude", "codex", "opencode"],
     why: "host-capability audit must name omp provider identifiers verbatim (provider-priority list, agent-discovery roots, observed provider name in probe evidence)",
   },
+  "docs/guides/packs.md": {
+    tokens: ["claude"],
+    why: "upstream-verbatim pack-layout diagram names .claude-plugin/plugin.json — the harness manifest a pack repo carries",
+  },
 }
 
 function isDotPath(rel: string): boolean {

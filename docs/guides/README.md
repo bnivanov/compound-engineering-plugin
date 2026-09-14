@@ -4,7 +4,7 @@ End-user-facing documentation for compound-engineering plugin skills. Each page 
 
 For runtime behavior and contributor reference, the `SKILL.md` in each skill's source folder under `skills/` is authoritative.
 
-Checkout-local defaults shared across skills are documented in [Compound Engineering configuration](./configuration.md).
+Checkout-local defaults shared across skills are documented in [Compound Engineering configuration](./configuration.md). Prescriptive rule packs the pipeline grounds in are documented in [Compound Packs](./packs.md).
 
 Artifact paths shown throughout these pages (`docs/plans/`, `docs/solutions/`, `docs/ideation/`, and the rest) are the **defaults**. A project can relocate every CE artifact folder under one repo-relative root with `docs_root`; when it is set, read the shown paths as `<your-docs_root>/plans/`, `<your-docs_root>/solutions/`, and so on. See [Artifact root](./configuration.md#artifact-root).
 
@@ -130,7 +130,7 @@ Invoked when a specific need arises, not part of any chain.
 | [`/ce-test-browser`](./ce-test-browser.md) | End-to-end browser tests of the current diff using OMP `browser`. Does not check out a PR or branch. |
 | [`/ce-test-xcode`](./ce-test-xcode.md) | Build and test an iOS app on the simulator (screenshots, logs, human verification). Not XCUITest. |
 | [`/ce-verify`](./ce-verify.md) | Generate or refresh a repo-local drive-and-verify skill plus a durable feature map for CLI, TUI, service, desktop, or web. |
-| [`/ce-setup`](./ce-setup.md) | Diagnose optional tool capabilities and create or repair repo `config.yaml` |
+| [`/ce-setup`](./ce-setup.md) | Diagnose optional tool capabilities, create or repair repo `config.yaml`, and scaffold a Compound Pack |
 | [`/ce-start`](./ce-start.md) | Front door: one question, then a route to the right skill |
 | [`/ce-mode`](./ce-mode.md) | Opt-in armed session mode: every request routed through a gated CE playbook (build / fix / decide / ship) until disarmed |
 | [`/ce-undo`](./ce-undo.md) | Graded revert of the last agent change set (commits, tree, or branch) |

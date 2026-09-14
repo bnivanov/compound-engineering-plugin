@@ -51,7 +51,7 @@ Running log of syncs between this fork (`bnivanov/compound-engineering-plugin`, 
 | `b36047e1` | fix(ce-babysit-pr): sustain monitoring after PR handoff (#1659) | ported | `d1172a46`; watch-loop.md condition ported into OMP background-and-wake mechanism; catalog cells translated to OMP scenario shape |
 | `b3efbd6c` | fix(review): release collected agents before follow-on work (#1649) | ported | `1998a529` (with ae6226f5); conditions ported into OMP task-dispatch mechanism |
 | `235252fa` | feat(site): publish docs site (#1664) | n/a-fork | Fork has no `site/` surface |
-| `5130557e` | feat(packs): Compound Packs (#1549) | pending-decision | New subsystem; adoption is a user decision |
+| `5130557e` | feat(packs): Compound Packs (#1549) | resolved-by-adoption | Adopted and ported as unit U3 on 2026-09-14; see Sync 2026-09-14 (U3) below |
 | `ae6226f5` | fix(ce-code-review): collect reviewers by attributable terminal outcome (#1667) | ported | `1998a529` (ordered pair with b3efbd6c) |
 | `2783b8e3` | fix(site): built HTML at any base path (#1669) | n/a-fork | Fork has no `site/` surface |
 | `390b0138` | fix(ce-optimize): focus progress updates on useful findings (#1668) | ported | `92a00fe0`; 8 files; catalog cells translated to OMP shape |
@@ -95,3 +95,16 @@ All dispositions verified 2026-09-11 against upstream HEAD `c4a643b1`.
 - **Skipped hunks, other units' territory:** none of the skipped material above is re-dispositioned later; `references/finish-input.md` adoption would be required first if a future unit splits finish across contexts.
 - **`tests/skill-eval-cell/catalog.ts`** serialized per KTD1: this unit's delta is the two ce-code-review cells (`ce-code-review/artifact-quote-before-filter` #1684, `ce-code-review/validator-veto-routes-protected-rejections` #1694) plus their fixture trees, catalog.test list rows, and the `must_include_any` field the fork's `Grade` type and `grade.ts` lacked relative to upstream pre-cluster (minimal enabling port; the `declared` grading machinery remains U4's).
 - All dispositions verified 2026-09-14 against upstream `fd8abda7`: focused suites green (`tests/ce-code-review-mechanics.test.ts`, `tests/review-skill-contract.test.ts`, `tests/skill-eval-cell/{catalog,grade}.test.ts` — 127 pass / 0 fail).
+
+## Sync 2026-09-14 (U3: Compound Packs)
+
+- **Upstream pin:** `fd8abda7f64ead2f410da2cfd86c0c8e7cbf8187` (program baseline). Hand-merge per file; no cherry-picks.
+
+| Commit | Subject | Disposition | Evidence |
+|---|---|---|---|
+| `5130557e` | feat(packs): Compound Packs (#1549) | ported | U3; resolver + consumer wiring across seven skills, config template/example packs blocks, `docs/guides/packs.md`, `docs/guides/configuration.md` packs section, ce-setup scaffold (`pack-scaffold.md`, `assets/pack-rule-template.md`, SKILL.md description/argument-hint/Pack Scaffold) + check-health packs block, `docs/guides/README.md` cross-ref. Seven resolver copies all sha256-pinned to `0e7de94883fcaa19576a93ed206513de6609720898e2a20ed4be5b599691a939` in `tests/skills/ce-packs.test.ts` |
+
+### Port notes (U3)
+
+- **Settled departures (recorded as settled; do not re-litigate):** 7 resolver copies not 2 (upstream puts one per consumer skill); repo-fixes.md rollout step + guides/README packs.md row are fork-side additions; single parity test file (`tests/skills/ce-packs.test.ts`) instead of upstream per-file tests; exclusions: CONCEPTS.md, root README, legacy-cleanup.ts, docs/guides/ce-*.md rows, upstream dogfood/plan learnings files, upstream test files, babysit-pr test hunks.
+- All dispositions verified 2026-09-14 against upstream `fd8abda7`: focused suites green (`tests/skills/ce-packs.test.ts`, `tests/skills/ce-setup-check-health.test.ts` — 56 pass / 0 fail).

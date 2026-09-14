@@ -787,10 +787,13 @@ describe("ce-code-review contract", () => {
       /Stage 3b standards discovery completed successfully \(with applicable paths or a confirmed empty result\)/i,
     )
     expect(content).toMatch(
-      /No conditional persona other than `project-standards` was selected in Stage 3/i,
+      /No conditional persona was selected in Stage 3 from the diff's own content/i,
     )
     expect(content).toMatch(
-      /Lite roster:[\s\S]{0,200}`project-standards-reviewer` only when Stage 3b found applicable paths/i,
+      /Lite roster:[\s\S]{0,300}`project-standards-reviewer` only when Stage 3b found applicable paths/i,
+    )
+    expect(content).toMatch(
+      /`learnings-researcher` only when declared packs selected it/i,
     )
   })
 
