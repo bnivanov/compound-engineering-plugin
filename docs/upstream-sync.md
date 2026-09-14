@@ -223,7 +223,7 @@ All dispositions verified 2026-09-11 against upstream HEAD `c4a643b1`.
 
 | Item | Disposition | Evidence |
 |---|---|---|
-| R12 plan-verify nudge (`plan-verify`-style post-implementation reminder, pstack) | ported (workflow-step enforcement) | U10; exactly one report-only nudge added to `skills/ce-work/references/shipping-workflow.md`'s Phase 4 step 3 (Notify User), mirrored with the same suppression sentence into `skills/ce-work/references/non-code-execution.md` step 4 so the non-code standalone completion — which never loads the shipping tail — carries it too. Report-only by contract: it never gates, blocks, or alters completion state, and the tests pin that the completion gate, ship-handoff gate, and Quality Checklist stay nudge-free. Pins: `ce-work plan-verify nudge (R12)` in `tests/pipeline-review-contract.test.ts` (3 tests, 24 assertions; 2 failed pre-edit, 3 pass post-edit, 69 pass for the file) |
+| R12 plan-verify nudge (`plan-verify`-style post-implementation reminder, pstack) | ported (workflow-step enforcement) | U10; exactly one report-only nudge added to `skills/ce-work/references/shipping-workflow.md`'s Phase 4 step 3 (Notify User), mirrored with the same suppression sentence into `skills/ce-work/references/non-code-execution.md` step 4 so the non-code standalone completion — which never loads the shipping tail — carries it too. Report-only by contract: it never gates, blocks, or alters completion state, and the tests pin that the completion gate, ship-handoff gate, and Quality Checklist stay nudge-free. Pins: `ce-work plan-verify nudge (R12)` in `tests/pipeline-review-contract.test.ts` (4 tests, 31 assertions; 70 pass for the file) |
 
 ### Port notes (U10)
 
