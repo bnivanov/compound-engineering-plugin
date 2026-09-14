@@ -60,7 +60,7 @@ These rules hold without any read:
 
 **`OUTPUT_FORMAT` is exclusive** — markdown OR HTML, never both — and pipeline mode (LFG, or any `disable-model-invocation` context) forces `md`.
 
-**When a file is written on the brainstorm path the artifact contract does not change**: write to `<root>/plans/YYYY-MM-DD-HHMM-<type>-<topic>-plan.<md|html>`, with `HHMM` from local wall-clock time at write; frontmatter carries `artifact_contract: ce-unified-plan/v1`, `artifact_readiness: requirements-only`, and `product_contract_source: ce-brainstorm`; the body is a Goal Capsule plus the Product Contract. Do **not** emit a Goal Launch Block or Reader Index. The non-software route writes none of this.
+**When a file is written on the brainstorm path the artifact contract does not change**: write to `<root>/plans/YYYY-MM-DD-HHMM-<type>-<topic>-plan.<md|html>`, with `HHMM` from local wall-clock time at write; frontmatter carries `artifact_contract: ce-unified-plan/v1` and `product_contract_source: ce-brainstorm`; the body is a Goal Capsule plus the Product Contract. Do **not** emit a Goal Launch Block or Reader Index. The non-software route writes none of this.
 
 **When a file is written, do not declare it written or enter Phase 4 while any check fails** in the Ready for Planning Check; a chat result enters Phase 4 with no check to run. An improvised Phase 4 menu is the other silent failure: it surfaces options that must be hidden and passes the wrong payload downstream.
 

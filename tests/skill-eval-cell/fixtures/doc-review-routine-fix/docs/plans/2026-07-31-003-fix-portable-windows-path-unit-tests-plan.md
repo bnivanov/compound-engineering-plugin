@@ -3,7 +3,6 @@ title: "fix: Make Windows path unit tests portable on Linux CI"
 type: fix
 date: 2026-07-31
 artifact_contract: ce-unified-plan/v1
-artifact_readiness: implementation-ready
 product_contract_source: ce-plan-bootstrap
 execution: code
 ---

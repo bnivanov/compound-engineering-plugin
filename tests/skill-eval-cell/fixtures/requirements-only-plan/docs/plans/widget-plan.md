@@ -1,6 +1,5 @@
 ---
 artifact_contract: ce-unified-plan/v1
-artifact_readiness: requirements-only
 execution: code
 product_contract_source: ce-brainstorm
 ---

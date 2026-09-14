@@ -20,7 +20,7 @@ Add `greetQuiet(name)` that returns an empty string when `name` is blank.
 
 Planned approach: export `greetQuiet` from `src/greet.js` next to `greet`, reusing the existing blank-name check style of `greet`.
 
-No open questions; the blank-name edge case is settled as return `""`.
+Open question (blocking): does `greetQuiet` also trim whitespace before comparing?
 
 ## Implementation Units
 

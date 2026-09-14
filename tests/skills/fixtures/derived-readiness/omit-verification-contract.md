@@ -18,9 +18,7 @@ Add `greetQuiet(name)` that returns an empty string when `name` is blank.
 
 ## Planning Contract
 
-Planned approach: export `greetQuiet` from `src/greet.js` next to `greet`, reusing the existing blank-name check style of `greet`.
-
-No open questions; the blank-name edge case is settled as return `""`.
+Planned approach: export `greetQuiet` from `src/greet.js` next to `greet`, reusing the existing blank-name check style of `greet`. No open questions; the blank-name edge case is settled as return `""`.
 
 ## Implementation Units
 
@@ -29,11 +27,6 @@ No open questions; the blank-name edge case is settled as return `""`.
 - Files: `src/greet.js`
 - Approach: export `greetQuiet` next to `greet`
 - Verification: a node assertion that blank input returns `""`
-
-## Verification Contract
-
-- U1 passes a node assertion that blank input returns `""`.
-- Full `bun run test` stays green.
 
 ## Definition of Done
 

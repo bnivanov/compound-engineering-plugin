@@ -1949,7 +1949,7 @@ Units:
     fixture: `${FIX}/requirements-only-plan`,
     why: "A requirements-only unified plan is not executable.",
     pre_contract:
-      "artifact_readiness: requirements-only → stop and tell the user this Product Contract needs ce-plan enrichment. Do not auto-execute.",
+      "Classify the plan by its contents. A requirements-only plan (a Product Contract without enough implementation direction) is not executable: stop and tell the user this Product Contract needs ce-plan enrichment. Do not auto-execute.",
     task: `Implement docs/plans/widget-plan.md.`,
     grade: {
       files_read_post: ["references/input-triage.md"],
