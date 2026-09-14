@@ -11,9 +11,9 @@ execution: code
 # Plugin-ecosystem port program - Plan
 
 **What you're getting:** an execution-ready program — 15 units across 4 tiers that port upstream's unlanded work and graft the verified ecosystem mechanisms into this fork's skills.
-**What I assumed:** one PR per slice; upstream fetched by URL per slice; each slice executes as one ce-work run; a mechanism whose host capability is missing gets a ledger entry, not a prose approximation.
+**What I assumed:** upstream fetched by URL per slice; each slice executes as one `ce-work` run; a mechanism whose host capability is missing gets a ledger entry, not a prose approximation. Interactive default is one PR per slice; a directed `lfg` run (this session's execution mode) ships one PR of separable per-slice commits.
 **What could go wrong:** the Slice-0 audit may find OMP lacks the hook surface half of Tiers 2-3 need — those items then land as blocked-with-reason records, not features; and the `artifact_readiness` migration touches ~37 files, the largest single-slice blast radius in the program.
-**Next:** `ce-work` on U1 (the capability audit), or `lfg` for the autonomous pipeline.
+**Next:** `lfg` for the directed autonomous pipeline (this session's mode), or `ce-work` on U1 (the capability audit) for interactive per-slice execution.
 
 ## Goal Capsule
 
@@ -24,11 +24,11 @@ execution: code
 **Open blockers:** None for writing this plan. Slice-level unknowns (OMP hook surface, per-spawn model field, prior-sync deferral intent) are carried as requirements to verify, not assumed.
 **Means:** Tier-sequential port program with same-file bundling (Product Contract Key Decisions; KTD1).
 
-**Execution profile:** Interactive planning; each slice executes as one `ce-work` run (or the program ships hands-off via `lfg`). Slices are PR-sized.
+**Execution profile:** Interactive planning. Interactive execution runs each slice as one `ce-work` invocation over that slice's U-ID packet plus the shared contract excerpts it names — one PR per slice. A directed `lfg` run (this session's mode) executes the whole program in one pipeline and ships one PR of separable per-slice commits — reviewability is preserved at commit granularity plus the sync record, not at PR granularity.
 
 **Stop conditions:** an audit finding that forecloses a mechanism resolves to blocked-with-reason, never approximation; evidence invalidating a session-settled decision stops the slice and surfaces.
 
-**Tail ownership:** each slice's executor owns its sync-record update and PR; the program-level residual is the ledger itself.
+**Tail ownership:** each slice's executor owns its sync-record update and its commit (interactive) or its commit inside the program PR (`lfg`); the program-level residual is the ledger itself.
 
 ## Product Contract
 
@@ -52,15 +52,15 @@ The research found that the highest-fit improvements are not exotic plugins but 
 **Program structure**
 
 - **R1.** The program is one plan with ordered slices. Slices land in this order: capability audit → upstream catch-up → OMP-ecosystem grafts → cross-harness mechanisms. Each slice is independently shippable and verifiable.
-- **R2.** When an ecosystem or cross-harness graft provably modifies files an upstream port also modifies, the graft bundles into that upstream slice; no file is edited twice across slices. Known bundle: quorum-review consensus dedup + refutation (R21) into the ce-code-review cluster slice (R4) — both touch `skills/ce-code-review/scripts/findings-mechanics.py` and `references/finish-review.md`. Bundled grafts land as separable commits inside the host slice; a graft whose host slice is blocked is itself blocked-with-same-reason unless re-homed. When a same-file overlap is discovered only after the upstream slice landed, the graft lands in its own later slice and the double-edit exception is recorded in that graft's sync-record disposition.
+- **R2.** When an ecosystem or cross-harness graft provably modifies files an upstream port also modifies, the graft bundles into that upstream slice; no file is edited twice across slices for overlapping content. Known bundle: quorum-review consensus dedup + refutation (R21) into the ce-code-review cluster slice (R4) — both touch `skills/ce-code-review/scripts/findings-mechanics.py` and `references/finish-review.md`. Bundled grafts land as separable commits inside the host slice; a graft whose host slice is blocked is itself blocked-with-same-reason unless re-homed. When a same-file overlap is discovered only after the upstream slice landed, the graft lands in its own later slice and the double-edit exception is recorded in that graft's sync-record disposition. Planned iterative re-edits of a shared file in disjoint sections (e.g., U4's description sweep then U7's gate section in `skills/lfg/SKILL.md`; U6's contract migration across test/doc files) are expected follow-ons, not double edits — the later unit's sync-record entry notes the follow-on.
 - **R3.** Slice 0 is a capability audit producing a durable findings record at `docs/omp-capability-audit.md`: (a) the full lifecycle-hook surface OMP exposes — enumerate every hook and its registration mechanism rather than checking a preset list (Stop, PreToolUse, SessionStart, compaction/post-compaction, task-completion, prompt-submit, and subagent-lifecycle events are the known candidates); (b) whether OMP task dispatch carries a per-spawn model field in current versions (the no-per-spawn-model claim is third-party and OMP-17-era — verify, don't assume); (c) whether OMP lazily loads per-skill context — consumed by R15's re-injection decision; (d) whether OMP dedupes capability names across sources first-match-wins — the premise R13 would codify. The audit is host-sourced: this repo contains zero hook registrations (`.pi/extensions/compound-engineering.ts` subscribes only to `resources_discover`), so findings come from OMP's docs, CLI surface, and executed probes — never from repo grep alone and never from agent self-report. The record ends in a mechanism × required-hook × fallback table that R9, R11, R12, R13, and R15 read before their port decisions.
 - **R18.** Slice 0 also persists the program's evidence base: the research report is committed under `docs/brainstorms/` and the claim ledger under `docs/` (or folded into `docs/upstream-sync.md`) before session scratch is lost — the disposition ledger has no verifiable source without them.
-- **R19.** Each slice pins its upstream baseline: fetch once per the documented procedure, record the SHA in the slice's sync-record entry, and port against it. Slice 0 additionally records the program baseline SHA (upstream HEAD at program start). Upstream commits that land during the program are recorded as new pending rows, not chased mid-slice. A slice's sync-record update is part of its done condition, including on abort — a mid-port abort records `partial` with the landed files and pinned SHA.
+- **R19.** Each Tier-1 slice pins its upstream baseline: fetch once per the documented procedure, record the SHA in the slice's sync-record entry, and port against it. Slice 0 additionally records the program baseline SHA (upstream HEAD at program start). Graft slices (Tiers 2–3) carry program-item notes in the sync record, not upstream SHAs. Upstream commits that land during the program are recorded as new pending rows, not chased mid-slice. A slice's sync-record update is part of its done condition, including on abort — a mid-port abort records `partial` with the landed files and pinned SHA.
 
 **Upstream catch-up (Tier 1)**
 
 - **R4.** Port the ce-code-review hardening cluster as one slice: protected-subject veto (#1694), cross-model-peer promotion gate (#1697), fresh-leaf finish path (#1692), bounded in-turn dispatch (#1691), on-disk validator contract (#1688), evidence backfill (#1684), and `.mjs`/`.cjs` scope fix (#1696). The cluster interlocks by upstream's design; splitting it produces a half-hardened review path. #1667 (terminal-outcome collection) is already recorded `ported` at `1998a529` in `docs/upstream-sync.md` — the slice verifies that port still stands and records no new disposition for it.
-- **R5.** Port Compound Packs (#1549) as one slice: `packs-resolve.py` into the ce-brainstorm and ce-code-review script dirs (upstream's two-copy shape, kept byte-identical with a parity test), the `packs:` config block into `config.example.yaml`, `config-template.yaml`, and `docs/guides/configuration.md`, pack wiring in the seven consuming skills (ce-brainstorm, ce-code-review, ce-compound, ce-doc-review, ce-dogfood, ce-plan, ce-setup), and the `docs/guides/packs.md` page. Missing pack directories fail closed at the consuming skill, matching the `docs_root` precedent. Before porting, resolve its `pending-decision` row in `docs/upstream-sync.md` — a recorded deferral wins over the report's adoption flag.
+- **R5.** Port Compound Packs (#1549) as one slice, matching the pinned upstream implementation's actual shape: `packs-resolve.py` resolver copies in the consuming skills' script dirs (upstream's copy layout, kept byte-identical with a parity test), the `packs:` config block into `config.example.yaml`, `config-template.yaml`, and `docs/guides/configuration.md` with upstream's layering semantics, pack wiring in the seven consuming skills (ce-brainstorm, ce-code-review, ce-compound, ce-doc-review, ce-dogfood, ce-plan, ce-setup), and the `docs/guides/packs.md` page. Resolver-copy count, config layering, source kinds, and failure semantics follow the pinned upstream implementation — any verified OMP-specific departure is recorded in the sync record as a deliberate adaptation, never attributed to upstream. Before porting, resolve its `pending-decision` row in `docs/upstream-sync.md` — a recorded deferral wins over the report's adoption flag.
 - **R6.** Port ce-bakeoff and ce-noslop as whole skills. ce-bakeoff ports its current de-experimentalized state (#1652 + #1655 + #1671), not the original. ce-noslop ports the post-#1700 contract (aae9f91c, unreleased upstream) including the opt-in edit-mode change summary; the accompanying skill-design learning `inline-callee-side-channel-must-name-where-it-may-not-land.md` is evaluated for port as part of the same slice. R6 owns the README reconciliation R8 names (skill count 39 after this slice; the packs guide row lands only if R5 adopted packs); R7 does not re-edit README.
 - **R7.** Port the hygiene sweep as one slice: Astra-shaped descriptions + ce-debug ask-first load gate + `astra-description-triggers.test.ts` (#1683), declared-decision grading in skill-eval-cell (#1686), and CI `timeout-minutes: 30` (#1687). The AGENTS.md consolidation from #1683 ports the *pattern* (policy → `docs/solutions/developer-experience/` with pointers), not upstream's exact text — the fork's AGENTS.md diverges. The #1682 prose restatement sweep inherits the sync record's `skipped` dispositions for the same campaign (#1671/#1681: wholesale conflict with OMP-adapted prose) unless the recorded flip condition — upstream style becoming canonical — now holds; the slice records the outcome either way. #1680's wedged-worker retry has no `run-tests.ts` to land in (the fork's test entry is `bun test --parallel`): the slice either adapts the fresh-process TimeoutError retry to that entry point or records `n/a-fork`.
 - **R8.** The docs site (#1664) is excluded — the 2026-09-11 sync record disposes it `n/a-fork` ("Fork has no `site/` surface"). Upstream's README now badges "plugin of 35 skills" and advertises Compound Packs — the fork's README skill counts and guide rows must be reconciled as part of R6/R7 regardless.
@@ -101,7 +101,7 @@ The research found that the highest-fit improvements are not exotic plugins but 
 - Every report item ends the program with a recorded disposition: ported, bundled-and-ported, already-ported, blocked-with-reason, deferred-with-reason, or excluded-by-boundary. No item is unaccounted for.
 - Each ported mechanism demonstrably fires in its host skill — a port that lands code paths nothing can reach fails this criterion even when its disposition is recorded.
 - `docs/upstream-sync.md` reflects the new upstream state after the Tier-1 slices.
-- Each slice passes the repo's gates: `bun run test` green, review before PR, and the sync record updated with the slice's pinned upstream SHA.
+- Each slice passes the repo's gates: `bun run test` green, review before PR, and the sync record updated — Tier-1 slices with the slice's pinned upstream SHA, graft slices with program-item notes.
 
 ### Scope Boundaries
 
@@ -113,16 +113,13 @@ The research found that the highest-fit improvements are not exotic plugins but 
 **Deferred for later:**
 - The 19 conditional Adapt grafts from the 2026-09-10 feasibility eval — a separate prior judgment; this program covers the new report's items only.
 - HStack `arena`/`blast-radius` — named candidates pending a skill-body read; the verify-skill pair is a confirmed duplicate of ce-verify.
-- The research report and its claim ledger live in session scratch (`local://report.md`, `$TMPDIR/deep-research-20260914a-kq223ilo/`) until R18 lands them in `docs/`.
-- Upstream fetch uses the documented no-persistent-remote procedure (`git fetch https://github.com/EveryInc/compound-engineering-plugin main`).
-- Ports are file-granular hand-merges, not cherry-picks — the sync record notes every upstream commit fails `git apply --check` on the drifted fork; slice sizing accounts for this.
 - Assumption to verify in-slice: the no-per-spawn-model-field claim may be stale (OMP-17-era source).
 
 
 ### Outstanding Questions
 
 - **Resolve Before Planning:** none — the audit (R3) is itself the resolution mechanism for the hook/routing unknowns, and the deferral checks are in-slice steps.
-- **Deferred to Planning:** whether ce-noslop's side-channel learning doc ports with it; whether plugin-eval's LLM-judge layer is worth its cost; the quorum consensus algorithm's shape (deterministic helper rule vs model-judged pass — decided in-slice against `findings-mechanics.py`); exact per-slice commit/PR boundaries inside each unit.
+- **Deferred to Planning:** whether ce-noslop's side-channel learning doc ports with it; whether plugin-eval's LLM-judge layer is worth its cost; exact per-slice commit boundaries inside each unit.
 
 ### Sources / Research
 
@@ -147,11 +144,11 @@ The research found that the highest-fit improvements are not exotic plugins but 
 ### Key Technical Decisions
 
 - KTD1. **File-granular hand-merge is the port mechanism.** Every Tier-1 unit fetches upstream by URL, pins the slice baseline SHA in its sync-record entry, and hand-merges per file — preserving OMP adaptations (skill names, `xd://` devices, harness prose) and citing the upstream SHA per commit. `git apply --check` fails on the drifted fork for nearly every upstream commit; cherry-picking is not an option. `tests/skill-eval-cell/catalog.ts` edits serialize in unit order with OMP-shape translation, per the 2026-09-11 KTD4 discipline. A mid-port abort records `partial` with landed files and the pinned SHA — the ledger is written even on abort.
-- KTD2. **Slice-0 audit is host-sourced and probe-verified.** This repo contains zero hook registrations, so the audit enumerates OMP's surface from host docs, CLI help, and executed probes (a dispatched task carrying a model field; a same-named capability from two sources observed for the winner) — never from repo grep or agent self-report. Output: `docs/omp-capability-audit.md` ending in a mechanism × required-hook × fallback table.
-- KTD3. **Fresh-verifier sits post-review-fixes, pre-ship in lfg.** Placement after step-4/5 review fixes means the verifier sees the final tree; earlier placement never sees applied fixes. The gate emits a PASS/BLOCK envelope extending `skills/lfg/references/work-return.md`'s field inventory (verdict, scoped U-IDs, evidence pointers, serving mode, independence label). BLOCK stops the pipeline or triggers one bounded rework, matching the one-recovery-invocation precedent.
+- KTD2. **Slice-0 audit is host-sourced and probe-verified.** This repo contains zero lifecycle/enforcement hook registrations (`.pi/extensions/compound-engineering.ts` subscribes only to `resources_discover` — the repo's existing registration precedent), so the audit enumerates OMP's surface from host docs, CLI help, and executed probes (a dispatched task carrying a model field; a same-named capability from two sources observed for the winner) — never from repo grep or agent self-report. Output: `docs/omp-capability-audit.md` ending in a mechanism × required-hook × fallback table.
+- KTD3. **Fresh-verifier sits post-review-fixes, pre-ship in lfg.** Placement after step-4/5 review fixes means the verifier sees the final tree; earlier placement never sees applied fixes. The gate emits a dedicated PASS/BLOCK verifier receipt defined in `skills/lfg/references/review-followup.md` — produced after step 5 applies review fixes and consumed by `skills/lfg/references/shipping-tail.md` before step 8 ships — carrying verdict, scoped U-IDs, evidence pointers, serving mode, and independence label per `work-return.md`'s field inventory. `work-return.md` itself is unchanged: it is consumed at lfg step 2, too early to certify the post-fix tree. BLOCK stops the pipeline or triggers one bounded rework, matching the one-recovery-invocation precedent.
 - KTD4. **Enforcement grafts evaluate at the orchestrator envelope, never at worker return.** ce-work splits authority — workers self-check units; the orchestrator owns authoritative verification and commits. A per-worker hook promotes unverified work. Tamper attestation reuses the existing `source_digest`/`plan_checkpoint` envelope fields (detect-and-block, never silent re-baseline). Any stop gate that cannot pass environmentally emits blocked-with-recovery, never an infinite hold.
-- KTD5. **`artifact_readiness` migration order: inventory → readers accept both → writers stop emitting → readers drop the field → tests/docs.** Every commit stays green; the derived detector is content-based (Implementation Units + Verification Contract + Definition of Done present ⇒ executable). Readiness stays a two-valued document-completeness signal — no third value, no mutable progress state.
-- KTD6. **Packs semantics follow the existing config precedents.** `config.local.yaml` overrides `config.yaml` (ordinary-key rule); pack paths are repo-relative; a missing pack directory fails closed at the consuming skill (the `docs_root` precedent); pack knowledge never outranks repo authority (STRATEGY.md/CONCEPTS.md/verified code win on conflict). `packs-resolve.py` keeps upstream's two-copy shape with one canonical copy and a byte-parity test — reviewers scope to the canonical path.
+- KTD5. **`artifact_readiness` migration order: inventory → readers accept both → writers stop emitting → readers drop the field → docs.** Every commit stays green; the derived detector is content-based and requires the full plan contract — Product Contract, Planning Contract, Implementation Units, Verification Contract, and Definition of Done present with no launch-blocking open question ⇒ executable; otherwise requirements-only. Readiness stays a two-valued document-completeness signal — no third value, no mutable progress state. Each affected contract test and fixture update lands in the same commit as the writer or reader change it pins; only non-contractual doc cleanup waits for the final migration commit.
+- KTD6. **Packs semantics follow the pinned upstream implementation, not local guesses.** `packs-resolve.py` copy layout, `packs:` config layering, supported source kinds, and failure semantics are read from upstream at the slice's pinned SHA and ported as-is; any verified OMP-specific departure is recorded in the sync record as a deliberate adaptation. Pack knowledge never outranks repo authority (STRATEGY.md/CONCEPTS.md/verified code win on conflict). Every resolver copy upstream places is kept byte-identical under a parity test — reviewers scope to the canonical path.
 - KTD7. **Converge gate is bounded, independently judged, and scope-guarded.** Default 3 cycles (the shipping-tail repair precedent); the convergence check runs in fresh context independent of the implementer; appended tasks are checked against plan Scope Boundaries — out-of-scope work returns blocked for re-planning. In return-to-caller mode the loop lives inside per-unit fix-before-next; outer re-dispatch belongs to the caller.
 - KTD8. **Bundled grafts land as separable commits inside the host slice.** A pre-slice overlap check (does the graft's file set intersect the port's?) decides bundling; a graft whose host slice is blocked is itself blocked-with-same-reason unless re-homed to another slice.
 - KTD9. **Milestone audits graft into ce-work's final-validation seam.** The audit is done-judgment over plan artifacts — ce-work's shipping workflow already owns that judgment with the plan in hand. ce-verify (generator, never QA judgment) and ce-dogfood (browser QA) are excluded by their own boundaries.
@@ -170,6 +167,8 @@ flowchart TB
     U6[U6 artifact_readiness removal<br/>last in tier]
     U2 --> U6
     U3 --> U6
+    U2 --> U4
+    U3 --> U4
     U4 --> U5
     U4 --> U6
     U5 --> U6
@@ -181,7 +180,7 @@ flowchart TB
     U9[U9 hook enforcement<br/>audit-gated]
     U10[U10 plan-verify nudge<br/>audit-gated]
     U11[U11 name-shadowing rule<br/>audit-gated]
-  end
+    U8 --> U10
   T2 --> T3
   subgraph T3[Tier 3 — cross-harness mechanisms]
     U12[U12 converge gate → ce-work]
@@ -197,11 +196,12 @@ flowchart TB
   U4 -.->|delta baseline| U14
 ```
 
-Tier order is sequential per R1; units inside a tier may overlap in time only when their file sets are disjoint. `tests/skill-eval-cell/catalog.ts` is the known contention point — U2, U4, and U5 serialize edits to it in that order.
+Tier order is sequential per R1 and is encoded in the dependency table: every Tier-2 unit depends on U6, and every Tier-3 unit depends on U7–U11. Units inside a tier may overlap in time only when their file sets are disjoint; intra-tier file overlaps are serialized by explicit edges (U2/U3 → U4, U8 → U10). `tests/skill-eval-cell/catalog.ts` is the known contention point — U2, U4, and U5 serialize edits to it in that order.
 
 ### Assumptions
 
-- One PR per slice; each slice executes as one `ce-work` run (or the program ships via `lfg`).
+- Interactive execution ships one PR per slice; a directed `lfg` run (this session's mode) ships one PR of separable per-slice commits.
+- Upstream fetch uses the documented no-persistent-remote procedure (`git fetch https://github.com/EveryInc/compound-engineering-plugin main`); ports are file-granular hand-merges, not cherry-picks — nearly every upstream commit fails `git apply --check` on the drifted fork, and slice sizing accounts for this.
 - Upstream content for post-`c4a643b1` commits (#1683, #1686, #1687, #1700, #1685) is unverified in-fork; each slice reads upstream at its pinned baseline before porting.
 - The no-per-spawn-model-field claim is OMP-17-era and may be stale; U1 verifies rather than assumes.
 - `docs/omp-capability-audit.md` is the findings-record home; `docs/upstream-sync.md` remains the disposition ledger — no DECISIONS.md is created (KTD2 of the 2026-09-11 sync plan).
@@ -215,18 +215,18 @@ Tier order is sequential per R1; units inside a tier may overlap in time only wh
 | U1 | Slice-0 capability audit + evidence + baseline | `docs/omp-capability-audit.md`, `docs/upstream-sync.md`, `docs/brainstorms/` | — |
 | U2 | ce-code-review hardening cluster + quorum dedup | `skills/ce-code-review/` | U1 |
 | U3 | Compound Packs | `skills/*/scripts/packs-resolve.py`, config files, 7 skill wirings | U1 |
-| U4 | Hygiene sweep | `skills/*/SKILL.md`, `tests/`, `.github/workflows/ci.yml` | U1 |
+| U4 | Hygiene sweep | `skills/*/SKILL.md`, `tests/`, `.github/workflows/ci.yml` | U2, U3 |
 | U5 | ce-bakeoff + ce-noslop ports | `skills/ce-bakeoff/`, `skills/ce-noslop/`, `README.md` | U4 |
 | U6 | `artifact_readiness` removal | ~37 files repo-wide | U2, U3, U4, U5 |
-| U7 | Fresh-verifier gate in lfg | `skills/lfg/` | U1 |
-| U8 | Milestone audits in ce-work | `skills/ce-work/references/shipping-workflow.md` | U1 |
-| U9 | Hook-enforcement mechanisms | `skills/ce-work/references/`, findings record | U1 |
-| U10 | Plan-verify nudge | `skills/ce-work/references/` | U1 |
-| U11 | Name-shadowing authoring rule | `docs/solutions/skill-design/portable-agent-skill-authoring.md` | U1 |
-| U12 | Converge gate in ce-work | `skills/ce-work/references/implementation-loop.md` | U1 |
-| U13 | Post-compaction re-injection | findings record or hook consumer | U1 |
-| U14 | Plugin-eval certification delta | `tests/` | U4 |
-| U15 | taskstoissues bridge | `skills/ce-plan/references/` | U1 |
+| U7 | Fresh-verifier gate in lfg | `skills/lfg/` | U1, U6 |
+| U8 | Milestone audits in ce-work | `skills/ce-work/references/shipping-workflow.md` | U6 |
+| U9 | Hook-enforcement mechanisms | `skills/ce-work/references/`, findings record | U1, U6 |
+| U10 | Plan-verify nudge | `skills/ce-work/references/` | U8 |
+| U11 | Name-shadowing authoring rule | `docs/solutions/skill-design/portable-agent-skill-authoring.md` | U1, U6 |
+| U12 | Converge gate in ce-work | `skills/ce-work/references/implementation-loop.md` | U7–U11 |
+| U13 | Post-compaction re-injection | findings record or hook consumer | U1, U7–U11 |
+| U14 | Plugin-eval certification delta | `tests/` | U4, U7–U11 |
+| U15 | taskstoissues bridge | `skills/ce-plan/references/` | U1, U7–U11 |
 
 ### U1. Slice-0 capability audit, evidence persistence, program baseline
 
@@ -248,7 +248,7 @@ Tier order is sequential per R1; units inside a tier may overlap in time only wh
 
 **Test scenarios:**
 - A hook claim in the findings record cites an executed probe or host doc — a claim sourced from repo grep alone fails review.
-- The mechanism × hook table has a row for every mechanism R11/R12/R15 name, each with a fallback column.
+- The mechanism × hook table has a row for every mechanism R9, R11, R12, R13, and R15 name, each with a fallback column.
 - The program baseline SHA appears in `docs/upstream-sync.md` and resolves via `git cat-file`.
 
 **Verification:** findings record exists at the named path; every R3(a–d) question has an evidence-backed answer; baseline SHA recorded; report + ledger committed.
@@ -261,13 +261,13 @@ Tier order is sequential per R1; units inside a tier may overlap in time only wh
 
 **Dependencies:** U1.
 
-**Files:** `skills/ce-code-review/SKILL.md`; `skills/ce-code-review/references/finish-review.md`, `dispatch-reviewers.md`, `select-and-route.md`, `validator-batch-template.md`, `cross-model-review.md`; `skills/ce-code-review/scripts/findings-mechanics.py`, `review-scope.py`; `tests/ce-code-review-mechanics.test.ts`; `docs/upstream-sync.md`.
+**Files:** `skills/ce-code-review/SKILL.md`; `skills/ce-code-review/references/finish-review.md`, `dispatch-reviewers.md`, `select-and-route.md`, `validator-batch-template.md`, `cross-model-review.md`; `skills/ce-code-review/scripts/findings-mechanics.py`, `review-scope.py`; `tests/ce-code-review-mechanics.test.ts`; `tests/skill-eval-cell/catalog.ts` (serialized per KTD1); `docs/upstream-sync.md`.
 
 **Approach:**
 1. Pin the slice baseline; read each upstream commit at that SHA before merging.
 2. Hand-merge per file: protected-subject veto extends the existing Protected Artifacts section in `finish-review.md`; the promotion gate lands on `independent_reviewer()`/`merge_group()` in `findings-mechanics.py` plus the Stage-5b skip rule; bounded in-turn dispatch tightens the existing bounded-foreground rule in `dispatch-reviewers.md`; the on-disk validator contract lands on the validator templates; evidence backfill fills the `first_evidence`/hydration seam; `.mjs`/`.cjs` joins `CODE_EXTENSIONS` in `review-scope.py`.
 3. Verify #1667's port still stands (terminal-outcome collection in SKILL.md + dispatch-reviewers.md); record `re-verified, no new disposition`.
-4. Land quorum consensus dedup + refutation as separable commits inside this slice: consensus dedup lives in the synthesis layer before the restore-mechanics rerun; deterministic-vs-model-judged consensus is decided in-slice against `findings-mechanics.py`; refutation gets a trigger and budget.
+4. Land quorum consensus dedup + refutation as separable commits inside this slice: `findings-mechanics.py` keeps exact-fingerprint dedup, promotion, and restoration; differently-worded consensus is Stage-5 model reconciliation before the restore-mechanics rerun, with quorum requiring two independent reviewer identities and an explicit bounded refutation trigger and budget.
 5. Preserve the fork adaptations: no shell-worker reintroduction (`cross-model-adversarial-review.sh` is gone by design), bounded foreground concurrency stays (never re-serialize per #1159), the `cross-model-panel.md` fork-adapted hunk stays skipped.
 
 **Patterns to follow:** `docs/plans/2026-09-11-2257-fix-upstream-sync-ports-plan.md` KTD1/KTD3/KTD4; `tests/ce-code-review-mechanics.test.ts` spawnSync-fixture idiom.
@@ -289,11 +289,11 @@ Tier order is sequential per R1; units inside a tier may overlap in time only wh
 
 **Dependencies:** U1.
 
-**Files:** `skills/ce-brainstorm/scripts/packs-resolve.py` (canonical), `skills/ce-code-review/scripts/packs-resolve.py` (parity copy); `.compound-engineering/config.example.yaml`, `skills/ce-setup/references/config-template.yaml`, `docs/guides/configuration.md`; wiring in `skills/ce-brainstorm/`, `skills/ce-code-review/`, `skills/ce-compound/`, `skills/ce-doc-review/`, `skills/ce-dogfood/`, `skills/ce-plan/`, `skills/ce-setup/`; `docs/guides/packs.md` (create); `tests/skills/ce-setup-check-health.test.ts`; a new parity test; `docs/upstream-sync.md`.
+**Files:** `skills/ce-brainstorm/scripts/packs-resolve.py` (canonical), `skills/ce-code-review/scripts/packs-resolve.py` (parity copy), plus every further resolver copy the pinned upstream implementation places; `.compound-engineering/config.example.yaml`, `skills/ce-setup/references/config-template.yaml`, `docs/guides/configuration.md`; wiring in `skills/ce-brainstorm/`, `skills/ce-code-review/`, `skills/ce-compound/`, `skills/ce-doc-review/`, `skills/ce-dogfood/`, `skills/ce-plan/`, `skills/ce-setup/`; `docs/guides/packs.md` (create); `tests/skills/ce-setup-check-health.test.ts`; a new parity test; `docs/upstream-sync.md`.
 
 **Approach:**
 1. Resolve the `pending-decision` row first — a recorded deferral ends the slice as `pending-decision` retained, no-op otherwise.
-2. Pin baseline; port `packs-resolve.py` per upstream's two-copy shape; add the byte-parity test.
+2. Pin baseline; port `packs-resolve.py` at the pinned SHA's actual shape — resolver-copy layout, config layering, source kinds, and failure semantics as upstream implements them; add the byte-parity test covering every copy upstream places.
 3. Add the `packs:` block to both config files and the `configuration.md` table row; ce-setup repo-fixes gains the rollout step; check-health validates the key.
 4. Wire the seven consumers — five have empty or missing `scripts/` dirs, so wiring is a read-time reference or anchored call per the tier rules, not a third script copy.
 5. Missing pack dir fails closed at the consuming skill; pack knowledge never outranks repo authority.
@@ -301,7 +301,7 @@ Tier order is sequential per R1; units inside a tier may overlap in time only wh
 **Patterns to follow:** `docs_root` fail-closed precedent; `cross_model_review_mode` config pattern (local-wins, invalid falls through, docs row, check-health pin); `reviewing-byte-duplicated-shared-assets.md` canonical-copy rule.
 
 **Test scenarios:**
-- Parity test: the two `packs-resolve.py` copies are byte-identical.
+- Parity test: every `packs-resolve.py` copy the pinned upstream implementation places is byte-identical.
 - check-health: a `packs:` key in config passes validation; a retired key still warns.
 - A consuming skill with a declared-but-missing pack dir stops with a named error, not a silent skip.
 - Pack content contradicting `CONCEPTS.md` loses — repo authority wins.
@@ -314,9 +314,9 @@ Tier order is sequential per R1; units inside a tier may overlap in time only wh
 
 **Requirements:** R7.
 
-**Dependencies:** U1.
+**Dependencies:** U2, U3 (the `skills/*/SKILL.md` sweep runs after their SKILL.md edits land).
 
-**Files:** `skills/*/SKILL.md` descriptions; `skills/ce-debug/SKILL.md`; `tests/skills/astra-description-triggers.test.ts` (create); `tests/skill-eval-cell/grade.ts`, `catalog.ts`; `.github/workflows/ci.yml`; `AGENTS.md` (pattern port: policy → `docs/solutions/developer-experience/`); `docs/upstream-sync.md`.
+**Files:** `skills/*/SKILL.md` descriptions; `skills/ce-debug/SKILL.md`; `tests/skills/astra-description-triggers.test.ts` (create); `tests/skill-eval-cell/grade.ts`, `tests/skill-eval-cell/catalog.ts`; `.github/workflows/ci.yml`; `AGENTS.md` (pattern port: policy → `docs/solutions/developer-experience/`); `skills/ce-work/scripts/__pycache__/` (delete — orphaned build output); `docs/upstream-sync.md`.
 
 **Approach:**
 1. Pin baseline; read each upstream commit at that SHA.
@@ -341,7 +341,7 @@ Tier order is sequential per R1; units inside a tier may overlap in time only wh
 
 **Dependencies:** U4 (the astra-description harness and current description conventions land first so the new skills conform on arrival).
 
-**Files:** `skills/ce-bakeoff/` (new), `skills/ce-noslop/` (new); `package.json` `pi.skills` if the manifest enumerates skills; `README.md` (skill count 37→39, guide rows); `docs/guides/README.md` catalog rows; `docs/guides/ce-bakeoff.md`, `docs/guides/ce-noslop.md` (create); `docs/solutions/skill-design/inline-callee-side-channel-must-name-where-it-may-not-land.md` (evaluate for port); `docs/upstream-sync.md`.
+**Files:** `skills/ce-bakeoff/` (new), `skills/ce-noslop/` (new); `package.json` `pi.skills` if the manifest enumerates skills; `README.md` (skill count 37→39, guide rows); `docs/guides/README.md` catalog rows; `docs/guides/ce-bakeoff.md`, `docs/guides/ce-noslop.md` (create); `tests/skill-eval-cell/catalog.ts` (serialized per KTD1); `docs/solutions/skill-design/inline-callee-side-channel-must-name-where-it-may-not-land.md` (evaluate for port); `docs/upstream-sync.md`.
 
 **Approach:**
 1. Pin baseline; port ce-bakeoff at #1652+#1655+#1671 state and ce-noslop at post-#1700 (`aae9f91c`) state.
@@ -352,7 +352,7 @@ Tier order is sequential per R1; units inside a tier may overlap in time only wh
 
 **Test scenarios:**
 - Both skills pass `astra-description-triggers.test.ts` and the skill-convention pins (`tests/skill-conventions.test.ts`, `tests/skill-agent-ce-prefix.test.ts`).
-- `omp install --dry-run --json .` lists both new skill dirs.
+- `omp install --dry-run --json .` lists the `./skills` manifest root; both new skill dirs are verified through the on-disk SKILL.md/frontmatter inventory test plus the description-trigger checks.
 - ce-noslop's opt-in edit-mode summary is opt-in, not default.
 
 **Verification:** `bun run test` green; both skills discoverable; sync record rows updated.
@@ -369,12 +369,12 @@ Tier order is sequential per R1; units inside a tier may overlap in time only wh
 
 **Approach:**
 1. Fresh fork-side inventory at slice time — do not trust the ~37 count.
-2. Define the derived detector once: Implementation Units + Verification Contract + Definition of Done present ⇒ executable; otherwise requirements-only. One shared predicate, identical behavior at all three gate call sites (lfg plan-brief, ce-work intake, ce-plan pipeline).
-3. Migrate in order: readers accept both forms → writers stop emitting the field → readers drop the field → tests and docs updated. Green at every commit.
+2. Define the derived detector once: Product Contract, Planning Contract, Implementation Units, Verification Contract, and Definition of Done present with no launch-blocking open question ⇒ executable; otherwise requirements-only. One shared predicate, identical behavior at all three gate call sites (lfg plan-brief, ce-work intake, ce-plan pipeline).
+3. Migrate in order: readers accept both forms → writers stop emitting the field → readers drop the field → docs. Green at every commit; each affected contract test and fixture update lands in the same commit as the writer or reader change it pins.
 4. Readiness stays two-valued document completeness — no third value, no progress state. Legacy `origin:` resolution keeps working.
 
 **Test scenarios:**
-- Contract tests: a plan with Units+Verification+DoD but no `artifact_readiness` field classifies executable at all three gates; one without them classifies requirements-only.
+- Contract tests: a plan carrying the full contract (Product Contract, Planning Contract, Implementation Units, Verification Contract, Definition of Done, no launch-blocking question) but no `artifact_readiness` field classifies executable at all three gates; one missing a contract component classifies requirements-only. Fixtures omit each required component in turn.
 - A `status:` field or progress-like value is still rejected.
 - Eval fixtures migrated; `catalog.ts` readiness-graded scenario updated.
 
@@ -386,12 +386,12 @@ Tier order is sequential per R1; units inside a tier may overlap in time only wh
 
 **Requirements:** R9.
 
-**Dependencies:** U1 (model-field answer decides routing mode).
+**Dependencies:** U1 (model-field answer decides routing mode), U6 (Tier-2 barrier).
 
-**Files:** `skills/lfg/SKILL.md`, `skills/lfg/references/work-return.md` (envelope extension), `skills/lfg/references/shipping-tail.md`; possibly `skills/lfg/references/review-followup.md`; `docs/upstream-sync.md` (ecosystem graft — record as program item, not upstream row).
+**Files:** `skills/lfg/SKILL.md`, `skills/lfg/references/review-followup.md` (verifier-receipt definition), `skills/lfg/references/shipping-tail.md` (receipt consumption); `docs/upstream-sync.md` (ecosystem graft — record as program item, not upstream row).
 
 **Approach:**
-1. Define the PASS/BLOCK envelope extending `work-return.md`'s field inventory: verdict, scoped U-IDs, evidence pointers, serving mode, independence label.
+1. Define the PASS/BLOCK verifier receipt in `review-followup.md`, extending `work-return.md`'s field inventory: verdict, scoped U-IDs, evidence pointers, serving mode, independence label. `work-return.md` itself is unchanged — it is consumed at lfg step 2, too early to certify the post-fix tree.
 2. Dispatch the verifier with fresh context and no implementation history; per-spawn model field if U1 confirmed one, else session model with `independence: structural-only` carried to the PR body.
 3. BLOCK stops the pipeline or triggers one bounded rework (one-recovery-invocation precedent); never an infinite hold.
 4. No new config keys — `modelRoles`/`agentModelOverrides` do not exist and introducing routing schema is out of scope.
@@ -409,7 +409,7 @@ Tier order is sequential per R1; units inside a tier may overlap in time only wh
 
 **Requirements:** R10.
 
-**Dependencies:** U1.
+**Dependencies:** U6 (Tier-2 barrier).
 
 **Files:** `skills/ce-work/references/shipping-workflow.md` (final-validation section); possibly a new `skills/ce-work/references/milestone-audit.md`; `docs/upstream-sync.md` (program item).
 
@@ -431,18 +431,18 @@ Tier order is sequential per R1; units inside a tier may overlap in time only wh
 
 **Requirements:** R11.
 
-**Dependencies:** U1 (the mechanism × hook × fallback table is the port decision).
+**Dependencies:** U1 (the mechanism × hook × fallback table is the port decision), U6 (Tier-2 barrier).
 
-**Files:** `skills/ce-work/references/return-to-caller.md`, `implementation-loop.md`, `execution-strategy.md` (envelope evaluation points); `docs/omp-capability-audit.md` (blocked entries); `docs/upstream-sync.md`.
+**Files:** `skills/ce-work/references/return-to-caller.md`, `implementation-loop.md`, `execution-strategy.md` (envelope evaluation points); the hook registration or consumer path U1 identifies for each confirmed mechanism (conditional — in scope when the audit confirms a hook); `docs/omp-capability-audit.md` (blocked entries); `docs/upstream-sync.md`.
 
 **Approach:**
-1. For each mechanism, read the matrix row: confirmed hook → port against it; absent → blocked-with-reason entry naming the mechanism, missing capability, and flip condition.
+1. For each mechanism, read the matrix row: confirmed hook → port against it, including the registration-to-orchestrator-envelope dispatch branch so the mechanism demonstrably fires; absent → blocked-with-reason entry naming the mechanism, missing capability, and flip condition.
 2. Enforcement evaluates at orchestrator-envelope emission, never worker return.
 3. Tamper attestation reuses `source_digest`/`plan_checkpoint`; a mismatch returns blocked with state preserved — never silent re-baseline.
 4. Stop gates emit blocked-with-recovery when they cannot pass environmentally.
 
 **Test scenarios:**
-- Each ported mechanism has a failing-then-passing path (e.g., a unit with no verification evidence cannot emit a PASS envelope).
+- Each ported mechanism has a failing-then-passing path (e.g., a unit with no verification evidence cannot emit a PASS envelope); for each confirmed mechanism an integration scenario invokes the host hook and observes the enforced outcome.
 - A tampered plan file produces blocked-with-recovery, not a re-baselined digest.
 - Each blocked mechanism has a findings-record entry with a flip condition.
 
@@ -454,7 +454,7 @@ Tier order is sequential per R1; units inside a tier may overlap in time only wh
 
 **Requirements:** R12.
 
-**Dependencies:** U1.
+**Dependencies:** U8 (intra-tier — both edit `shipping-workflow.md`), U1 (event-surface answer).
 
 **Files:** `skills/ce-work/references/shipping-workflow.md` or the completion surface the audit identifies; `docs/omp-capability-audit.md`; `docs/upstream-sync.md`.
 
@@ -475,13 +475,13 @@ Tier order is sequential per R1; units inside a tier may overlap in time only wh
 
 **Requirements:** R13.
 
-**Dependencies:** U1 (R3d answer).
+**Dependencies:** U1 (R3d answer), U6 (Tier-2 barrier).
 
 **Files:** `docs/solutions/skill-design/portable-agent-skill-authoring.md`; possibly `AGENTS.md` pointer; `docs/omp-capability-audit.md`.
 
 **Approach:**
 1. Verified on user-invocation AND agent-dispatch paths → write the rule validating the `ce-` prefix convention.
-2. Verified on only one path → the rule names which path it covers.
+2. A one-path confirmation is incomplete verification — the unit stays blocked until both probes confirm the same rule; no path-limited rule is published.
 3. Negative result → blocked-with-reason; the claim is not codified.
 
 **Test scenarios:**
@@ -496,7 +496,7 @@ Tier order is sequential per R1; units inside a tier may overlap in time only wh
 
 **Requirements:** R14.
 
-**Dependencies:** U1.
+**Dependencies:** U7–U11 (Tier-3 barrier; U9 shares `implementation-loop.md`).
 
 **Files:** `skills/ce-work/references/implementation-loop.md`; possibly `skills/ce-work/references/return-to-caller.md` (RTC-mode placement); `docs/upstream-sync.md` (program item).
 
@@ -520,7 +520,7 @@ Tier order is sequential per R1; units inside a tier may overlap in time only wh
 
 **Requirements:** R15.
 
-**Dependencies:** U1 (compaction-hook and lazy-context answers).
+**Dependencies:** U1 (compaction-hook and lazy-context answers), U7–U11 (Tier-3 barrier).
 
 **Files:** hook consumer TBD by audit; `docs/omp-capability-audit.md`; `docs/upstream-sync.md`.
 
@@ -541,7 +541,7 @@ Tier order is sequential per R1; units inside a tier may overlap in time only wh
 
 **Requirements:** R16.
 
-**Dependencies:** U4 (the delta is defined against `astra-description-triggers.test.ts` + declared-decision grading).
+**Dependencies:** U4 (the delta is defined against `astra-description-triggers.test.ts` + declared-decision grading), U7–U11 (Tier-3 barrier).
 
 **Files:** `tests/` (new structural checks as a `bun run test` target); `docs/upstream-sync.md` (program item).
 
@@ -562,18 +562,19 @@ Tier order is sequential per R1; units inside a tier may overlap in time only wh
 
 **Requirements:** R17.
 
-**Dependencies:** U1.
+**Dependencies:** U1 (tracker-interface answer), U7–U11 (Tier-3 barrier).
 
 **Files:** `skills/ce-plan/references/` (new reference) + `skills/ce-plan/SKILL.md` section; reuse of `skills/ce-work/references/tracker-defer.md` precedent; `docs/upstream-sync.md` (program item).
 
 **Approach:**
 1. Detect the project's tracker interface per the tracker-defer precedent; check approval/audit posture for agent-path writes, not just API existence.
 2. No suitable interface or no write-approval posture → deferred-with-reason.
-3. The bridge translates the plan's unit/task list into tracker issues through whatever interface the tracker exposes.
+3. The bridge extends ce-plan's existing Create Issue handoff: the one-plan-issue default is preserved; per-unit fan-out is exposed only after explicit user selection, and noninteractive invocation requires explicit standing authority. The bridge translates the plan's unit/task list into tracker issues through whatever interface the tracker exposes and returns the created issue links.
+4. Issue creation is idempotent: plan path + U-ID is the stable dedup identity — a rerun updates or skips existing issues rather than duplicating them.
 
 **Test scenarios:**
-- A plan's units become tracker issues with stable titles and links back to the plan.
-- A repo with no tracker interface produces the deferred disposition, not a failure.
+- A plan's units become tracker issues with stable titles and links back to the plan, created only after explicit opt-in selection.
+- A rerun over the same plan creates no duplicate issues (plan path + U-ID dedup).
 
 **Verification:** bridge produces issues on a tracker-equipped repo, or deferred-with-reason is recorded.
 
@@ -599,4 +600,4 @@ Tier order is sequential per R1; units inside a tier may overlap in time only wh
 
 **Per-slice:** the slice's units pass `bun run test` green; the diff passed `ce-code-review`; the sync record carries the slice's pinned SHA and dispositions including abort-partial records; no abandoned-attempt code or scratch files remain in the diff; the PR body carries the independence label when a session-model verifier served (U7).
 
-**Per-unit:** the unit's Verification field satisfied; test scenarios enumerated in the unit exist as real tests or recorded exceptions; files outside the unit's declared set are not in its diff.
+**Per-unit:** the unit's Verification field satisfied; test scenarios enumerated in the unit exist as real tests or recorded exceptions; files outside the unit's declared set are not in its diff — a conditional Files entry (marked "possibly"/"conditional") is in declared scope only when the unit's Approach triggers it.
