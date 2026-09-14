@@ -176,3 +176,15 @@ All dispositions verified 2026-09-11 against upstream HEAD `c4a643b1`.
 
 - **Integration note (orchestrator):** `skills/lfg/SKILL.md` sits at 99% of the Codex 8000-byte prompt bound (observed 7924/8000 in LF bytes before this slice). The gate's always-loaded presence was therefore paid for by compressing that file's "only it carries …" reference catalogues down to their conditions — every condition and every test-pinned phrase survives; the detail lives in the reference files the body names. Bound re-verified by `tests/codex-skill-prompt-budget.test.ts` (down-only ratchet: `lfg` must never join `OVER_BUDGET`).
 - **Stage-order pins unaffected:** the gate attaches inside step 5's block and inside `shipping-tail.md`'s step-8 region, so no numbered heading moved — the pins at `tests/skills/unified-plan-artifact-contract.test.ts` (step-6/7 slice) and `tests/review-skill-contract.test.ts` (`Stack handoff from step 8`) pass unchanged.
+
+## Sync 2026-09-14 (U8: milestone audits in ce-work final validation)
+
+- **Program item (ecosystem graft — no upstream SHA applies):** R10. ce-work's final-validation seam gains a cross-phase milestone audit.
+
+| Item | Disposition | Evidence |
+|---|---|---|
+| R10 gsd-omp-style milestone audits (`/gsd-audit-uat` + `/gsd-audit-milestone` pattern, tchivs/gsd-omp) | ported | U8; the checklist is defined in-slice at `skills/ce-work/references/milestone-audit.md` (upstream audit rigor is unverified, so nothing is trusted from the source) and grafted as a required Final Validation step in `skills/ce-work/references/shipping-workflow.md`: it audits outstanding verification items across the plan's implementation units, milestone completion against the plan's stated intent, and residual accounting. Authority boundary: it consumes the plan artifact and this sync record, judges and reports, and never edits product code, the plan, this record, or the capability-audit matrix — a checklist over artifacts, never a product-code driver. It runs only for a run executed from a plan artifact (exact skip phrase `Milestone audit: skipped (no plan artifact)`) and never inside Return-to-Caller Mode, whose done-judgment belongs to the invoking workflow. Pin: `final validation runs a milestone audit that judges artifacts, never product code` in `tests/pipeline-review-contract.test.ts` |
+
+### Port notes (U8)
+
+- **Source-rigor caution recorded:** the checklist is locally defined, not ported. The unit's own brief flagged upstream audit rigor as unverified; the checklist forbids inventing verification states or dispositions beyond what the plan artifact and sync record actually carry, which is what keeps an unverified source from leaking invented rigor into fork contract prose.

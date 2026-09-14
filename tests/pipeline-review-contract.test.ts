@@ -61,6 +61,51 @@ describe("ce-work review contract", () => {
     expect(shipping).toContain("Ship-handoff gate")
   })
 
+  test("final validation runs a milestone audit that judges artifacts, never product code", async () => {
+    const shipping = await readRepoFile("skills/ce-work/references/shipping-workflow.md")
+    const audit = await readRepoFile("skills/ce-work/references/milestone-audit.md")
+
+    // Grafted as a Final Validation step that consumes the plan artifact + sync record
+    const finalValidation = sliceSection(
+      shipping,
+      "5. **Final Validation**",
+      "6. **Prepare Operational Validation Plan**",
+    )
+    expect(finalValidation).toContain("**Milestone Audit**")
+    expect(finalValidation).toContain("references/milestone-audit.md")
+    expect(finalValidation).toContain("docs/upstream-sync.md")
+
+    // Read-only over product code: judges and reports, never edits
+    expect(finalValidation).toContain("read-only over product code")
+    expect(finalValidation).toContain("never edits product code, the plan, or the sync record")
+    expect(audit).toContain("read-only over product code")
+    expect(audit).toContain("never edits product code, never edits the plan artifact or the sync record")
+    expect(audit).toContain("never drives the capability-audit matrix")
+
+    // The three checklist axes: outstanding verification, intent conformance, residuals
+    expect(audit).toContain("1. Outstanding verification items")
+    expect(audit).toContain("2. Milestone completion vs stated intent")
+    expect(audit).toContain("3. Residual accounting")
+    // Grounded in what the artifacts carry — no invented fields
+    expect(audit).toContain("Do not invent fields, verification states, or dispositions")
+
+    // Scenario: an unverified unit fails the audit with the item named
+    expect(audit).toContain("`<U-ID>: <item>`")
+    expect(shipping).toContain("every finding named (`<U-ID>: <item>`)")
+    // Scenario: divergence from stated intent is flagged, not passed
+    expect(audit).toContain("flagged `not passed`")
+    expect(audit).toContain("disposed divergence")
+    expect(shipping).toContain("flagged, not passed")
+    // Scenario: it is a checklist over artifacts — never an editor of product code
+    expect(audit).toContain("The audit itself does not create the record")
+    // A gap report fails Final Validation, matching the bullet-failure behavior
+    expect(audit).toContain("**Gap report**")
+    expect(shipping).toContain("A gap report fails Final Validation")
+    // No-plan runs skip with an exact recorded phrase, never silently
+    expect(shipping).toContain("Milestone audit: skipped (no plan artifact)")
+    expect(audit).toContain("Milestone audit: skipped (no plan artifact)")
+  })
+
   // Hosts such as Grok register a bundled skill named `review`. Headings like
   // "invoke review" and slash examples like `/review` caused sibling-path reads of
   // this plugin's skills/review/SKILL.md, which does not exist.
