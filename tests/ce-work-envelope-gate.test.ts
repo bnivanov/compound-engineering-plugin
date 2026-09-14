@@ -101,6 +101,30 @@ describe("ce-work envelope emission gate", () => {
     expect(JSON.parse(proseOnly.stdout).reason).toContain("structured entry")
   })
 
+  test("junk-string dischargers do not discharge a unit, while a spelled count does", () => {
+    const { plan, digest } = fixturePlan()
+    for (const field of ["tests_added_or_changed", "tests_used_unchanged"]) {
+      for (const junk of ["no", "0"]) {
+        const result = runGate(
+          plan,
+          baseEnvelope(plan, digest, {
+            verification_evidence: [{ unit: "U9", behavior_changed: true, [field]: junk }],
+          }),
+        )
+        expect(result.status).toBe(2)
+        expect(JSON.parse(result.stdout).checks.unverified_never_pass.status).toBe("blocked")
+      }
+    }
+
+    const spelledCount = runGate(
+      plan,
+      baseEnvelope(plan, digest, {
+        verification_evidence: [{ unit: "U9", behavior_changed: true, tests_added_or_changed: "2" }],
+      }),
+    )
+    expect(spelledCount.status).toBe(0)
+  })
+
   test("a deliberate exception discharges a non-behavioral unit", () => {
     const { plan, digest } = fixturePlan()
     const envelope = baseEnvelope(plan, digest, {

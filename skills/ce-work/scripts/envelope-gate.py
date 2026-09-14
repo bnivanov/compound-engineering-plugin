@@ -78,12 +78,22 @@ def nonempty_str(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
 
-def truthy_behavior_change(value: Any) -> bool:
-    """Model-authored envelopes spell booleans loosely; accept the JSON
-    boolean and the plausible string spellings of true."""
-    if value is True:
-        return True
-    return isinstance(value, str) and value.strip().lower() in ("true", "yes")
+def truthy_flag(value: Any) -> bool:
+    """Model-authored envelopes spell booleans loosely: the JSON boolean, a
+    positive count (``2`` or ``"2"``), or a plausible string spelling of true
+    (``"true"``, ``"yes"``). Everything else is not an assertion of true — a
+    zero count and a junk string such as ``"no"`` are both non-assertions, and
+    must not read as a discharge."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return value > 0
+    if isinstance(value, str):
+        text = value.strip().lower()
+        if text in ("true", "yes"):
+            return True
+        return text.isdigit() and int(text) > 0
+    return False
 
 
 PLAN_UNIT_ID_RE = re.compile(r"\bU\d+\b")
@@ -153,10 +163,12 @@ def plan_membership_check(
 def entry_discharges_evidence(entry: dict[str, Any]) -> bool:
     """An entry discharges UNVERIFIED-never-PASS when it shows real
     verification (tests added/changed, tests used unchanged) or a deliberate
-    exception with a stated reason."""
-    if entry.get("tests_added_or_changed"):
+    exception with a stated reason. The two test fields are model-spelled
+    booleans, so they are normalized: a zero count or a junk string such as
+    "no" asserts no verification and does not discharge."""
+    if truthy_flag(entry.get("tests_added_or_changed")):
         return True
-    if entry.get("tests_used_unchanged"):
+    if truthy_flag(entry.get("tests_used_unchanged")):
         return True
     return nonempty_str(entry.get("exception_reason"))
 
@@ -197,7 +209,7 @@ def unverified_problems(envelope: dict[str, Any]) -> list[str]:
     attempted = attempted_raw if isinstance(attempted_raw, list) else []
     evidence = evidence_raw if isinstance(evidence_raw, list) else []
 
-    if truthy_behavior_change(envelope.get("behavior_change")) and not evidence:
+    if truthy_flag(envelope.get("behavior_change")) and not evidence:
         problems.append(
             "behavior_change is true but verification_evidence is empty — "
             "UNVERIFIED work cannot emit a PASS envelope"
