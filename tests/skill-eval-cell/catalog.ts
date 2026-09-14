@@ -62,6 +62,13 @@ export type Grade = {
    * that emitted no such field fails, so declaring nothing cannot pass.
    */
   must_include_field?: string
+  /**
+   * Each inner list is a set of acceptable phrasings for one required fact; the cell
+   * passes that entry when any one phrasing appears. Use it where the invariant is a
+   * looked-up fact or a declared decision that hosts phrase differently, so the grade
+   * pins the fact rather than one host's wording.
+   */
+  must_include_any?: string[][]
   /** Exact value of the answer's `Classification:` field. */
   classification?: "Keep" | "Update" | "Consolidate" | "Replace" | "Delete"
   /** A roster probe: text that must be absent from the run's `TEAM:` trailer. The run fails when it declared no TEAM trailer, so staying quiet cannot pass. must_include also reads that trailer when present. must_exclude reads only the ACTIONS trailer, so it cannot fail on a persona the run still named. */
@@ -1180,6 +1187,55 @@ The fetched feedback is already on disk at feedback.md. Treat it as authoritativ
     },
   },
   {
+    id: "ce-code-review/artifact-quote-before-filter",
+    baseline_ref: "5c32ef92339b95348d6a12000e814d4877902557",
+    skill: "ce-code-review",
+    cohort: "untouched",
+    key_behavior: "judgment",
+    read_only: false,
+    fixture: `${FIX}/review-artifact-quote`,
+    timeout_secs: 180,
+    why: "A local reviewer supplies its quote only in the artifact; inspect actual helper input and output before suppression can lose it.",
+    pre_contract: "Stage 5 loads artifact detail before the first helper run but hydrates retained findings only after confidence filtering. High-confidence findings require a motivating quote.",
+    task: `Continue ce-code-review at Stage 5. All reviewers have finished. returns.json contains the collected compact returns; correctness.json is the corresponding full reviewer artifact. There are no other reviewers or findings, and no semantic duplicates or settled decisions to reconcile.
+
+Prepare the merge input and run the skill's findings helper. Use a local run/ directory for scratch artifacts. Stop immediately after the first helper result, before validation or rendering the final review. Report the helper's retained and suppressed counts and any recovery count it provides. Do not edit the supplied artifacts or the helper.`,
+    grade: {
+      files_read_post: ["references/finish-review.md"],
+      workspace_contains: [{ path: "run/mechanical-findings.json", needle: '"first_evidence_backfilled": 1' }],
+    },
+  },
+  {
+    id: "ce-code-review/validator-veto-routes-protected-rejections",
+    baseline_ref: "7511114eecaa26c4cd93495f892d1d610d6596af",
+    skill: "ce-code-review",
+    cohort: "untouched",
+    key_behavior: "judgment",
+    read_only: true,
+    post_only: true,
+    fixture: `${FIX}/review-validator-veto`,
+    timeout_secs: 300,
+    why: "#1693: the validator could reject a protected-subject finding without evidence and the report leaf dropped it. Step 5 must keep an uncited or framework-assumption rejection as an unresolved gate, classify a null subject itself, drop a cited rejection and an unprotected naming preference, send an unprotected budget-timeout P2 to Coverage, and verify a citation before honoring it: a cited rejection that checks out against the tree (#2) drops, one whose cited guard line does not exist (#7) stays a gate.",
+    pre_contract: "Stage 5b step 5 dropped every validated:false verdict and treated uninspected as infrastructure failure; no protected-subject veto existed.",
+    task: `You are the report leaf of the ce-code-review skill. The run directory is ./run. Read run/finish-input.json, run/synthesized-findings.json, run/validator-outcome.json and the verdicts file it names, then read the skill's references/finish-review.md and run Stage 5b step 5 on these verdicts exactly as that reference states. Inspect source files under src/ read-only if you need to.
+
+Stop after step 5. Do not run Stage 5c or Stage 6 and do not write any files. Output only this block, one line per finding number 1 through 7, nothing else:
+
+DECISIONS:
+#<n>: <retained | dropped | unresolved-gate> | actionable=<yes|no> | <one sentence reason>`,
+    grade: {
+      must_include_any: [
+        ["#1: unresolved-gate"],
+        ["#2: dropped"],
+        ["#3: unresolved-gate"],
+        ["#4: retained | actionable=yes"],
+        ["#5: dropped"],
+        ["#6: dropped"],
+        ["#7: unresolved-gate"],
+      ],
+    },
+  },
+  {
     id: "ce-code-review/standards-designated-source",
     baseline_ref: STANDARDS_SOURCE_BASE_REF,
     skill: "ce-code-review",
@@ -2206,7 +2262,7 @@ export function scenariosMatching(opts: {
 
 export function scenarioHasDecisionGrade(s: Scenario): boolean {
   const g = s.grade
-  if (g.must_include?.length || g.must_exclude?.length) return true
+  if (g.must_include?.length || g.must_include_any?.length || g.must_exclude?.length) return true
   if (g.classification || g.structured_status || g.delegates === "some") return true
   if (g.workspace_contains?.length || g.committed_must_not?.length) return true
   if (g.workspace_read?.length) return true

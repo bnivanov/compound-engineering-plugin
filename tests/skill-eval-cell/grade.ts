@@ -191,6 +191,11 @@ export function gradeHost(opts: {
   for (const needle of scopeField && !scopedText ? [] : opts.grade.must_include ?? []) {
     if (!textScope.includes(needle.toLowerCase())) reasons.push(`missing required text: ${needle}`)
   }
+  for (const options of scopeField && !scopedText ? [] : opts.grade.must_include_any ?? []) {
+    if (!options.some((needle) => textScope.includes(needle.toLowerCase()))) {
+      reasons.push(`missing required text (any of): ${options.join(" | ")}`)
+    }
+  }
   if (opts.grade.must_not_include?.length && !team) reasons.push("missing TEAM trailer")
   for (const needle of team ? opts.grade.must_not_include ?? [] : []) {
     if (team.includes(needle.toLowerCase())) reasons.push(`forbidden text in TEAM trailer: ${needle}`)

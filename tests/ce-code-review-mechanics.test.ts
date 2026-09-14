@@ -50,6 +50,21 @@ describe("ce-code-review deterministic mechanics", () => {
     expect(scope.lite_eligible).toBe(false)
   })
 
+  test("scope helper counts .mjs and .cjs files as executable code", () => {
+    const { dir, base } = fixtureRepo()
+    writeFileSync(path.join(dir, "esm.mjs"), "export const value = 1\n")
+    writeFileSync(path.join(dir, "common.cjs"), "module.exports = 1\n")
+    git(dir, "add", ".")
+
+    const result = run("python3", [SCOPE_SCRIPT, "--base", base], dir)
+    expect(result.status).toBe(0)
+    const scope = JSON.parse(result.stdout)
+
+    expect(scope.exec_lines).toBe(2)
+    expect(scope.uncounted_files).toBe(0)
+    expect(scope.lite_eligible).toBe(true)
+  })
+
   test("scope helper emits UNKNOWN-equivalent state for an invalid endpoint", () => {
     const { dir } = fixtureRepo()
     const result = run("python3", [SCOPE_SCRIPT, "--base", "missing-ref"], dir)
@@ -220,12 +235,39 @@ describe("ce-code-review deterministic mechanics", () => {
 
     expect(merged.findings).toHaveLength(1)
     expect(merged.findings[0]["#"]).toBe(1)
-    expect(merged.findings[0].confidence).toBe(100)
+    expect(merged.findings[0].confidence).toBe(75)
     expect(merged.findings[0].autofix_class).toBe("manual")
     expect(merged.findings[0].owner).toBe("human")
     expect(merged.findings[0].reviewers).toEqual(["correctness", "reliability"])
     expect(merged.findings[0].independent_reviewers).toEqual(["correctness", "reliability"])
     expect(merged.suppressed_by_confidence).toEqual({ "50": 1 })
+  })
+
+  test("agreement promotes only with a verified cross-model peer", () => {
+    const finding = {
+      title: "Stale result", severity: "P1", file: "src/worker.ts", line: 12,
+      confidence: 75, autofix_class: "manual", owner: "downstream-resolver",
+      requires_verification: true, pre_existing: false,
+      first_evidence: "src/worker.ts:12 -- result = staleValue",
+    }
+    const merge = (peer: Record<string, unknown>) => {
+      const returns = [
+        { reviewer: "correctness", findings: [finding], residual_risks: [], testing_gaps: [] },
+        { reviewer: "reliability", findings: [finding], residual_risks: [], testing_gaps: [] },
+        { reviewer: "adversarial-omp", findings: [finding], residual_risks: [], testing_gaps: [], ...peer },
+      ]
+      const result = run("python3", [FINDINGS_SCRIPT], undefined, JSON.stringify(returns))
+      expect(result.status).toBe(0)
+      return JSON.parse(result.stdout).findings[0]
+    }
+
+    const verified = merge({ independence_verified: true })
+    expect(verified.confidence).toBe(100)
+    expect(verified.independent_reviewers).toEqual(["correctness", "reliability", "adversarial-omp"])
+
+    const unverified = merge({ independence_verified: false })
+    expect(unverified.confidence).toBe(75)
+    expect(unverified.independent_reviewers).toEqual(["correctness", "reliability"])
   })
 
   test("synthetic reruns preserve independent corroboration from semantic duplicates", () => {
@@ -240,8 +282,8 @@ describe("ce-code-review deterministic mechanics", () => {
       requires_verification: true,
       pre_existing: false,
       first_evidence: "src/worker.ts:12 -- result = staleValue",
-      reviewers: ["correctness", "testing"],
-      independent_reviewers: ["correctness", "testing"],
+      reviewers: ["correctness", "adversarial-omp"],
+      independent_reviewers: ["correctness", "adversarial-omp"],
     }
 
     const result = run(
@@ -265,8 +307,8 @@ describe("ce-code-review deterministic mechanics", () => {
       expect.objectContaining({
         title: reconciled.title,
         confidence: 75,
-        reviewers: ["correctness", "testing"],
-        independent_reviewers: ["correctness", "testing"],
+        reviewers: ["correctness", "adversarial-omp"],
+        independent_reviewers: ["correctness", "adversarial-omp"],
       }),
     ])
   })
@@ -311,6 +353,67 @@ describe("ce-code-review deterministic mechanics", () => {
         independent_reviewers: ["correctness"],
       }),
     ])
+  })
+
+  test("differently worded consensus findings survive the helper with both attributions", () => {
+    const finding = {
+      severity: "P1", file: "src/worker.ts", line: 12,
+      confidence: 75, autofix_class: "manual", owner: "downstream-resolver",
+      requires_verification: true, pre_existing: false,
+      first_evidence: "src/worker.ts:12 -- result = staleValue",
+    }
+    const returns = [
+      {
+        reviewer: "correctness",
+        findings: [{ ...finding, title: "Stale result returned after refresh" }],
+        residual_risks: [],
+        testing_gaps: [],
+      },
+      {
+        reviewer: "reliability",
+        findings: [{ ...finding, title: "Refresh leaves workers reading a stale value" }],
+        residual_risks: [],
+        testing_gaps: [],
+      },
+    ]
+    const result = run("python3", [FINDINGS_SCRIPT], undefined, JSON.stringify(returns))
+    expect(result.status).toBe(0)
+    const merged = JSON.parse(result.stdout)
+
+    // The helper owns exact-fingerprint dedup only: differently worded
+    // descriptions of one defect both survive it for Stage 5 synthesis to
+    // reconcile. A merged consensus candidate then lists every contributing
+    // reviewer, and quorum agreement never promotes without a verified
+    // cross-model peer.
+    expect(merged.findings).toHaveLength(2)
+    expect(merged.findings.flatMap((merged_finding: { reviewers: string[] }) => merged_finding.reviewers).sort()).toEqual(["correctness", "reliability"])
+    for (const merged_finding of merged.findings) {
+      expect(merged_finding.reviewers).toHaveLength(1)
+    }
+
+    const consensus = {
+      title: "Stale result returned after refresh",
+      severity: "P1", file: "src/worker.ts", line: 12,
+      confidence: 75, autofix_class: "manual", owner: "downstream-resolver",
+      requires_verification: true, pre_existing: false,
+      first_evidence: "src/worker.ts:12 -- result = staleValue",
+      reviewers: ["correctness", "reliability"],
+      independent_reviewers: ["correctness", "reliability"],
+    }
+    const rerun = run(
+      "python3",
+      [FINDINGS_SCRIPT],
+      undefined,
+      JSON.stringify([
+        { reviewer: "synthesis", findings: [consensus], residual_risks: [], testing_gaps: [] },
+      ]),
+    )
+    expect(rerun.status).toBe(0)
+    const remerged = JSON.parse(rerun.stdout)
+    expect(remerged.findings).toHaveLength(1)
+    expect(remerged.findings[0].reviewers).toEqual(["correctness", "reliability"])
+    expect(remerged.findings[0].independent_reviewers).toEqual(["correctness", "reliability"])
+    expect(remerged.findings[0].confidence).toBe(75)
   })
 
   test("confidence-gated testing advisories remain available for soft-bucket routing", () => {
@@ -477,6 +580,77 @@ describe("ce-code-review deterministic mechanics", () => {
         confidence: 50,
       }),
     ])
+  })
+
+  test("findings helper recovers artifact quotes before validation without weakening the evidence gate", () => {
+    const quote = "src/state.ts:8 -- return priorState"
+    const base = {
+      title: "Stale state returned", severity: "P1", file: "src/state.ts", line: 8,
+      confidence: 75, autofix_class: "manual", owner: "downstream-resolver",
+      requires_verification: true, pre_existing: false,
+    }
+    const cases = [
+      { fields: { evidence: [quote] }, retained: 1, backfilled: 1, malformed: 0 },
+      { fields: { first_evidence: " ", evidence: [quote] }, retained: 1, backfilled: 1, malformed: 0 },
+      { fields: { first_evidence: quote, evidence: ["other quote"] }, retained: 1, backfilled: 0, malformed: 0 },
+      { fields: { first_evidence: false, evidence: [quote] }, retained: 0, backfilled: 0, malformed: 1 },
+      { fields: { first_evidence: 42, evidence: [quote] }, retained: 0, backfilled: 0, malformed: 1 },
+      { fields: {}, retained: 0, backfilled: 0, malformed: 0 },
+      { fields: { evidence: [] }, retained: 0, backfilled: 0, malformed: 0 },
+      { fields: { evidence: "not an array" }, retained: 0, backfilled: 0, malformed: 0 },
+      { fields: { evidence: [42, quote] }, retained: 0, backfilled: 0, malformed: 0 },
+      { fields: { evidence: [" ", quote] }, retained: 0, backfilled: 0, malformed: 0 },
+      { fields: { first_evidence: false, evidence: [] }, retained: 0, backfilled: 0, malformed: 1 },
+    ]
+    const returns = [{
+      reviewer: "correctness",
+      findings: cases.map((entry, index) => ({
+        ...base,
+        ...entry.fields,
+        title: `${base.title} ${index}`,
+        line: base.line + index,
+      })),
+      residual_risks: [],
+      testing_gaps: [],
+    }]
+    const result = run("python3", [FINDINGS_SCRIPT], undefined, JSON.stringify(returns))
+    expect(result.status).toBe(0)
+    const merged = JSON.parse(result.stdout)
+
+    expect(merged.findings).toHaveLength(cases.filter((entry) => entry.retained).length)
+    expect(merged.first_evidence_backfilled).toBe(cases.reduce((sum, entry) => sum + entry.backfilled, 0))
+    expect(merged.malformed_findings).toBe(cases.reduce((sum, entry) => sum + entry.malformed, 0))
+    expect(merged.suppressed_by_confidence).toEqual({
+      "50": cases.filter((entry) => !entry.retained && !entry.malformed).length,
+    })
+    expect(merged.findings.map((finding: { title: string }) => finding.title).sort()).toEqual(
+      cases.flatMap((entry, index) => entry.retained ? [`${base.title} ${index}`] : []).sort(),
+    )
+    expect(merged.suppressed_findings.map((finding: { title: string }) => finding.title).sort()).toEqual(
+      cases.flatMap((entry, index) => !entry.retained && !entry.malformed ? [`${base.title} ${index}`] : []).sort(),
+    )
+    for (const finding of merged.findings) {
+      expect(finding.first_evidence).toBe(quote)
+      expect(finding.confidence).toBe(75)
+    }
+  })
+
+  test("artifact quotes do not promote two independent anchor-50 findings", () => {
+    const finding = {
+      title: "Possible stale state", severity: "P2", file: "src/state.ts", line: 8,
+      confidence: 50, autofix_class: "advisory", owner: "downstream-resolver",
+      requires_verification: true, pre_existing: false,
+      evidence: ["src/state.ts:8 -- return priorState"],
+    }
+    const returns = ["correctness", "reliability"].map((reviewer) => ({
+      reviewer, findings: [finding], residual_risks: [], testing_gaps: [],
+    }))
+    const result = run("python3", [FINDINGS_SCRIPT], undefined, JSON.stringify(returns))
+    expect(result.status).toBe(0)
+    const merged = JSON.parse(result.stdout)
+    expect(merged.findings).toEqual([])
+    expect(merged.first_evidence_backfilled).toBe(0)
+    expect(merged.suppressed_by_confidence).toEqual({ "50": 1 })
   })
 
   test("findings helper keeps settled decisions, caps fast-pass, and sorts by confidence", () => {
