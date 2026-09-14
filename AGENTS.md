@@ -98,6 +98,7 @@ Three rules that hold regardless of whether the skill was invoked:
 - **State conditions, not procedures or cases.** When a block keeps absorbing "add the case we just found" — in authoring, in a review round, or in your own fix to a finding — the representation is wrong. Delete the additions and restate the goal, then re-verify against every path the additions served; a restatement that no longer names a path is a new defect, not a simplification.
 - **Prescribe a mechanism only where it is owned.** A delegating skill states the condition, the safe failure direction, and the non-derivable callee facts, never a re-derivation of the callee's commands (`docs/solutions/skill-design/skill-gates-state-conditions-not-prescribed-git-commands.md`).
 - **Bring the block you touch up to the standard**; leave untouched blocks alone and name them as follow-up. Skills predate the standard and evolve toward it.
+- **Distributed names must not collide.** Capability names dedupe first-match-wins per resolution path, so a same-named skill or agent silently loses — see the standard's "Keep the name unique across sources" (the audit-verified rule behind the `ce-` prefix).
 
 ### User-Facing Skill Invocations
 

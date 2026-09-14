@@ -18,7 +18,7 @@ tags:
   - protocol
   - judgment
   - skill-eval
-last_updated: 2026-09-02
+last_updated: 2026-09-14
 ---
 
 # Portable Agent Skill Authoring
@@ -171,6 +171,17 @@ Evaluate activation separately from execution with a few positive triggers, adja
 Keep agent-to-agent routing capability-first: format formal skill names as inline code (for example, `ce-plan`) and invoke the named skill through the active harness's callable skill mechanism. Exact command spelling belongs only where the skill prints or copies a user-runnable invocation. At that output seam, default to `/skill-name`; use `$skill-name` only when the active harness is Codex or explicitly documents dollar-prefixed skill invocation. On oh-my-pi (`omp`), keep the default form for model-visible targets; use native `/skill:<name>` only when the target is not model-visible because it declares `disable-model-invocation` or `hide` (for example, `/skill:ce-polish`). In prose, render only the invocation as inline code; use a fenced block only when the command stands alone. Output exactly one form. Built-in commands such as `/goal` are separate capabilities, not evidence that slash-prefixed skill names are callable in Codex.
 
 An authoring guide cannot supply runtime behavior to an installed skill. Put the smallest self-contained rendering rule immediately before the smallest section that contains all affected user-copy seams. Do not repeat it in every step; repeat it only in a separately loaded reference that independently owns output. Use a focused contract test when independently edited skills must preserve the same handoff, without duplicating the rationale or a harness matrix.
+
+### Keep the name unique across sources
+
+On oh-my-pi (omp), capability names dedupe across sources first-match-wins — verified on both resolution paths by the capability audit (`docs/omp-capability-audit.md`, R3(d)):
+
+- **Skills (user-invocation path):** dedup key is the skill name; first wins by provider priority (`native` → `omp-plugins` → `claude` → `claude-plugins`/`agents`/`codex` → `opencode` → `github` → `omp-managed`), with custom-directory skills merging after provider skills and overriding same-named default-path provider skills. Probe evidence: a scratch project defined a shadow `skills/ce-work/SKILL.md` under a custom directory; in a headless run the system prompt still carried the original fork's description and a live `skill://ce-work` read returned the original SKILL.md, not the shadow — the installed `omp-plugins` copy won.
+- **Task agents (agent-dispatch path):** first-wins dedup by exact, case-sensitive `agent.name` in discovery order — project `.omp/agents` → user `.omp/agents` → extension roots → Claude marketplace roots → bundled agents (`omp://task-agent-discovery.md`, per the audit). The slash-command surface is likewise first-wins.
+
+"First" is not one global ordering. For skills it means provider-priority first; for agents it means discovery-order first. The shared property is narrower and is the whole rule: on each path exactly one capability per name runs, and it is the first source on that path.
+
+The practical consequence for authors: a skill or agent whose name collides with an earlier source silently loses on both the user-invocation and the agent-dispatch path. Nothing errors, nothing asks — the colliding copy simply never runs, and the wrong one does. This is why this plugin prefixes every distributed skill name with `ce-`: the prefix is the uniqueness mechanism that keeps end-user local files from shadowing plugin skills (and plugin skills from shadowing each other). When authoring a skill for distribution, choose a name that cannot collide; when a collision exists, the fix is a rename, never a precedence argument.
 
 ## Separate protocol from judgment
 
@@ -419,6 +430,7 @@ Measure the outcome the skill exists to improve, not proxy volume:
 - [ ] Capabilities and observable contracts precede named tools.
 - [ ] Missing capabilities degrade without silent skips.
 - [ ] Bundled execution paths are deterministic and were diagnosed before rewriting.
+- [ ] The distributed name cannot collide with an earlier source on any resolution path (see "Keep the name unique across sources").
 
 ### Authority and delegation
 
@@ -481,6 +493,9 @@ the approach. Add only the protocol needed to protect that outcome.
 12. Use a small targeted evaluation set for the weakest realistic layer,
    strong-model regression, restraint, activation, and the next consumer.
 13. Choose the smallest supported change and record any material deviation.
+14. Confirm the distributed name cannot shadow or be shadowed: capability
+    names dedupe first-match-wins per resolution path, so a colliding name
+    silently loses.
 
 Return the outcome spine, proposed skill or findings, intentionally inapplicable
 guide sections, Change/Verify/Consider findings, targeted tests, and unresolved
