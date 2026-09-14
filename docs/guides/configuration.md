@@ -90,6 +90,7 @@ All settings are optional. Commented examples are documentation, not active valu
 | Consumer | Options | Purpose and values |
 |---|---|---|
 | all artifact-writing skills | `docs_root` | Repo-relative folder every CE artifact subdirectory lives under. Set only in `config.yaml`. Unset -> `docs`. See [Artifact root](#artifact-root). |
+| omp extension (all skills) | `skill_reinject` | Post-compaction skill re-injection. `true` re-injects one `<additional-context>` line after each context compaction naming the session's active skill (its last `read` of `skill://<name>`) and how to reload it; the artifact root is appended when `docs_root` is set. Default `false` — with the key absent or `false` the extension appends no session state and injects no compaction context. Ordinary cascade: `config.local.yaml`, then `config.yaml`, then the default. |
 | [`ce-ideate`](./ce-ideate.md), [`ce-brainstorm`](./ce-brainstorm.md), [`ce-plan`](./ce-plan.md) | `ideate_output`, `brainstorm_output`, `plan_output` | Artifact format: `md` or `html`. Defaults are HTML for ideation and markdown for brainstorms/plans. Pipeline contexts force markdown. |
 | [`ce-plan`](./ce-plan.md) | `plan_skip_scoping_confirm` | `true` skips the normal pre-plan scope confirmation; default `false`. It does not suppress genuine blockers or the post-plan menu. |
 | [`lfg`](./lfg.md) | `lfg_supervised`, `max_run_budget` | `lfg_supervised: true` adds two gates (after plan, after review). `max_run_budget` stops LFG before step 1 when remaining host budget is below it (`0` = off). |

@@ -62,6 +62,18 @@
 # lfg_supervised: true          # two gates: after plan, after review (default: false)
 # max_run_budget: 0             # stop LFG before step 1 when remaining host budget is below this (0 = off)
 
+# --- Post-compaction skill re-injection (omp extension) ---
+# OMP loads skill bodies on demand, so a compaction can summarize the active
+# skill's instructions out of context while the session is still following
+# that skill. With this key on, the plugin's omp extension remembers which
+# skill the session read last (read skill://<name>) and, when compaction
+# runs, re-injects one line naming that skill and how to reload it. Off by
+# default; with the key off the extension never appends session state and
+# never injects compaction context. Ordinary cascade: local, then this file,
+# then the default.
+
+# skill_reinject: true            # true | false (default: false)
+
 
 # --- PR concept teaching (ce-commit-push-pr) ---
 # When a PR introduces a concept new to the codebase, the generated PR
