@@ -90,3 +90,14 @@ Evidence:
 **Blocked-with-reason entries resulting from this audit: none.** Every mechanism above finds its required surface in omp v18.1.21. The only negative finding (no wire-level per-spawn model field) lands on R9, whose plan already specifies the structural-separation fallback as the primary path.
 
 **Flip conditions to re-check at each consuming slice:** OMP version bump (this audit pins v18.1.21); `resources_discover` gaining `AgentSession` callsites (would make the repo's existing extension registration live); `task` wire schema gaining a `model` field (would unlock R9 tiered routing).
+
+## U9 port record (2026-09-14)
+
+U9 ported the four R11 mechanisms against this matrix. **Blocked-with-reason entries: none** — every mechanism found its confirmed surface and demonstrably fires through the ported enforcement point, `skills/ce-work/scripts/envelope-gate.py` (the orchestrator-envelope emission gate bound in `skills/ce-work/references/return-to-caller.md`; focused tests in `tests/ce-work-envelope-gate.test.ts`).
+
+Registration decision — no live host hook shipped, deliberately:
+
+- **UNVERIFIED-never-PASS / tamper attestation / deterministic stop gate.** `session_stop` fires at session settle and never for task/subagent sessions. In pipeline mode (`lfg`), the ce-work orchestrator session IS a dispatched subagent, so a `session_stop` registration would miss the exact enforcement point KTD4 names (orchestrator-envelope emission) and would never fire precisely when enforcement matters most. The gate script is the consumer path: it runs in the ce-work orchestrator session at envelope emission, and its block output is `{ decision, reason }`-shaped with the same 8-continuation cap, so a future `session_stop` registration can consume its verdict verbatim if a checkout opts in.
+- **Plan re-injection.** `context`/`session.compacting` remain confirmed and available. The port binds re-injection at envelope emission — the gate's disk re-read of the plan — which compaction cannot bypass. A live `session.compacting` registration was not shipped: it would change compaction behavior for every session run in this checkout, and it requires an active-plan state convention the repo does not have. Flip condition: such a convention existing, or a checkout explicitly opting in — the handler would then return `context[]` carrying the plan path plus its digest.
+
+The repo's one extension registration (`.pi/extensions/compound-engineering.ts`) is unchanged and remains inert (`resources_discover` only).

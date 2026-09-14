@@ -336,8 +336,10 @@ describe("verification_evidence seam parity (ce-work <-> lfg)", () => {
     { fact: "existing tests inspected", ceWork: "existing_tests_inspected", lfg: "existing tests inspected" },
     { fact: "tests added/changed", ceWork: "tests_added_or_changed", lfg: "tests added/changed" },
     { fact: "red/characterization evidence", ceWork: "red failure or characterization", lfg: "red failure or characterization" },
-    { fact: "verification run", ceWork: "verification commands/results", lfg: "verification run" },
-    { fact: "deliberate exception", ceWork: "exception reason", lfg: "deliberate test exception" },
+    // R11 structured entries: the return contract names these facts as gate-parsed
+    // field tokens, so the ce-work surface form is the field, not a prose phrase.
+    { fact: "verification run", ceWork: "commands/results", lfg: "verification run" },
+    { fact: "deliberate exception", ceWork: "exception_reason", lfg: "deliberate test exception" },
   ]
 
   test("ce-work return contract owns the verification_evidence field and gates completion on it", async () => {
