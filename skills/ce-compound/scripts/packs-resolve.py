@@ -656,7 +656,11 @@ def _emit(declared_only: bool, entries: list, roots: list, warnings: list, error
             "errors": errors,
             "entries": len(entries),
         }))
-    return 0
+    # `--declared-only` is a probe: shape errors ride in the JSON for the caller
+    # to report. A resolve run that dropped a declared pack is a failed command.
+    if declared_only:
+        return 0
+    return 1 if errors else 0
 
 
 def _repo_root() -> str | None:
@@ -730,7 +734,7 @@ def main() -> int:
         print(json.dumps({
             "roots": [], "warnings": [], "errors": [f"packs resolver failed unexpectedly: {exc}"], "entries": 0,
         }))
-        return 0
+        return 1  # an errors payload is a failed command here too
 
 
 if __name__ == "__main__":

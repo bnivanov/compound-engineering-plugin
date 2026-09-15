@@ -10,7 +10,8 @@ import { afterAll, describe, expect, setDefaultTimeout, test } from "bun:test"
 // per-file resolver tests; the port record disposes those as excluded and keeps
 // this file instead: the seven byte-identical resolver copies upstream places,
 // the --declared-only contract the ce-code-review scope helper leans on, the
-// fail-closed behavior for a declared-but-missing pack directory, and the
+// fail-closed behavior for a declared-but-missing pack directory (non-zero
+// exit, so a consumer reads the failure without parsing the JSON), and the
 // citation prose the consumer wiring repeats.
 setDefaultTimeout(30000)
 
@@ -114,7 +115,14 @@ async function makeProject(config: string, localConfig?: string): Promise<string
   return dir
 }
 
-async function resolve(projectDir: string, args: string[] = [], cacheDir?: string) {
+/**
+ * Run the resolver and parse its JSON. `expectedCode` defaults to 0: a clean
+ * resolution and the `--declared-only` probe both succeed. A resolve run that
+ * could not load every declared pack exits non-zero while still printing the
+ * JSON (see the fail-closed case below) — that exit code is the part a
+ * consumer reads without parsing anything, so it is pinned here.
+ */
+async function resolve(projectDir: string, args: string[] = [], cacheDir?: string, expectedCode = 0) {
   const proc = Bun.spawn([hasPython as string, resolver, ...args], {
     cwd: projectDir,
     env: {
@@ -130,7 +138,7 @@ async function resolve(projectDir: string, args: string[] = [], cacheDir?: strin
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
   ])
-  expect(exitCode).toBe(0)
+  expect(exitCode).toBe(expectedCode)
   return JSON.parse(stdout)
 }
 
@@ -140,7 +148,7 @@ describe("packs-resolve.py copies", () => {
       const digest = createHash("sha256")
         .update(await readFile(path.join(repoRoot, copy)))
         .digest("hex")
-      expect(digest).toBe("0e7de94883fcaa19576a93ed206513de6609720898e2a20ed4be5b599691a939")
+      expect(digest).toBe("e838bb3d6c4567ae1db360001f8f0ea9aa175367a8e699d7f8ba7c3b055eb4c6")
     }
   })
 })
@@ -192,10 +200,16 @@ describe("resolution and failure modes", () => {
     expect(out.roots[0].dir).toBe(realpathSync(path.join(local, "rules")))
   })
 
-  resolverTest("a declared-but-missing pack dir fails closed, naming the entry", async () => {
+  // A dropped declared pack must fail as a command. The JSON field alone was
+  // the whole signal before this, and a live ce-plan run read it as success and
+  // recorded nothing, so the exit code is pinned with the rest.
+  resolverTest("a declared-but-missing pack dir fails closed: non-zero exit, no roots, the entry named", async () => {
     const local = await tempDir("absent")
     const out = await resolve(
       await makeProject(`packs:\n  - source: ${path.join(local, "absent-pack")}\n`),
+      [],
+      undefined,
+      1,
     )
     expect(out.roots).toEqual([])
     expect(out.entries).toBe(1)
