@@ -18,7 +18,9 @@ setDefaultTimeout(30000)
 const repoRoot = path.join(import.meta.dir, "..", "..")
 const resolver = path.join(repoRoot, "skills", "ce-plan", "scripts", "packs-resolve.py")
 
-// Byte-identical copies of upstream's packs-resolve.py, one per consumer skill.
+// One copy per consumer skill, byte-identical to each other. The fork's copy
+// diverges from upstream's: a resolve run exits 1 on `errors`. See
+// docs/upstream-sync.md before a sync overwrites one of these.
 const RESOLVER_COPIES = [
   "skills/ce-brainstorm/scripts/packs-resolve.py",
   "skills/ce-code-review/scripts/packs-resolve.py",
@@ -148,7 +150,7 @@ describe("packs-resolve.py copies", () => {
       const digest = createHash("sha256")
         .update(await readFile(path.join(repoRoot, copy)))
         .digest("hex")
-      expect(digest).toBe("e838bb3d6c4567ae1db360001f8f0ea9aa175367a8e699d7f8ba7c3b055eb4c6")
+      expect(digest).toBe("34ca03b1607f44e4b5f3f6908043e3b1289a23b5dd6a43ef7cbe56d085bbab6f")
     }
   })
 })

@@ -13,11 +13,14 @@ source publishes, applies selection, and prints one JSON object to stdout:
 pack's top level. Discovery never reads them (subdirectories are storage), so
 the count is informational and is reported by the health check, not warned.
 
-Exit 0 whenever resolution ran (per-entry failures are data in `errors` /
-`warnings`); non-zero only when the resolver itself cannot run. Consumers treat
-`errors` as loud per-entry configuration problems and `warnings` as degraded
-availability (e.g. an unreachable git source skipped per the warn-and-continue
-contract).
+A resolve run exits 1 both when the resolver itself cannot run and when
+`errors` is non-empty: a declared pack that did not load is a failed command, so
+a consumer cannot lose it by neglecting to read the JSON. A resolve run carrying
+warnings but no errors exits 0, and so does `--declared-only`, which is a probe
+answering a shape question rather than an action that failed (see below).
+Consumers treat `errors` as loud per-entry configuration problems and `warnings`
+as degraded availability (e.g. an unreachable git source skipped per the
+warn-and-continue contract).
 
 `--declared-only` answers the config-only question without touching git or the
 cache: it parses both config layers, shape-checks each entry, and prints

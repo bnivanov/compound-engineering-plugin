@@ -43,7 +43,7 @@ Exiting non-zero is for the mode whose caller treats the call as an action. A **
 ## Evidence
 
 - Deterministic: `tests/skills/ce-packs.test.ts` pins the fail-closed case at exit 1 and the probe at exit 0; the seven copies stay byte-identical under a digest pin.
-- Live, pre-fix vs post-fix, one variable (a declared source that does not exist): resolver exit 0 → a plan with no trace; resolver exit 1 → the same failure named in the assistant's reply and written into the plan's assumptions and sources.
+- Live, pre-fix vs post-fix, one variable (a declared source that does not exist): resolver exit 0 → a plan with no trace; resolver exit 1 → the failure named in the plan's goal capsule, in its assumptions (the resolver's line verbatim), and in its sources.
 
 ## Evaluating a bundled-script change
 
