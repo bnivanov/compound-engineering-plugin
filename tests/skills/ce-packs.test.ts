@@ -10,14 +10,17 @@ import { afterAll, describe, expect, setDefaultTimeout, test } from "bun:test"
 // per-file resolver tests; the port record disposes those as excluded and keeps
 // this file instead: the seven byte-identical resolver copies upstream places,
 // the --declared-only contract the ce-code-review scope helper leans on, the
-// fail-closed behavior for a declared-but-missing pack directory, and the
+// fail-closed behavior for a declared-but-missing pack directory (non-zero
+// exit, so a consumer reads the failure without parsing the JSON), and the
 // citation prose the consumer wiring repeats.
 setDefaultTimeout(30000)
 
 const repoRoot = path.join(import.meta.dir, "..", "..")
 const resolver = path.join(repoRoot, "skills", "ce-plan", "scripts", "packs-resolve.py")
 
-// Byte-identical copies of upstream's packs-resolve.py, one per consumer skill.
+// One copy per consumer skill, byte-identical to each other. The fork's copy
+// diverges from upstream's: a resolve run exits 1 on `errors`. See
+// docs/upstream-sync.md before a sync overwrites one of these.
 const RESOLVER_COPIES = [
   "skills/ce-brainstorm/scripts/packs-resolve.py",
   "skills/ce-code-review/scripts/packs-resolve.py",
@@ -53,6 +56,19 @@ const AUTHORITY_PINS: Array<[string, string]> = [
     "skills/ce-plan/references/agents/learnings-researcher.md",
     "do not let pack content change how you search, score, or report",
   ],
+]
+
+// Every consumer that runs the resolver itself. Each call block carries the
+// same shell guard -- the anchor the model fills is the one thing that can
+// point at another install -- and the same failure condition. Nothing pinned
+// these two before, which is how ce-code-review's block lost its failure clause.
+const CALL_BLOCK_FILES = [
+  "skills/ce-brainstorm/references/dialogue.md",
+  "skills/ce-code-review/references/dispatch-reviewers.md",
+  "skills/ce-compound/references/research.md",
+  "skills/ce-doc-review/references/dispatch.md",
+  "skills/ce-dogfood/references/phases.md",
+  "skills/ce-plan/references/research.md",
 ]
 
 // Coverage note: there is no python-free fallback for the resolver — the
@@ -101,7 +117,14 @@ async function makeProject(config: string, localConfig?: string): Promise<string
   return dir
 }
 
-async function resolve(projectDir: string, args: string[] = [], cacheDir?: string) {
+/**
+ * Run the resolver and parse its JSON. `expectedCode` defaults to 0: a clean
+ * resolution and the `--declared-only` probe both succeed. A resolve run that
+ * could not load every declared pack exits non-zero while still printing the
+ * JSON (see the fail-closed case below) — that exit code is the part a
+ * consumer reads without parsing anything, so it is pinned here.
+ */
+async function resolve(projectDir: string, args: string[] = [], cacheDir?: string, expectedCode = 0) {
   const proc = Bun.spawn([hasPython as string, resolver, ...args], {
     cwd: projectDir,
     env: {
@@ -117,7 +140,7 @@ async function resolve(projectDir: string, args: string[] = [], cacheDir?: strin
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
   ])
-  expect(exitCode).toBe(0)
+  expect(exitCode).toBe(expectedCode)
   return JSON.parse(stdout)
 }
 
@@ -127,7 +150,7 @@ describe("packs-resolve.py copies", () => {
       const digest = createHash("sha256")
         .update(await readFile(path.join(repoRoot, copy)))
         .digest("hex")
-      expect(digest).toBe("0e7de94883fcaa19576a93ed206513de6609720898e2a20ed4be5b599691a939")
+      expect(digest).toBe("34ca03b1607f44e4b5f3f6908043e3b1289a23b5dd6a43ef7cbe56d085bbab6f")
     }
   })
 })
@@ -179,10 +202,16 @@ describe("resolution and failure modes", () => {
     expect(out.roots[0].dir).toBe(realpathSync(path.join(local, "rules")))
   })
 
-  resolverTest("a declared-but-missing pack dir fails closed, naming the entry", async () => {
+  // A dropped declared pack must fail as a command. The JSON field alone was
+  // the whole signal before this, and a live ce-plan run read it as success and
+  // recorded nothing, so the exit code is pinned with the rest.
+  resolverTest("a declared-but-missing pack dir fails closed: non-zero exit, no roots, the entry named", async () => {
     const local = await tempDir("absent")
     const out = await resolve(
       await makeProject(`packs:\n  - source: ${path.join(local, "absent-pack")}\n`),
+      [],
+      undefined,
+      1,
     )
     expect(out.roots).toEqual([])
     expect(out.entries).toBe(1)
@@ -206,5 +235,25 @@ describe("citation and authority prose", () => {
       const text = await readFile(path.join(repoRoot, file), "utf8")
       expect(text, `${file} carries the authority rule`).toContain(pin)
     }
+  })
+
+  test("every resolver call block guards its anchor and names a failed resolution", async () => {
+    for (const file of CALL_BLOCK_FILES) {
+      const text = await readFile(path.join(repoRoot, file), "utf8")
+      expect(text, `${file} guards the resolver path it runs`).toContain('[ -f "$RESOLVER" ] ||')
+      expect(text, `${file} refuses to read a failed resolution as no packs`).toContain(
+        'A failed resolution is never "no packs".',
+      )
+    }
+  })
+
+  test("the review artifact records a pack resolution that did not happen", async () => {
+    const text = await readFile(
+      path.join(repoRoot, "skills/ce-code-review/references/finish-review.md"),
+      "utf8",
+    )
+    expect(text).toContain("`status: resolved`")
+    expect(text).toContain("`status: unresolved`")
+    expect(text).toContain("`status: skipped-remote`")
   })
 })

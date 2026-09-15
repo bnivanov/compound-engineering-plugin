@@ -13,11 +13,14 @@ source publishes, applies selection, and prints one JSON object to stdout:
 pack's top level. Discovery never reads them (subdirectories are storage), so
 the count is informational and is reported by the health check, not warned.
 
-Exit 0 whenever resolution ran (per-entry failures are data in `errors` /
-`warnings`); non-zero only when the resolver itself cannot run. Consumers treat
-`errors` as loud per-entry configuration problems and `warnings` as degraded
-availability (e.g. an unreachable git source skipped per the warn-and-continue
-contract).
+A resolve run exits 1 both when the resolver itself cannot run and when
+`errors` is non-empty: a declared pack that did not load is a failed command, so
+a consumer cannot lose it by neglecting to read the JSON. A resolve run carrying
+warnings but no errors exits 0, and so does `--declared-only`, which is a probe
+answering a shape question rather than an action that failed (see below).
+Consumers treat `errors` as loud per-entry configuration problems and `warnings`
+as degraded availability (e.g. an unreachable git source skipped per the
+warn-and-continue contract).
 
 `--declared-only` answers the config-only question without touching git or the
 cache: it parses both config layers, shape-checks each entry, and prints
@@ -656,7 +659,11 @@ def _emit(declared_only: bool, entries: list, roots: list, warnings: list, error
             "errors": errors,
             "entries": len(entries),
         }))
-    return 0
+    # `--declared-only` is a probe: shape errors ride in the JSON for the caller
+    # to report. A resolve run that dropped a declared pack is a failed command.
+    if declared_only:
+        return 0
+    return 1 if errors else 0
 
 
 def _repo_root() -> str | None:
@@ -730,7 +737,7 @@ def main() -> int:
         print(json.dumps({
             "roots": [], "warnings": [], "errors": [f"packs resolver failed unexpectedly: {exc}"], "entries": 0,
         }))
-        return 0
+        return 1  # an errors payload is a failed command here too
 
 
 if __name__ == "__main__":
