@@ -236,6 +236,7 @@ describe("citation and authority prose", () => {
       path.join(repoRoot, "skills/ce-code-review/references/finish-review.md"),
       "utf8",
     )
+    expect(text).toContain("`status: resolved`")
     expect(text).toContain("`status: unresolved`")
     expect(text).toContain("`status: skipped-remote`")
   })
