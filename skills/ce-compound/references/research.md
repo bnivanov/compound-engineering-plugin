@@ -60,10 +60,12 @@ Pass `{run_id}` and the resolved absolute `{run_dir}` into every Phase 1 subagen
 ```bash
 SKILL_DIR="<absolute path of the directory containing the SKILL.md you just read>";
 PY="$(for c in python3 python py; do command -v "$c" >/dev/null 2>&1 && "$c" -c '' >/dev/null 2>&1 && { echo "$c"; break; }; done)"; [ -n "$PY" ] || { echo "no working Python 3 interpreter on PATH" >&2; exit 1; };
-"$PY" "$SKILL_DIR/scripts/packs-resolve.py"
+RESOLVER="$SKILL_DIR/scripts/packs-resolve.py";
+[ -f "$RESOLVER" ] || { echo "pack resolver not found at $RESOLVER -- SKILL_DIR must be the directory of the SKILL.md you just read, never a searched install" >&2; exit 1; };
+"$PY" "$RESOLVER"
 ```
 
-Pass the JSON's `roots` (pack `id` + absolute `dir`, plus `url`/`ref` when git-sourced) into the Related Docs Finder's prompt; surface `errors`/`warnings` once in the completion report and nowhere else. With no `packs:` key the result is empty and nothing changes. When the command yields no JSON (no interpreter, script not found, non-zero exit), packs are unresolved for this run: the finder searches `<root>/solutions/` alone, say so once in the completion report, and never stop the run for it.
+Pass the JSON's `roots` (pack `id` + absolute `dir`, plus `url`/`ref` when git-sourced) into the Related Docs Finder's prompt; surface `warnings` once in the completion report and nowhere else. With no `packs:` key the result is empty and nothing changes. A failed resolution is never "no packs". When the guard above fires, the command exits non-zero, or the JSON carries `errors`, the declared packs did not load; the finder searches `<root>/solutions/` alone and the completion report carries the failure with the resolver's own lines, never a quiet skip.
 
 **Dispatch.** Launch `Context Analyzer`, `Solution Extractor`, and `Related Docs Finder` in parallel, in the background, and do not wait on them here. They keep running underneath the session-history step the body starts next, so the two overlap and the wall-clock cost is `max(session-history, slowest background subagent)` rather than their sum.
 

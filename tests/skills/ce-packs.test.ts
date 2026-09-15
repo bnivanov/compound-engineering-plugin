@@ -55,6 +55,19 @@ const AUTHORITY_PINS: Array<[string, string]> = [
   ],
 ]
 
+// Every consumer that runs the resolver itself. Each call block carries the
+// same shell guard -- the anchor the model fills is the one thing that can
+// point at another install -- and the same failure condition. Nothing pinned
+// these two before, which is how ce-code-review's block lost its failure clause.
+const CALL_BLOCK_FILES = [
+  "skills/ce-brainstorm/references/dialogue.md",
+  "skills/ce-code-review/references/dispatch-reviewers.md",
+  "skills/ce-compound/references/research.md",
+  "skills/ce-doc-review/references/dispatch.md",
+  "skills/ce-dogfood/references/phases.md",
+  "skills/ce-plan/references/research.md",
+]
+
 // Coverage note: there is no python-free fallback for the resolver — the
 // resolver is a python script, and exercising its behavior from a test-local
 // reimplementation would defend a copy, not the shipped artifact. On a host
@@ -206,5 +219,24 @@ describe("citation and authority prose", () => {
       const text = await readFile(path.join(repoRoot, file), "utf8")
       expect(text, `${file} carries the authority rule`).toContain(pin)
     }
+  })
+
+  test("every resolver call block guards its anchor and names a failed resolution", async () => {
+    for (const file of CALL_BLOCK_FILES) {
+      const text = await readFile(path.join(repoRoot, file), "utf8")
+      expect(text, `${file} guards the resolver path it runs`).toContain('[ -f "$RESOLVER" ] ||')
+      expect(text, `${file} refuses to read a failed resolution as no packs`).toContain(
+        'A failed resolution is never "no packs".',
+      )
+    }
+  })
+
+  test("the review artifact records a pack resolution that did not happen", async () => {
+    const text = await readFile(
+      path.join(repoRoot, "skills/ce-code-review/references/finish-review.md"),
+      "utf8",
+    )
+    expect(text).toContain("`status: unresolved`")
+    expect(text).toContain("`status: skipped-remote`")
   })
 })
